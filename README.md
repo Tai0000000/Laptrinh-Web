@@ -53,4 +53,6 @@ npm run dev
 ## Công nghệ sử dụng
 
 - **Backend**: PHP 8.x, Laravel 10/11, MySQL, Sanctum (Authentication).
-- **Frontend**: React 18, Vite, Tailwind CSS, Axios, React Router.
+- # **Frontend**: React 18, Vite, Tailwind CSS, Axios, React Router.
+
+# Laptrinh-Web
