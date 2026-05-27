@@ -8,7 +8,6 @@ return new class extends Migration
 {
     public function up()
     {
-        // Bảng Users (đã tồn tại trong Laravel, nhưng thêm vai trò)
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');

@@ -1,0 +1,26 @@
+{
+  "name": "horse-racing/backend",
+  "description": "Horse Racing Backend using Laravel",
+  "type": "project",
+  "require": {
+    "php": "^8.3",
+    "laravel/framework": "^11.0",
+    "laravel/sanctum": "^4.0"
+  },
+  "require-dev": {
+    "laravel/tinker": "^2.9"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/",
+      "Database\\Factories\\": "database/factories/",
+      "Database\\Seeders\\": "database/seeders/"
+    }
+  },
+  "scripts": {
+    "post-install-cmd": [
+      "@php artisan key:generate --ansi",
+      "@php artisan storage:link"
+    ]
+  }
+}
