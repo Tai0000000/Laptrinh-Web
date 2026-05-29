@@ -1,0 +1,14 @@
+.env
+.env.local
+.env.*.local
+.DS_Store
+vendor/
+node_modules/
+storage/
+bootstrap/cache/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.phpunit.result.cache
