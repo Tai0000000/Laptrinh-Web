@@ -19,7 +19,7 @@ class JockeyController
 
         $jId = (int) $j['id'];
 
-        // ID từ path ví dụ: invitations/5/respond => parts[1]=invitations, parts[2]=5, parts[3]=respond
+        
         $sub    = $parts[1] ?? '';
         $resId  = is_numeric($parts[2] ?? '') ? (int) $parts[2] : null;
         $action = $parts[3] ?? '';
