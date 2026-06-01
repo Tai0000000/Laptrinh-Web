@@ -1,101 +1,112 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import HeroBanner from '../components/HeroBanner';
+import FeaturedTournaments from '../components/FeaturedTournaments';
+import UpcomingRaces from '../components/UpcomingRaces';
 
 const Home = () => {
+  // Dữ liệu giả lập (Mock data)
+  const nextRaceTime = new Date(Date.now() + 1000 * 60 * 60 * 24 * 2); // 2 ngày tới
+  
+  const featuredTournaments = [
+    {
+      id: 1,
+      name: "Grand Royal Derby 2026",
+      location: "Sân vận động Phú Thọ, TP.HCM",
+      date_range: "15/06 - 20/06/2026",
+      category: "World Series",
+      race_count: 8,
+      horse_count: 64,
+      prize_pool: "$50,000"
+    },
+    {
+      id: 2,
+      name: "Summer Sprint Cup",
+      location: "Trường đua Đại Nam, Bình Dương",
+      date_range: "01/07 - 05/07/2026",
+      category: "Regional",
+      race_count: 5,
+      horse_count: 40,
+      prize_pool: "$20,000"
+    },
+    {
+      id: 3,
+      name: "Golden Hoof Championship",
+      location: "Hà Nội Hippodrome",
+      date_range: "12/08 - 15/08/2026",
+      category: "National",
+      race_count: 6,
+      horse_count: 48,
+      prize_pool: "$35,000"
+    }
+  ];
+
+  const upcomingRaces = [
+    {
+      id: 101,
+      time: "14:30",
+      name: "Vòng loại Bảng A - Sprint",
+      tournament_name: "Grand Royal Derby 2026",
+      distance: 1200,
+      status: "Sắp bắt đầu"
+    },
+    {
+      id: 102,
+      time: "15:45",
+      name: "Chung kết Cup Mùa Hè",
+      tournament_name: "Summer Sprint Cup",
+      distance: 1600,
+      status: "Đang chờ"
+    },
+    {
+      id: 103,
+      time: "17:00",
+      name: "Đua biểu diễn Horse-Power",
+      tournament_name: "National Exhibition",
+      distance: 1000,
+      status: "Đang chờ"
+    }
+  ];
+
   return (
-    <div className="space-y-12 py-8">
-      {/* Hero Section */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] items-center">
-          <div className="rounded-3xl border border-white/70 bg-white/80 p-8 shadow-xl backdrop-blur-xl sm:p-12">
-            <span className="inline-flex rounded-full bg-indigo-100 px-3 py-1 text-sm font-medium text-indigo-700">
-              Hệ Thống Đua Ngựa Chuyên Nghiệp
-            </span>
-            <h1 className="mt-6 text-4xl font-black tracking-tight text-slate-900 sm:text-6xl leading-tight">
-              Quản lý giải đua ngựa <br />
-              <span className="text-indigo-600">Gọn, Rõ và Hiện đại.</span>
-            </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-              Theo dõi trực tiếp, đặt cược thông minh và trải nghiệm những giải đấu kịch tính nhất. 
-              Hệ thống cung cấp đầy đủ công cụ cho Chủ ngựa, Nài ngựa, Trọng tài và Khán giả.
-            </p>
+    <div className="space-y-16 pb-20">
+      {/* Hero Section với Countdown */}
+      <HeroBanner 
+        nextRaceTime={nextRaceTime} 
+        raceTitle="Grand Royal Derby 2026" 
+      />
 
-            <div className="mt-10 flex flex-wrap gap-4">
-              <Link
-                to="/tournaments"
-                className="rounded-full bg-slate-900 px-8 py-4 font-bold text-white shadow-lg transition hover:-translate-y-1 hover:bg-slate-800"
-              >
-                Khám phá ngay
-              </Link>
-              <Link
-                to="/dashboard"
-                className="rounded-full border border-slate-200 bg-white px-8 py-4 font-bold text-slate-700 transition hover:border-slate-300 hover:text-slate-900 shadow-sm"
-              >
-                Vào Dashboard
-              </Link>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20">
+        {/* Section Giải đấu nổi bật */}
+        <FeaturedTournaments tournaments={featuredTournaments} />
+
+        {/* Section Lịch đua sắp tới */}
+        <UpcomingRaces races={upcomingRaces} />
+
+        {/* Cấu trúc cũ được giữ lại nếu cần bổ sung thêm */}
+        <section className="py-12 border-t border-gray-100">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-black text-slate-900">Tại sao chọn chúng tôi?</h2>
+            <p className="text-slate-500 mt-2">Nền tảng quản lý và đặt cược đua ngựa hàng đầu Việt Nam.</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center p-6">
+              <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-600 font-bold text-2xl">01</div>
+              <h3 className="font-bold text-xl mb-2">Minh bạch</h3>
+              <p className="text-gray-500 text-sm">Mọi kết quả đều được trọng tài xác nhận và ghi lại trực tiếp trên hệ thống.</p>
+            </div>
+            <div className="text-center p-6">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 font-bold text-2xl">02</div>
+              <h3 className="font-bold text-xl mb-2">Nhanh chóng</h3>
+              <p className="text-gray-500 text-sm">Cập nhật dữ liệu trực tiếp qua WebSocket với độ trễ cực thấp.</p>
+            </div>
+            <div className="text-center p-6">
+              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-600 font-bold text-2xl">03</div>
+              <h3 className="font-bold text-xl mb-2">An toàn</h3>
+              <p className="text-gray-500 text-sm">Hệ thống đặt cược bảo mật, nạp rút nhanh chóng và hỗ trợ 24/7.</p>
             </div>
           </div>
-
-          {/* Role Cards */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-            {[
-              ['Horse Owner', 'Đăng ký ngựa, quản lý đội hình và theo dõi tiến độ.'],
-              ['Jockey', 'Nhận lịch đua, lời mời và thống kê thành tích.'],
-              ['Referee', 'Kiểm tra thông tin, ghi nhận kết quả và sự cố.'],
-              ['Admin', 'Quản lý người dùng, giải đấu và cấu hình hệ thống.'],
-            ].map(([title, description]) => (
-              <article key={title} className="rounded-2xl border border-white/70 bg-slate-950 p-6 text-white shadow-xl hover:scale-[1.02] transition-transform">
-                <h2 className="text-lg font-bold text-indigo-400">{title}</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{description}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Feature Grid */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
-            <div className="h-12 w-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-6 text-indigo-600">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">Giải đấu sắp tới</h3>
-            <p className="text-gray-600 mb-6 leading-relaxed">Xem danh sách các cuộc đua chuẩn bị diễn ra trong tuần này với đầy đủ thông tin chi tiết.</p>
-            <Link to="/tournaments" className="text-indigo-600 font-bold hover:text-indigo-700 inline-flex items-center">
-              Xem chi tiết <span className="ml-2">&rarr;</span>
-            </Link>
-          </div>
-
-          <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
-            <div className="h-12 w-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-6 text-indigo-600">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">Dự đoán & Đặt cược</h3>
-            <p className="text-gray-600 mb-6 leading-relaxed">Phân tích phong độ ngựa và nài ngựa để đưa ra lựa chọn chính xác nhất cho mỗi vòng đua.</p>
-            <Link to="/predictions" className="text-indigo-600 font-bold hover:text-indigo-700 inline-flex items-center">
-              Đặt cược ngay <span className="ml-2">&rarr;</span>
-            </Link>
-          </div>
-
-          <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
-            <div className="h-12 w-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-6 text-indigo-600">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 01-2 2h2a2 2 0 012-2zm7-5v-4a2 2 0 00-2-2h-2a2 2 0 00-2 2v4a2 2 0 002 2h2a2 2 0 002-2z" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">Bảng xếp hạng</h3>
-            <p className="text-gray-600 mb-6 leading-relaxed">Vinh danh những nài ngựa và chú ngựa có thành tích xuất sắc nhất trong hệ thống giải đấu.</p>
-            <Link to="/leaderboard" className="text-indigo-600 font-bold hover:text-indigo-700 inline-flex items-center">
-              Xem bảng xếp hạng <span className="ml-2">&rarr;</span>
-            </Link>
-          </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   );
 };
