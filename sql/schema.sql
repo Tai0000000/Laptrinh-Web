@@ -1,7 +1,4 @@
--- ============================================================
--- Horse Racing Tournament Management System — Database Schema
--- MySQL 8.0
--- ============================================================
+
 
 SET NAMES utf8mb4;
 SET foreign_key_checks = 0;
