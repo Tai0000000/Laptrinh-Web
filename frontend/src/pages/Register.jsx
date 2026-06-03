@@ -75,11 +75,11 @@ function Register() {
                             onChange={(e) => setRole(e.target.value)}
                             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-slate-400 text-slate-700"
                         >
-                            <option value="spectator">Spectator</option>
-                            <option value="horse_owner">Horse Owner</option>
-                            <option value="jockey">Jockey</option>
-                            <option value="race_referee">Race Referee</option>
-                            <option value="admin">System Admin</option>
+                            <option value="spectator">Spectator (Khán giả)</option>
+                            <option value="horse_owner">Horse Owner (Chủ ngựa)</option>
+                            <option value="jockey">Jockey (Nài ngựa)</option>
+                            <option value="race_referee">Race Referee (Trọng tài)</option>
+                            <option value="admin">System Admin (Quản trị)</option>
                         </select>
                     </label>
 

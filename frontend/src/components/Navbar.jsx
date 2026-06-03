@@ -31,7 +31,7 @@ function Navbar() {
 
         <nav className="flex items-center gap-2">
           <NavLink to="/" className={linkClass} end>
-            Home
+            Trang chủ
           </NavLink>
           {user ? (
             <>
@@ -42,12 +42,12 @@ function Navbar() {
                 onClick={handleLogout}
                 className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-white/80 hover:text-slate-900 transition"
               >
-                Sign Out
+                Đăng xuất
               </button>
             </>
           ) : (
             <NavLink to="/login" className={linkClass}>
-              Sign In
+              Đăng nhập
             </NavLink>
           )}
         </nav>

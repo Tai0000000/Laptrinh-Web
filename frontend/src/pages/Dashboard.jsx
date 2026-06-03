@@ -121,7 +121,7 @@ const SpectatorDashboard = () => (
         <div className="grid gap-4 sm:grid-cols-2 pt-2">
             <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
                 <h3 className="font-semibold text-slate-900">💸 Prediction & Betting</h3>
-                <p className="mt-1 text-xs text-slate-500">Place bets on your favorite horse & jockey duos.</p>
+                <p className="mt-1 text-xs text-slate-500">Place cược (bets) on your favorite horse & jockey duos.</p>
             </div>
             <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
                 <h3 className="font-semibold text-slate-900">📊 Live Rankings</h3>
