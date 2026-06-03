@@ -18,42 +18,42 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Bảng Horse Owners (Chủ ngựa)
+        // Horse Owners table
         Schema::create('horse_owners', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->unique()->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
 
-        // Bảng Jockeys (Nài ngựa)
+        // Jockeys table
         Schema::create('jockeys', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->unique()->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
 
-        // Bảng Race Referees (Trọng tài)
+        // Race Referees table
         Schema::create('race_referees', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->unique()->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
 
-        // Bảng Spectators (Khán giả)
+        // Spectators table
         Schema::create('spectators', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->unique()->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
 
-        // Bảng Admins (Quản trị viên)
+        // Admins table
         Schema::create('admins', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->unique()->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
 
-        // Bảng Horses (Ngựa)
+        // Horses table
         Schema::create('horses', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -64,7 +64,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Bảng Tournaments (Giải đấu)
+        // Tournaments table
         Schema::create('tournaments', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -74,17 +74,17 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Bảng Races (Cuộc đua)
+        // Races table
         Schema::create('races', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tournament_id')->constrained()->onDelete('cascade');
             $table->dateTime('race_time');
-            $table->integer('distance'); // tính bằng mét
-            $table->string('status')->default('scheduled'); // đã lên lịch, đang diễn ra, đã hoàn thành, đã hủy
+            $table->integer('distance'); // in meters
+            $table->string('status')->default('scheduled'); // scheduled, ongoing, finished, cancelled
             $table->timestamps();
         });
 
-        // Đăng ký (Ngựa & Nài ngựa trong một Cuộc đua)
+        // Registrations (Horse & Jockey in a Race)
         Schema::create('registrations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('race_id')->constrained()->onDelete('cascade');
@@ -94,7 +94,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Kết quả Cuộc đua
+        // Race Results
         Schema::create('race_results', function (Blueprint $table) {
             $table->id();
             $table->foreignId('race_id')->constrained()->onDelete('cascade');
@@ -105,14 +105,14 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Đặt cược (Dành cho Khán giả)
+        // Bets (For Spectators)
         Schema::create('bets', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('registration_id')->constrained()->onDelete('cascade');
             $table->decimal('amount', 10, 2);
-            $table->string('prediction_type'); // ví dụ: thắng, hạng nhất, hạng nhì
-            $table->string('status')->default('pending'); // đang chờ, thắng, thua
+            $table->string('prediction_type'); // e.g., win, place, show
+            $table->string('status')->default('pending'); // pending, won, lost
             $table->timestamps();
         });
     }

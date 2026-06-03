@@ -8,7 +8,7 @@ const api = axios.create({
     },
 });
 
-// Thêm interceptor cho request để đính kèm token xác thực
+// Add request interceptor to attach the authentication token
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {

@@ -5,7 +5,7 @@ namespace App\Repositories\Contracts;
 interface IHorseOwnerRepository
 {
     /**
-     * Tìm chủ ngựa theo ID
+     * Find horse owner by ID
      *
      * @param int $id
      * @return mixed
@@ -13,7 +13,7 @@ interface IHorseOwnerRepository
     public function findById(int $id): mixed;
 
     /**
-     * Tìm chủ ngựa theo user ID
+     * Find horse owner by user ID
      *
      * @param int $userId
      * @return mixed
@@ -21,7 +21,7 @@ interface IHorseOwnerRepository
     public function findByUserId(int $userId): mixed;
 
     /**
-     * Tạo chủ ngựa mới
+     * Create a new horse owner
      *
      * @param array $data
      * @return mixed
@@ -29,7 +29,7 @@ interface IHorseOwnerRepository
     public function create(array $data): mixed;
 
     /**
-     * Cập nhật thông tin chủ ngựa
+     * Update horse owner details
      *
      * @param int $id
      * @param array $data
@@ -38,7 +38,7 @@ interface IHorseOwnerRepository
     public function update(int $id, array $data): mixed;
 
     /**
-     * Xóa chủ ngựa
+     * Delete a horse owner
      *
      * @param int $id
      * @return bool
@@ -46,7 +46,7 @@ interface IHorseOwnerRepository
     public function delete(int $id): bool;
 
     /**
-     * Lấy danh sách ngựa của chủ ngựa
+     * Get all horses owned by this owner
      *
      * @param int $horseOwnerId
      * @return mixed
@@ -54,7 +54,7 @@ interface IHorseOwnerRepository
     public function getHorses(int $horseOwnerId): mixed;
 
     /**
-     * Lấy danh sách ngựa tham gia giải đấu
+     * Get owner's horses participating in a specific race
      *
      * @param int $horseOwnerId
      * @param int $raceId
@@ -63,7 +63,7 @@ interface IHorseOwnerRepository
     public function getHorsesForRace(int $horseOwnerId, int $raceId): mixed;
 
     /**
-     * Lấy danh sách jockey của ngựa
+     * Get jockeys associated with the horse
      *
      * @param int $horseId
      * @return mixed
@@ -71,7 +71,7 @@ interface IHorseOwnerRepository
     public function getJockeysForHorse(int $horseId): mixed;
 
     /**
-     * Lấy lịch thi đấu của ngựa
+     * Get race schedule for a specific horse
      *
      * @param int $horseId
      * @return mixed
@@ -79,7 +79,7 @@ interface IHorseOwnerRepository
     public function getRaceScheduleForHorse(int $horseId): mixed;
 
     /**
-     * Lấy kết quả thi đấu của ngựa
+     * Get race results for a specific horse
      *
      * @param int $horseId
      * @return mixed
@@ -87,7 +87,7 @@ interface IHorseOwnerRepository
     public function getRaceResults(int $horseId): mixed;
 
     /**
-     * Lấy bảng xếp hạng của ngựa
+     * Get rankings for a specific horse
      *
      * @param int $horseId
      * @return mixed
@@ -95,7 +95,7 @@ interface IHorseOwnerRepository
     public function getHorseRankings(int $horseId): mixed;
 
     /**
-     * Lấy tiền thưởng của ngựa
+     * Get rewards for a specific horse
      *
      * @param int $horseId
      * @return mixed

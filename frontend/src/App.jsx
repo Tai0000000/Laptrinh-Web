@@ -15,7 +15,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            {/* Thêm các tuyến đường cho các vai trò cụ thể tại đây */}
+            {/* Add role-specific routes here */}
           </Routes>
         </main>
       </div>

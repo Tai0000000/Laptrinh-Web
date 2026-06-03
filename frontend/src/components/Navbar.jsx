@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const linkClass = ({ isActive }) =>
   [
@@ -7,6 +8,14 @@ const linkClass = ({ isActive }) =>
   ].join(' ');
 
 function Navbar() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <header className="sticky top-0 z-20 border-b border-white/70 bg-white/70 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
@@ -22,14 +31,25 @@ function Navbar() {
 
         <nav className="flex items-center gap-2">
           <NavLink to="/" className={linkClass} end>
-            Trang chủ
+            Home
           </NavLink>
-          <NavLink to="/dashboard" className={linkClass}>
-            Dashboard
-          </NavLink>
-          <NavLink to="/login" className={linkClass}>
-            Đăng nhập
-          </NavLink>
+          {user ? (
+            <>
+              <NavLink to="/dashboard" className={linkClass}>
+                Dashboard
+              </NavLink>
+              <button
+                onClick={handleLogout}
+                className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-white/80 hover:text-slate-900 transition"
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <NavLink to="/login" className={linkClass}>
+              Sign In
+            </NavLink>
+          )}
         </nav>
       </div>
     </header>

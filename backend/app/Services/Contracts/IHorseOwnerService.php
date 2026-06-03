@@ -5,7 +5,7 @@ namespace App\Services\Contracts;
 interface IHorseOwnerService
 {
     /**
-     * Đăng ký tài khoản tham gia hệ thống
+     * Register a new account to participate in the system
      *
      * @param array $data
      * @return void
@@ -13,7 +13,7 @@ interface IHorseOwnerService
     public function registerAccount(array $data): void;
 
     /**
-     * Đăng ký ngựa tham gia giải đấu
+     * Register a horse for a tournament race
      *
      * @param int $horseId
      * @param int $raceId
@@ -22,7 +22,7 @@ interface IHorseOwnerService
     public function registerHorseForRace(int $horseId, int $raceId): void;
 
     /**
-     * Quản lý thông tin ngựa
+     * Manage horse details
      *
      * @param int $horseId
      * @param array $data
@@ -31,7 +31,7 @@ interface IHorseOwnerService
     public function updateHorseInfo(int $horseId, array $data): void;
 
     /**
-     * Thuê/chọn jockey cho ngựa tham gia cuộc đua
+     * Hire/select a jockey for a horse in a specific race
      *
      * @param int $horseId
      * @param int $jockeyId
@@ -41,7 +41,7 @@ interface IHorseOwnerService
     public function hireJockeyForRace(int $horseId, int $jockeyId, int $raceId): void;
 
     /**
-     * Quản lý danh sách jockey của ngựa, xác nhận jockey tham gia cuộc đua
+     * Manage horse's jockey list and confirm jockey participation
      *
      * @param int $horseId
      * @param int $raceId
@@ -51,7 +51,7 @@ interface IHorseOwnerService
     public function confirmJockeyForRace(int $horseId, int $raceId, int $jockeyId): void;
 
     /**
-     * Xem lịch thi đấu của ngựa, xác nhận cho ngựa tham gia cuộc đua
+     * View horse race schedule and confirm participation
      *
      * @param int $horseId
      * @return array
@@ -59,7 +59,7 @@ interface IHorseOwnerService
     public function viewRaceScheduleAndConfirmParticipation(int $horseId): array;
 
     /**
-     * Xem thông tin cuộc đua
+     * View race details
      *
      * @param int $raceId
      * @return array
@@ -67,7 +67,7 @@ interface IHorseOwnerService
     public function viewRaceInfo(int $raceId): array;
 
     /**
-     * Theo dõi kết quả thi đấu của ngựa
+     * Track race results of a horse
      *
      * @param int $horseId
      * @return array
@@ -75,7 +75,7 @@ interface IHorseOwnerService
     public function trackRaceResults(int $horseId): array;
 
     /**
-     * Xem bảng xếp hạng của ngựa
+     * View horse rankings
      *
      * @param int $horseId
      * @return array
@@ -83,7 +83,7 @@ interface IHorseOwnerService
     public function getHorseRankings(int $horseId): array;
 
     /**
-     * Xem tiền thưởng của ngựa
+     * View horse rewards
      *
      * @param int $horseId
      * @return array
