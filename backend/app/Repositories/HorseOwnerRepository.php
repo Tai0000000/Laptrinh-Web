@@ -2,45 +2,51 @@
 
 namespace App\Repositories;
 
+use App\Models\HorseOwner;
+use App\Models\Horse;
+use App\Models\Registration;
+use App\Models\Race;
+use App\Models\RaceResult;
+use App\Models\User;
 use App\Repositories\Contracts\IHorseOwnerRepository;
 
 class HorseOwnerRepository implements IHorseOwnerRepository
 {
     /**
-     * Tìm chủ ngựa theo ID
+     * Find horse owner by ID
      *
      * @param int $id
      * @return mixed
      */
     public function findById(int $id): mixed
     {
-        return null;
+        return HorseOwner::find($id);
     }
 
     /**
-     * Tìm chủ ngựa theo user ID
+     * Find horse owner by user ID
      *
      * @param int $userId
      * @return mixed
      */
     public function findByUserId(int $userId): mixed
     {
-        return null;
+        return HorseOwner::where('user_id', $userId)->first();
     }
 
     /**
-     * Tạo chủ ngựa mới
+     * Create a new horse owner
      *
      * @param array $data
      * @return mixed
      */
     public function create(array $data): mixed
     {
-        return null;
+        return HorseOwner::create($data);
     }
 
     /**
-     * Cập nhật thông tin chủ ngựa
+     * Update horse owner details
      *
      * @param int $id
      * @param array $data
@@ -48,33 +54,42 @@ class HorseOwnerRepository implements IHorseOwnerRepository
      */
     public function update(int $id, array $data): mixed
     {
+        $owner = HorseOwner::find($id);
+        if ($owner) {
+            $owner->update($data);
+            return $owner;
+        }
         return null;
     }
 
     /**
-     * Xóa chủ ngựa
+     * Delete a horse owner
      *
      * @param int $id
      * @return bool
      */
     public function delete(int $id): bool
     {
-        return true;
+        $owner = HorseOwner::find($id);
+        if ($owner) {
+            return $owner->delete();
+        }
+        return false;
     }
 
     /**
-     * Lấy danh sách ngựa của chủ ngựa
+     * Get all horses owned by this owner
      *
      * @param int $horseOwnerId
      * @return mixed
      */
     public function getHorses(int $horseOwnerId): mixed
     {
-        return null;
+        return Horse::where('horse_owner_id', $horseOwnerId)->get();
     }
 
     /**
-     * Lấy danh sách ngựa tham gia giải đấu
+     * Get owner's horses participating in a specific race
      *
      * @param int $horseOwnerId
      * @param int $raceId
@@ -82,61 +97,89 @@ class HorseOwnerRepository implements IHorseOwnerRepository
      */
     public function getHorsesForRace(int $horseOwnerId, int $raceId): mixed
     {
-        return null;
+        return Horse::where('horse_owner_id', $horseOwnerId)
+            ->whereHas('registrations', function ($query) use ($raceId) {
+                $query->where('race_id', $raceId);
+            })
+            ->get();
     }
 
     /**
-     * Lấy danh sách jockey của ngựa
+     * Get jockeys associated with the horse
      *
      * @param int $horseId
      * @return mixed
      */
     public function getJockeysForHorse(int $horseId): mixed
     {
-        return null;
+        $jockeyIds = Registration::where('horse_id', $horseId)->pluck('jockey_id')->unique();
+        return User::whereIn('id', $jockeyIds)->get();
     }
 
     /**
-     * Lấy lịch thi đấu của ngựa
+     * Get race schedule for a specific horse
      *
      * @param int $horseId
      * @return mixed
      */
     public function getRaceScheduleForHorse(int $horseId): mixed
     {
-        return null;
+        return Race::whereHas('registrations', function ($query) use ($horseId) {
+            $query->where('horse_id', $horseId);
+        })->with('tournament')->get();
     }
 
     /**
-     * Lấy kết quả thi đấu của ngựa
+     * Get race results for a specific horse
      *
      * @param int $horseId
      * @return mixed
      */
     public function getRaceResults(int $horseId): mixed
     {
-        return null;
+        return RaceResult::whereHas('registration', function ($query) use ($horseId) {
+            $query->where('horse_id', $horseId);
+        })->with(['race.tournament', 'registration.jockey'])->get();
     }
 
     /**
-     * Lấy bảng xếp hạng của ngựa
+     * Get rankings for a specific horse
      *
      * @param int $horseId
      * @return mixed
      */
     public function getHorseRankings(int $horseId): mixed
     {
-        return null;
+        return RaceResult::whereHas('registration', function ($query) use ($horseId) {
+            $query->where('horse_id', $horseId);
+        })->select('id', 'race_id', 'registration_id', 'rank', 'finish_time')->get();
     }
 
     /**
-     * Lấy tiền thưởng của ngựa
+     * Get rewards for a specific horse
      *
      * @param int $horseId
      * @return mixed
      */
     public function getHorseRewards(int $horseId): mixed
     {
-        return null;
+        $results = RaceResult::whereHas('registration', function ($query) use ($horseId) {
+            $query->where('horse_id', $horseId);
+        })->with('race.tournament')->get();
+
+        return $results->map(function ($res) {
+            $amount = 0;
+            if ($res->rank === 1) $amount = 10000000;
+            elseif ($res->rank === 2) $amount = 5000000;
+            elseif ($res->rank === 3) $amount = 2000000;
+
+            return [
+                'race_result_id' => $res->id,
+                'race' => $res->race,
+                'rank' => $res->rank,
+                'reward_amount' => $amount,
+                'description' => "Reward for rank " . ($res->rank ?? 'N/A') . " in race " . ($res->race->id ?? '')
+            ];
+        });
     }
 }
