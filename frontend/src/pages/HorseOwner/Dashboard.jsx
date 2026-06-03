@@ -1,7 +1,9 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import HorseOwnerLayout from '../../components/HorseOwnerLayout';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   return (
     <HorseOwnerLayout>
       <div className="max-w-7xl">
@@ -52,7 +54,9 @@ const Dashboard = () => {
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Quick Actions</h2>
             <div className="space-y-3">
-              <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition-colors">
+              <button 
+                onClick={() => navigate('/horse-owner/horses/new')}
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition-colors">
                 Add New Horse
               </button>
               <button className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded transition-colors">

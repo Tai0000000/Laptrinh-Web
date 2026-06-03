@@ -1,7 +1,9 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import HorseOwnerLayout from '../../components/HorseOwnerLayout';
 
 const MyHorses = () => {
+  const navigate = useNavigate();
   const horses = [
     { id: 1, name: 'Thunder King', breed: 'Arabian', age: 5, wins: 12 },
     { id: 2, name: 'Lightning', breed: 'Thoroughbred', age: 4, wins: 8 },
@@ -16,7 +18,10 @@ const MyHorses = () => {
             <h1 className="text-4xl font-bold text-gray-800">My Horses</h1>
             <p className="text-gray-600 mt-2">Manage your horses collection</p>
           </div>
-          <button className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
+          <button 
+            onClick={() => navigate('/horse-owner/horses/new')}
+            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+          >
             + Add New Horse
           </button>
         </div>
