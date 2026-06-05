@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Services\Contracts\IHorseService;
 use App\Repositories\Contracts\IHorseRepository;
+use App\DTOs\HorseDTO;
 
 class HorseService implements IHorseService
 {
@@ -14,19 +15,22 @@ class HorseService implements IHorseService
         $this->horseRepository = $horseRepository;
     }
 
-    public function getHorseById(int $id): mixed
+    public function getHorseById(int $id): ?HorseDTO
     {
-        return $this->horseRepository->findHorseById($id);
+        $horse = $this->horseRepository->findHorseById($id);
+        return $horse ? HorseDTO::fromModel($horse) : null;
     }
 
-    public function addHorse(array $data): mixed
+    public function addHorse(HorseDTO $dto): HorseDTO
     {
-        return $this->horseRepository->createHorse($data);
+        $horse = $this->horseRepository->createHorse($dto->toModelAttributes());
+        return HorseDTO::fromModel($horse);
     }
 
-    public function updateHorse(int $id, array $data): mixed
+    public function updateHorse(int $id, HorseDTO $dto): ?HorseDTO
     {
-        return $this->horseRepository->updateHorse($id, $data);
+        $horse = $this->horseRepository->updateHorse($id, $dto->toModelAttributes());
+        return $horse ? HorseDTO::fromModel($horse) : null;
     }
 
     public function removeHorse(int $id): bool
@@ -34,8 +38,13 @@ class HorseService implements IHorseService
         return $this->horseRepository->deleteHorse($id);
     }
 
-    public function getHorsesByOwner(int $ownerId): mixed
+    public function getHorsesByOwner(int $ownerId): array
     {
-        return $this->horseRepository->getHorsesByOwnerId($ownerId);
+        $horses = $this->horseRepository->getHorsesByOwnerId($ownerId);
+        $dtos = [];
+        foreach ($horses as $horse) {
+            $dtos[] = HorseDTO::fromModel($horse);
+        }
+        return $dtos;
     }
 }

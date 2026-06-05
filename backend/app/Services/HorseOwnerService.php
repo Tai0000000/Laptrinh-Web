@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Services\Contracts\IHorseOwnerService;
 use App\Repositories\Contracts\IHorseOwnerRepository;
+use App\DTOs\HorseOwnerDTO;
 
 class HorseOwnerService implements IHorseOwnerService
 {
@@ -14,19 +15,22 @@ class HorseOwnerService implements IHorseOwnerService
         $this->horseOwnerRepository = $horseOwnerRepository;
     }
 
-    public function getOwnerById(int $id): mixed
+    public function getOwnerById(int $id): ?HorseOwnerDTO
     {
-        return $this->horseOwnerRepository->findHorseOwnerById($id);
+        $owner = $this->horseOwnerRepository->findHorseOwnerById($id);
+        return $owner ? HorseOwnerDTO::fromModel($owner) : null;
     }
 
-    public function registerOwner(array $data): mixed
+    public function registerOwner(HorseOwnerDTO $dto): HorseOwnerDTO
     {
-        return $this->horseOwnerRepository->createHorseOwner($data);
+        $owner = $this->horseOwnerRepository->createHorseOwner($dto->toModelAttributes());
+        return HorseOwnerDTO::fromModel($owner);
     }
 
-    public function updateOwnerInfo(int $id, array $data): mixed
+    public function updateOwnerInfo(int $id, HorseOwnerDTO $dto): ?HorseOwnerDTO
     {
-        return $this->horseOwnerRepository->updateHorseOwner($id, $data);
+        $owner = $this->horseOwnerRepository->updateHorseOwner($id, $dto->toModelAttributes());
+        return $owner ? HorseOwnerDTO::fromModel($owner) : null;
     }
 
     public function deleteOwnerAccount(int $id): bool
