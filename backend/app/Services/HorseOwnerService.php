@@ -3,122 +3,34 @@
 namespace App\Services;
 
 use App\Services\Contracts\IHorseOwnerService;
+use App\Repositories\Contracts\IHorseOwnerRepository;
 
 class HorseOwnerService implements IHorseOwnerService
 {
-    /**
-     * Đăng ký tài khoản tham gia hệ thống
-     *
-     * @param array $data
-     * @return void
-     */
-    public function registerAccount(array $data): void
+    protected IHorseOwnerRepository $horseOwnerRepository;
+
+    public function __construct(IHorseOwnerRepository $horseOwnerRepository)
     {
-        //
+        $this->horseOwnerRepository = $horseOwnerRepository;
     }
 
-    /**
-     * Đăng ký ngựa tham gia giải đấu
-     *
-     * @param int $horseId
-     * @param int $raceId
-     * @return void
-     */
-    public function registerHorseForRace(int $horseId, int $raceId): void
+    public function getOwnerById(int $id): mixed
     {
-        //
+        return $this->horseOwnerRepository->findHorseOwnerById($id);
     }
 
-    /**
-     * Quản lý thông tin ngựa
-     *
-     * @param int $horseId
-     * @param array $data
-     * @return void
-     */
-    public function updateHorseInfo(int $horseId, array $data): void
+    public function registerOwner(array $data): mixed
     {
-        //
+        return $this->horseOwnerRepository->createHorseOwner($data);
     }
 
-    /**
-     * Thuê/chọn jockey cho ngựa tham gia cuộc đua
-     *
-     * @param int $horseId
-     * @param int $jockeyId
-     * @param int $raceId
-     * @return void
-     */
-    public function hireJockeyForRace(int $horseId, int $jockeyId, int $raceId): void
+    public function updateOwnerInfo(int $id, array $data): mixed
     {
-        //
+        return $this->horseOwnerRepository->updateHorseOwner($id, $data);
     }
 
-    /**
-     * Quản lý danh sách jockey của ngựa, xác nhận jockey tham gia cuộc đua
-     *
-     * @param int $horseId
-     * @param int $raceId
-     * @param int $jockeyId
-     * @return void
-     */
-    public function confirmJockeyForRace(int $horseId, int $raceId, int $jockeyId): void
+    public function deleteOwnerAccount(int $id): bool
     {
-        //
-    }
-
-    /**
-     * Xem lịch thi đấu của ngựa, xác nhận cho ngựa tham gia cuộc đua
-     *
-     * @param int $horseId
-     * @return array
-     */
-    public function viewRaceScheduleAndConfirmParticipation(int $horseId): array
-    {
-        return [];
-    }
-
-    /**
-     * Xem thông tin cuộc đua
-     *
-     * @param int $raceId
-     * @return array
-     */
-    public function viewRaceInfo(int $raceId): array
-    {
-        return [];
-    }
-
-    /**
-     * Theo dõi kết quả thi đấu của ngựa
-     *
-     * @param int $horseId
-     * @return array
-     */
-    public function trackRaceResults(int $horseId): array
-    {
-        return [];
-    }
-
-    /**
-     * Xem bảng xếp hạng của ngựa
-     *
-     * @param int $horseId
-     * @return array
-     */
-    public function getHorseRankings(int $horseId): array
-    {
-        return [];
-    }
-
-    /**
-     * Xem tiền thưởng của ngựa
-     *
-     * @param int $horseId
-     * @return array
-     */
-    public function getHorseRewards(int $horseId): array
-    {
-        return [];
+        return $this->horseOwnerRepository->deleteHorseOwner($id);
     }
 }
