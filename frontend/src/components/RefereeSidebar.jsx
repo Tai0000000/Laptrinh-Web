@@ -7,7 +7,7 @@ const RefereeSidebar = () => {
 
   const menuItems = [
     { 
-      label: 'Dashboard', 
+      label: 'Bảng điều khiển', 
       path: '/referee/dashboard',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -16,7 +16,7 @@ const RefereeSidebar = () => {
       )
     },
     { 
-      label: 'Races', 
+      label: 'Cuộc đua', 
       path: '/referee/races',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -25,7 +25,7 @@ const RefereeSidebar = () => {
       )
     },
     { 
-      label: 'Violations', 
+      label: 'Báo cáo vi phạm', 
       path: '/referee/violations',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -34,7 +34,7 @@ const RefereeSidebar = () => {
       )
     },
     { 
-      label: 'Schedule', 
+      label: 'Lịch trình trọng tài', 
       path: '/referee/schedule',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -61,7 +61,7 @@ const RefereeSidebar = () => {
             </svg>
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-white">Referee Portal</h1>
+            <h1 className="text-xl font-bold tracking-tight text-white">Cổng Trọng Tài</h1>
             <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mt-0.5">Trọng tài giải đấu</p>
           </div>
         </div>
@@ -102,7 +102,7 @@ const RefereeSidebar = () => {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
           </svg>
-          <span>End Session</span>
+          <span>Kết thúc phiên</span>
         </button>
       </div>
     </div>

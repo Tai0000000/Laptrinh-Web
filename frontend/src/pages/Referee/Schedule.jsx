@@ -4,22 +4,31 @@ import RefereeLayout from '../../components/RefereeLayout';
 const Schedule = () => {
   const scheduleDays = [
     {
-      date: 'Today - Saturday, June 6, 2026',
+      date: 'Hôm nay - Thứ Bảy, ngày 6 tháng 6, 2026',
       races: [
-        { time: '14:30', name: 'Grand Prix Final', status: 'completed', distance: '1200m', track: 'Main Track A', role: 'Track Judge' },
-        { time: '16:00', name: 'Spring Sprint Cup - Heat A', status: 'completed', distance: '1000m', track: 'Inner Circle B', role: 'Start Judge' },
-        { time: '17:15', name: 'Spring Sprint Cup - Heat B', status: 'pending', distance: '1000m', track: 'Inner Circle B', role: 'Start Judge' },
-        { time: '19:00', name: 'Sunset Classic Derby', status: 'pending', distance: '1600m', track: 'Main Track A', role: 'Chief Referee' },
+        { time: '14:30', name: 'Chung kết Grand Prix', status: 'completed', distance: '1200m', track: 'Đường chạy chính A', role: 'Trọng tài giám sát đường chạy' },
+        { time: '16:00', name: 'Cúp Spring Sprint - Nhóm A', status: 'completed', distance: '1000m', track: 'Đường chạy vòng trong B', role: 'Trọng tài xuất phát' },
+        { time: '17:15', name: 'Cúp Spring Sprint - Nhóm B', status: 'pending', distance: '1000m', track: 'Đường chạy vòng trong B', role: 'Trọng tài xuất phát' },
+        { time: '19:00', name: 'Sunset Classic Derby', status: 'pending', distance: '1600m', track: 'Đường chạy chính A', role: 'Trọng tài trưởng' },
       ]
     },
     {
-      date: 'Tomorrow - Sunday, June 7, 2026',
+      date: 'Ngày mai - Chủ Nhật, ngày 7 tháng 6, 2026',
       races: [
-        { time: '10:00', name: 'Youth Sprint Championship', status: 'pending', distance: '800m', track: 'Main Track A', role: 'Finish Judge' },
-        { time: '15:30', name: 'Royal Gold Cup', status: 'pending', distance: '2000m', track: 'Main Track A', role: 'Chief Referee' },
+        { time: '10:00', name: 'Giải vô địch trẻ Sprint', status: 'pending', distance: '800m', track: 'Đường chạy chính A', role: 'Trọng tài về đích' },
+        { time: '15:30', name: 'Cúp Vàng Hoàng Gia', status: 'pending', distance: '2000m', track: 'Đường chạy chính A', role: 'Trọng tài trưởng' },
       ]
     }
   ];
+
+  // Helper to translate status label for UI
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'completed': return 'Đã hoàn thành';
+      case 'pending': return 'Đang chờ';
+      default: return status;
+    }
+  };
 
   return (
     <RefereeLayout>
@@ -27,10 +36,10 @@ const Schedule = () => {
         {/* Header */}
         <div>
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-amber-400 bg-clip-text text-transparent">
-            My Assignment Schedule
+            Lịch phân công của tôi
           </h1>
           <p className="text-slate-400 mt-2 text-sm">
-            View your referee roster, assigned roles, and race tracks for current and upcoming events.
+            Xem lịch trình làm việc, vai trò được chỉ định và đường chạy cho các sự kiện hôm nay và sắp tới.
           </p>
         </div>
 
@@ -61,7 +70,7 @@ const Schedule = () => {
                           </h4>
                         </div>
                         <p className="text-slate-400 text-xs mt-1">
-                          Role: <span className="text-amber-400/90 font-semibold">{race.role}</span> • Track: {race.track} • Distance: {race.distance}
+                          Vai trò: <span className="text-amber-400/90 font-semibold">{race.role}</span> • Đường chạy: {race.track} • Cự ly: {race.distance}
                         </p>
                       </div>
 
@@ -70,7 +79,7 @@ const Schedule = () => {
                           ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                           : 'bg-slate-800 text-slate-400 border border-slate-700/50'
                       }`}>
-                        {race.status}
+                        {getStatusLabel(race.status)}
                       </span>
                     </div>
                   </div>
