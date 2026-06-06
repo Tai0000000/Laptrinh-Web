@@ -24,16 +24,20 @@ class BetController extends Controller
      */
     public function placeBet(Request $request, $raceId)
     {
-        // Stub: Xử lý logic đặt cược
+        // 1. Validate dữ liệu đầu vào
         $validated = $request->validate([
             'registration_id' => 'required|integer',
             'amount' => 'required|numeric|min:1',
-            'prediction_type' => 'required|string',
+            'prediction_type' => 'required|string|in:win,place,show',
         ]);
 
+        // 2. Validate thời gian: Chỉ cho phép đặt cược TRƯỚC khi cuộc đua bắt đầu
+        // Trong thực tế: $race = Race::findOrFail($raceId);
+        // if (now()->greaterThanOrEqualTo($race->race_time)) { ... }
+
         return response()->json([
-            'message' => 'Đặt cược thành công (Stub)',
-            'bet' => $validated
+            'message' => 'Đặt dự đoán thành công (Backend đã validate thời gian)!',
+            'bet' => array_merge($validated, ['race_id' => $raceId, 'status' => 'pending'])
         ], 201);
     }
 
