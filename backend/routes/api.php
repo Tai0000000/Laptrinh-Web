@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\BetController;
 use App\Http\Controllers\API\HorseController;
+use App\Http\Controllers\API\HorseOwnerController;
 use App\Http\Controllers\API\JockeyController;
 use App\Http\Controllers\API\RaceController;
 use App\Http\Controllers\API\RaceResultController;
@@ -86,6 +87,19 @@ Route::middleware('jwt.auth')->group(function () {
 
         // Register horse for a race
         Route::post('/registrations', [RegistrationController::class, 'store']);
+
+        // Horse Owner profile & management
+        Route::get('/horse-owner/profile', [HorseOwnerController::class, 'profile']);
+        Route::get('/horse-owner/horses', [HorseOwnerController::class, 'myHorses']);
+        Route::get('/horse-owner/horses-for-race/{raceId}', [HorseOwnerController::class, 'horsesForRace']);
+        Route::get('/horse-owner/horses/{horseId}/jockeys', [HorseOwnerController::class, 'jockeysForHorse']);
+        Route::get('/horse-owner/horses/{horseId}/schedule', [HorseOwnerController::class, 'raceSchedule']);
+        Route::get('/horse-owner/horses/{horseId}/results', [HorseOwnerController::class, 'raceResults']);
+        Route::get('/horse-owner/horses/{horseId}/rankings', [HorseOwnerController::class, 'horseRankings']);
+        Route::get('/horse-owner/horses/{horseId}/rewards', [HorseOwnerController::class, 'horseRewards']);
+
+        // Danh sách nài ngựa để chủ ngựa chọn thuê
+        Route::get('/jockeys', [HorseOwnerController::class, 'listJockeys']);
     });
 
     // Jockey only: View schedule & accept registration
