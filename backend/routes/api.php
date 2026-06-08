@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\API\BetController;
 use App\Http\Controllers\API\TournamentController;
+use App\Http\Controllers\API\RefereeController;
+use App\Http\Controllers\API\ResultController;
 
 // Health check endpoint
 Route::get('/health', function () {
@@ -32,6 +34,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/bets/{bet}', [BetController::class, 'show']);
     Route::post('/races/{race}/bet', [BetController::class, 'placeBet']);
     Route::delete('/bets/{bet}', [BetController::class, 'destroy']);
+
+    // Referee routes
+    Route::get('/referee/races', [RefereeController::class, 'index']);
+    Route::get('/referee/races/{id}', [RefereeController::class, 'show']);
+    Route::post('/referee/violations', [RefereeController::class, 'logViolation']);
+    Route::post('/referee/races/{race}/results', [ResultController::class, 'store']);
+    Route::get('/referee/races/{race}/results', [ResultController::class, 'show']);
 });
 
 // Public routes
