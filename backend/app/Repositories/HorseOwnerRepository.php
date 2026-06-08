@@ -3,40 +3,32 @@
 namespace App\Repositories;
 
 use App\Repositories\Contracts\IHorseOwnerRepository;
+use App\Models\Horse;
+
+use App\Models\HorseOwner;
 
 class HorseOwnerRepository implements IHorseOwnerRepository
 {
     /**
-     * Tìm chủ ngựa theo ID
+     * Tìm kiếm chủ ngựa theo ID
      *
      * @param int $id
      * @return mixed
      */
-    public function findById(int $id): mixed
+    public function findHorseOwnerById(int $id): mixed
     {
-        return null;
+        return HorseOwner::find($id);
     }
 
     /**
-     * Tìm chủ ngựa theo user ID
-     *
-     * @param int $userId
-     * @return mixed
-     */
-    public function findByUserId(int $userId): mixed
-    {
-        return null;
-    }
-
-    /**
-     * Tạo chủ ngựa mới
+     * Thêm chủ ngựa mới
      *
      * @param array $data
      * @return mixed
      */
-    public function create(array $data): mixed
+    public function createHorseOwner(array $data): mixed
     {
-        return null;
+        return HorseOwner::create($data);
     }
 
     /**
@@ -46,8 +38,13 @@ class HorseOwnerRepository implements IHorseOwnerRepository
      * @param array $data
      * @return mixed
      */
-    public function update(int $id, array $data): mixed
+    public function updateHorseOwner(int $id, array $data): mixed
     {
+        $owner = HorseOwner::find($id);
+        if ($owner) {
+            $owner->update($data);
+            return $owner;
+        }
         return null;
     }
 
@@ -57,86 +54,12 @@ class HorseOwnerRepository implements IHorseOwnerRepository
      * @param int $id
      * @return bool
      */
-    public function delete(int $id): bool
+    public function deleteHorseOwner(int $id): bool
     {
-        return true;
-    }
-
-    /**
-     * Lấy danh sách ngựa của chủ ngựa
-     *
-     * @param int $horseOwnerId
-     * @return mixed
-     */
-    public function getHorses(int $horseOwnerId): mixed
-    {
-        return null;
-    }
-
-    /**
-     * Lấy danh sách ngựa tham gia giải đấu
-     *
-     * @param int $horseOwnerId
-     * @param int $raceId
-     * @return mixed
-     */
-    public function getHorsesForRace(int $horseOwnerId, int $raceId): mixed
-    {
-        return null;
-    }
-
-    /**
-     * Lấy danh sách jockey của ngựa
-     *
-     * @param int $horseId
-     * @return mixed
-     */
-    public function getJockeysForHorse(int $horseId): mixed
-    {
-        return null;
-    }
-
-    /**
-     * Lấy lịch thi đấu của ngựa
-     *
-     * @param int $horseId
-     * @return mixed
-     */
-    public function getRaceScheduleForHorse(int $horseId): mixed
-    {
-        return null;
-    }
-
-    /**
-     * Lấy kết quả thi đấu của ngựa
-     *
-     * @param int $horseId
-     * @return mixed
-     */
-    public function getRaceResults(int $horseId): mixed
-    {
-        return null;
-    }
-
-    /**
-     * Lấy bảng xếp hạng của ngựa
-     *
-     * @param int $horseId
-     * @return mixed
-     */
-    public function getHorseRankings(int $horseId): mixed
-    {
-        return null;
-    }
-
-    /**
-     * Lấy tiền thưởng của ngựa
-     *
-     * @param int $horseId
-     * @return mixed
-     */
-    public function getHorseRewards(int $horseId): mixed
-    {
-        return null;
+        $owner = HorseOwner::find($id);
+        if ($owner) {
+            return $owner->delete();
+        }
+        return false;
     }
 }
