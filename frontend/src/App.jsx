@@ -6,6 +6,7 @@ import Tournaments from './pages/Tournaments';
 import TournamentDetail from './pages/TournamentDetail';
 import RaceDetail from './pages/RaceDetail';
 import Predictions from './pages/Predictions';
+import Dashboard from './pages/Dashboard';
 import Navbar from './components/Navbar';
 import { SocketProvider } from './context/SocketContext';
 
@@ -23,6 +24,7 @@ function App() {
               <Route path="/tournaments/:id" element={<TournamentDetail />} />
               <Route path="/races/:id" element={<RaceDetail />} />
               <Route path="/predictions" element={<Predictions />} />
+              <Route path="/dashboard" element={<Dashboard />} />
             </Routes>
           </main>
         </div>
