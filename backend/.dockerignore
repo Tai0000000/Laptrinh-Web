@@ -1,0 +1,9 @@
+.git
+.env
+vendor
+storage
+bootstrap/cache
+public/storage
+.dockerignore
+Dockerfile
+docker-compose.yml
