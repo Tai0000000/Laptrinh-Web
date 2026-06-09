@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\Controller;
 use App\Services\Contracts\IHorseOwnerService;
 use App\Http\Requests\HorseOwnerRequest\GetOwnerByIdRequest;
 use App\Http\Requests\HorseOwnerRequest\RegisterOwnerRequest;
@@ -10,7 +9,7 @@ use App\Http\Requests\HorseOwnerRequest\UpdateOwnerInfoRequest;
 use App\Http\Requests\HorseOwnerRequest\DeleteOwnerAccountRequest;
 use App\Http\Resources\HorseOwnerResource\HorseOwnerResource;
 
-class HorseOwnerController extends Controller
+class HorseOwnerController
 {
     protected IHorseOwnerService $horseOwnerService;
 
@@ -20,11 +19,13 @@ class HorseOwnerController extends Controller
     }
 
     /**
-     * GET /api/owners/{id}
+     * GET /api/owners/{ownerId}
      */
-    public function getHorseOwnerById(GetOwnerByIdRequest $request, int $id)
+    public function getHorseOwnerById(GetOwnerByIdRequest $request, int $ownerId)
     {
-        $dto = $this->horseOwnerService->getOwnerById($id);
+        $ownerId = 10;
+
+        $dto = $this->horseOwnerService->getOwnerById($ownerId);
         if (!$dto) {
             return response()->json(['message' => 'Chủ ngựa không tồn tại'], 404);
         }
@@ -42,12 +43,12 @@ class HorseOwnerController extends Controller
     }
 
     /**
-     * PUT /api/owners/{id}
+     * PUT /api/owners/{ownerId}
      */
-    public function updateHorseOwner(UpdateOwnerInfoRequest $request, int $id)
+    public function updateHorseOwner(UpdateOwnerInfoRequest $request, int $ownerId)
     {
         $dto = $request->toDTO();
-        $resultDto = $this->horseOwnerService->updateOwnerInfo($id, $dto);
+        $resultDto = $this->horseOwnerService->updateOwnerInfo($ownerId, $dto);
         if (!$resultDto) {
             return response()->json(['message' => 'Chủ ngựa không tồn tại hoặc cập nhật thất bại'], 404);
         }
@@ -55,11 +56,11 @@ class HorseOwnerController extends Controller
     }
 
     /**
-     * DELETE /api/owners/{id}
+     * DELETE /api/owners/{ownerId}
      */
-    public function deleteHorseOwner(DeleteOwnerAccountRequest $request, int $id)
+    public function deleteHorseOwner(DeleteOwnerAccountRequest $request, int $ownerId)
     {
-        $deleted = $this->horseOwnerService->deleteOwnerAccount($id);
+        $deleted = $this->horseOwnerService->deleteOwnerAccount($ownerId);
         if (!$deleted) {
             return response()->json(['message' => 'Chủ ngựa không tồn tại hoặc xóa thất bại'], 404);
         }

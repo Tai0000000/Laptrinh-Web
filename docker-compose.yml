@@ -37,6 +37,7 @@ services:
       DB_PASSWORD: horse_pass
       SANCTUM_STATEFUL_DOMAINS: localhost,127.0.0.1
       SESSION_DOMAIN: localhost
+      CACHE_DRIVER: array
     ports:
       - "8000:8000"
     volumes:
