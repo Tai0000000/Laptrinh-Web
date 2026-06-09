@@ -19,6 +19,12 @@ import TournamentsRaces from './pages/HorseOwner/TournamentsRaces';
 import ResultsRewards from './pages/HorseOwner/ResultsRewards';
 import AccountSettings from './pages/HorseOwner/AccountSettings';
 
+// Referee Pages
+import RefereeDashboard from './pages/Referee/Dashboard';
+import RefereeRaces from './pages/Referee/Races';
+import RefereeViolations from './pages/Referee/Violations';
+import RefereeSchedule from './pages/Referee/Schedule';
+
 function App() {
   return (
     <SocketProvider>
@@ -44,6 +50,12 @@ function App() {
               <Route path="/horse-owner/tournaments-races" element={<TournamentsRaces />} />
               <Route path="/horse-owner/results-rewards" element={<ResultsRewards />} />
               <Route path="/horse-owner/settings" element={<AccountSettings />} />
+
+              {/* Referee Dashboard Routes */}
+              <Route path="/referee/dashboard" element={<RefereeDashboard />} />
+              <Route path="/referee/races" element={<RefereeRaces />} />
+              <Route path="/referee/violations" element={<RefereeViolations />} />
+              <Route path="/referee/schedule" element={<RefereeSchedule />} />
             </Routes>
           </main>
         </div>
