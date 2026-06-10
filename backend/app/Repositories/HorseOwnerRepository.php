@@ -3,8 +3,6 @@
 namespace App\Repositories;
 
 use App\Repositories\Contracts\IHorseOwnerRepository;
-use App\Models\Horse;
-
 use App\Models\HorseOwner;
 
 class HorseOwnerRepository implements IHorseOwnerRepository
@@ -17,7 +15,7 @@ class HorseOwnerRepository implements IHorseOwnerRepository
      */
     public function findHorseOwnerById(int $id): mixed
     {
-        return HorseOwner::find($id);
+        return HorseOwner::with('user')->find($id);
     }
 
     /**
@@ -40,9 +38,27 @@ class HorseOwnerRepository implements IHorseOwnerRepository
      */
     public function updateHorseOwner(int $id, array $data): mixed
     {
-        $owner = HorseOwner::find($id);
+        $owner = HorseOwner::with('user')->find($id);
         if ($owner) {
-            $owner->update($data);
+            // Update associated user if user details are provided
+            if ($owner->user) {
+                $userData = [];
+                if (isset($data['name'])) $userData['name'] = $data['name'];
+                if (isset($data['email'])) $userData['email'] = $data['email'];
+                if (!empty($userData)) {
+                    $owner->user->update($userData);
+                }
+            }
+            // Update the horse owner record itself
+            $ownerData = array_filter($data, function($key) {
+                return $key === 'user_id';
+            }, ARRAY_FILTER_USE_KEY);
+            if (!empty($ownerData)) {
+                $owner->update($ownerData);
+            }
+            
+            // Reload user relation to return updated data
+            $owner->load('user');
             return $owner;
         }
         return null;

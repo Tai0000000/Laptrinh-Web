@@ -1,14 +1,23 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import HorseOwnerLayout from '../../components/HorseOwner/HorseOwnerLayout';
 import AddNewHorseModal from '../../components/HorseOwner/AddNewHorseModal';
+import HorseDetailModal from '../../components/HorseOwner/HorseDetailModal';
+import ConfirmDeleteModal from '../../components/HorseOwner/ConfirmDeleteModal';
+import EditHorseModal from '../../components/HorseOwner/EditHorseModal';
+import SuccessModal from '../../components/SuccessModal';
 
 const MyHorses = () => {
+  const location = useLocation();
   const [horses, setHorses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const [selectedHorse, setSelectedHorse] = useState(null);
+  const [horseToDelete, setHorseToDelete] = useState(null);
+  const [horseToEdit, setHorseToEdit] = useState(null);
+  const [successMessage, setSuccessMessage] = useState({ show: false, title: '', msg: '' });
 
   const fetchHorses = () => {
     setLoading(true);
@@ -26,7 +35,17 @@ const MyHorses = () => {
 
   useEffect(() => {
     fetchHorses();
-  }, []);
+    
+    // Check if we navigated here from a successful action
+    if (location.state?.success) {
+      setSuccessMessage({
+        show: true,
+        title: location.state.title || 'Success!',
+        msg: location.state.msg || 'Action completed successfully.'
+      });
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   return (
     <HorseOwnerLayout>
@@ -70,18 +89,44 @@ const MyHorses = () => {
                   </tr>
                 ) : (
                   horses.map((horse) => (
-                    <tr key={horse.id} className="border-b hover:bg-gray-50">
+                    <tr 
+                      key={horse.id} 
+                      onClick={() => setSelectedHorse(horse)}
+                      className="border-b hover:bg-blue-50/40 cursor-pointer transition-colors"
+                    >
                       <td className="px-6 py-4 font-semibold text-gray-800">{horse.name}</td>
                       <td className="px-6 py-4 text-gray-700">{horse.breed}</td>
                       <td className="px-6 py-4 text-gray-700">{horse.age} years</td>
                       <td className="px-6 py-4">
-                        <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold capitalize">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${
+                          horse.status === 'active' 
+                            ? 'bg-green-100 text-green-800' 
+                            : horse.status === 'resting'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
                           {horse.status || 'active'}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <button className="text-blue-500 hover:text-blue-700 mr-4">Edit</button>
-                        <button className="text-red-500 hover:text-red-700">Delete</button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setHorseToEdit(horse);
+                          }}
+                          className="text-blue-500 hover:text-blue-700 mr-4 font-medium"
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setHorseToDelete(horse);
+                          }}
+                          className="text-red-500 hover:text-red-700 font-medium"
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))
@@ -96,7 +141,67 @@ const MyHorses = () => {
       <AddNewHorseModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        onSuccess={fetchHorses} 
+        onSuccess={() => {
+          setSuccessMessage({
+            show: true,
+            title: 'Horse Added',
+            msg: 'New horse has been added successfully!'
+          });
+          fetchHorses();
+        }} 
+      />
+
+      {/* Horse Detail Modal */}
+      <HorseDetailModal 
+        isOpen={selectedHorse !== null} 
+        horse={selectedHorse} 
+        onClose={() => setSelectedHorse(null)} 
+        onEdit={(horse) => {
+          setHorseToEdit(horse);
+        }}
+        onDelete={(horse) => {
+          setHorseToDelete(horse);
+        }}
+      />
+
+      {/* Confirm Delete Modal */}
+      <ConfirmDeleteModal
+        isOpen={horseToDelete !== null}
+        horse={horseToDelete}
+        onClose={() => setHorseToDelete(null)}
+        onSuccess={() => {
+          setSelectedHorse(null);
+          setSuccessMessage({
+            show: true,
+            title: 'Horse Deleted',
+            msg: 'Horse has been deleted successfully!'
+          });
+          fetchHorses();
+        }}
+      />
+
+      {/* Edit Horse Modal */}
+      <EditHorseModal
+        isOpen={horseToEdit !== null}
+        horse={horseToEdit}
+        onClose={() => setHorseToEdit(null)}
+        onSuccess={() => {
+          setSelectedHorse(null);
+          setSuccessMessage({
+            show: true,
+            title: 'Horse Updated',
+            msg: 'Horse details have been updated successfully!'
+          });
+          fetchHorses();
+        }}
+      />
+
+      {/* Success Notification Modal */}
+      <SuccessModal 
+        isOpen={successMessage.show} 
+        title={successMessage.title}
+        message={successMessage.msg}
+        onClose={() => setSuccessMessage(prev => ({ ...prev, show: false }))}
       />
     </HorseOwnerLayout>
   );

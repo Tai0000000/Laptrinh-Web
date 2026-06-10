@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const AddNewHorseModal = ({ isOpen, onClose, onSuccess }) => {
+const EditHorseModal = ({ isOpen, horse, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     name: '',
     breed: '',
@@ -12,7 +12,20 @@ const AddNewHorseModal = ({ isOpen, onClose, onSuccess }) => {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
-  if (!isOpen) return null;
+  // Sync state when horse changes
+  useEffect(() => {
+    if (horse) {
+      setFormData({
+        name: horse.name || '',
+        breed: horse.breed || '',
+        age: horse.age || '',
+        status: horse.status || 'active',
+      });
+      setErrors({});
+    }
+  }, [horse]);
+
+  if (!isOpen || !horse) return null;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -47,27 +60,20 @@ const AddNewHorseModal = ({ isOpen, onClose, onSuccess }) => {
     }
 
     setSubmitting(true);
-    axios.post('http://localhost:8000/api/horses', {
+    axios.put(`http://localhost:8000/api/horses/${horse.id}`, {
       name: formData.name,
       breed: formData.breed,
       age: parseInt(formData.age),
-      horse_owner_id: 10, // Hardcoded for testing
+      horse_owner_id: horse.horse_owner_id || 10,
       status: formData.status
     })
     .then((response) => {
-      // Clear form
-      setFormData({
-        name: '',
-        breed: '',
-        age: '',
-        status: 'active',
-      });
       onSuccess();
       onClose();
     })
     .catch((err) => {
-      console.error('Error adding horse:', err);
-      alert(err.response?.data?.message || 'Failed to add horse. Please try again.');
+      console.error('Error updating horse:', err);
+      alert(err.response?.data?.message || 'Failed to update horse. Please try again.');
     })
     .finally(() => {
       setSubmitting(false);
@@ -75,7 +81,7 @@ const AddNewHorseModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto outline-none focus:outline-none">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-x-hidden overflow-y-auto outline-none focus:outline-none">
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity duration-300"
@@ -83,14 +89,14 @@ const AddNewHorseModal = ({ isOpen, onClose, onSuccess }) => {
       ></div>
 
       {/* Modal Content */}
-      <div className="relative w-full max-w-lg mx-auto my-6 z-50 px-4">
+      <div className="relative w-full max-w-lg mx-auto my-6 z-[60] px-4">
         <div className="relative flex flex-col w-full bg-white border-0 rounded-2xl shadow-2xl overflow-hidden outline-none focus:outline-none transform transition-all scale-100 duration-300">
           
           {/* Header */}
           <div className="flex items-start justify-between p-6 border-b border-gray-150 rounded-t">
             <div>
-              <h3 className="text-2xl font-bold text-gray-800">Add New Horse</h3>
-              <p className="text-sm text-gray-500 mt-1">Register a new horse to your collection</p>
+              <h3 className="text-2xl font-bold text-gray-800">Edit Horse</h3>
+              <p className="text-sm text-gray-500 mt-1">Update information for "{horse.name}"</p>
             </div>
             <button
               className="p-1 ml-auto bg-transparent border-0 text-gray-400 hover:text-gray-600 float-right text-3xl leading-none font-semibold outline-none focus:outline-none transition-colors"
@@ -194,7 +200,7 @@ const AddNewHorseModal = ({ isOpen, onClose, onSuccess }) => {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-end p-6 border-t border-gray-150 rounded-b gap-3 bg-gray-50">
+            <div className="flex items-center justify-end p-6 border-t border-gray-150 rounded-b gap-3 bg-gray-55">
               <button
                 type="button"
                 onClick={onClose}
@@ -208,7 +214,7 @@ const AddNewHorseModal = ({ isOpen, onClose, onSuccess }) => {
                 disabled={submitting}
                 className="px-5 py-2.5 text-sm font-semibold text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:outline-none shadow-md transition-colors disabled:opacity-50"
               >
-                {submitting ? 'Adding...' : 'Add Horse'}
+                {submitting ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </form>
@@ -218,4 +224,4 @@ const AddNewHorseModal = ({ isOpen, onClose, onSuccess }) => {
   );
 };
 
-export default AddNewHorseModal;
+export default EditHorseModal;

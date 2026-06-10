@@ -15,7 +15,9 @@ class UpdateOwnerInfoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => 'sometimes|integer|unique:horse_owners,user_id|exists:users,id',
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|email|max:255',
+            'user_id' => 'sometimes|integer|exists:users,id',
         ];
     }
 

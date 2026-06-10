@@ -18,4 +18,7 @@ interface IHorseService
      * @return HorseDTO[]
      */
     public function getHorsesByOwner(int $ownerId): array;
+
+    public function countHorsesByOwner(int $ownerId): int;
 }
+

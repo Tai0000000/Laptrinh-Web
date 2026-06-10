@@ -51,7 +51,9 @@ Route::get('/public/tournaments', [TournamentController::class, 'index']);
 
 // Horse routes (public for testing)
 Route::get('/owners/{ownerId}/horses', [HorseController::class, 'getHorsesByOwner']);
+Route::get('/owners/{ownerId}/horses/count', [HorseController::class, 'countHorsesByOwner']);
 Route::get('/horses/{horseId}', [HorseController::class, 'getHorseById']);
+
 Route::post('/horses', [HorseController::class, 'createHorse']);
 Route::put('/horses/{horseId}', [HorseController::class, 'updateHorse']);
 Route::delete('/horses/{horseId}', [HorseController::class, 'deleteHorse']);

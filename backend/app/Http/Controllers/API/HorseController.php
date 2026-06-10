@@ -31,6 +31,17 @@ class HorseController
     }
 
     /**
+     * GET /api/owners/{ownerId}/horses/count
+     */
+    public function countHorsesByOwner(int $ownerId)
+    {
+        $ownerId = 10; // Hardcode for testing
+        $count = $this->horseService->countHorsesByOwner($ownerId);
+        return response()->json(['count' => $count]);
+    }
+
+
+    /**
      * GET /api/horses/{horseId}
      */
     public function getHorseById(GetHorseByIdRequest $request, int $horseId)
