@@ -1,9 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import HorseOwnerLayout from '../../components/HorseOwnerLayout';
+import HorseOwnerLayout from '../../components/HorseOwner/HorseOwnerLayout';
+import AddNewHorseModal from '../../components/HorseOwner/AddNewHorseModal';
+
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleSuccess = () => {
+    navigate('/horse-owner/horses');
+  };
+
   return (
     <HorseOwnerLayout>
       <div className="max-w-7xl">
@@ -55,7 +63,7 @@ const Dashboard = () => {
             <h2 className="text-xl font-bold text-gray-800 mb-4">Quick Actions</h2>
             <div className="space-y-3">
               <button 
-                onClick={() => navigate('/horse-owner/horses/new')}
+                onClick={() => setIsModalOpen(true)}
                 className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition-colors">
                 Add New Horse
               </button>
@@ -69,6 +77,13 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Add New Horse Modal */}
+      <AddNewHorseModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSuccess={handleSuccess} 
+      />
     </HorseOwnerLayout>
   );
 };
