@@ -72,4 +72,16 @@ class HorseRepository implements IHorseRepository
     {
         return Horse::where('horse_owner_id', $horseOwnerId)->get();
     }
+
+    /**
+     * Đếm số lượng ngựa của chủ ngựa
+     *
+     * @param int $horseOwnerId
+     * @return int
+     */
+    public function countHorsesByOwnerId(int $horseOwnerId): int
+    {
+        return Horse::where('horse_owner_id', $horseOwnerId)->count();
+    }
 }
+

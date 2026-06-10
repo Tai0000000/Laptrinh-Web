@@ -44,4 +44,13 @@ interface IHorseRepository
      * @return mixed
      */
     public function getHorsesByOwnerId(int $horseOwnerId): mixed;
+
+    /**
+     * Đếm số lượng ngựa của chủ ngựa
+     *
+     * @param int $horseOwnerId
+     * @return int
+     */
+    public function countHorsesByOwnerId(int $horseOwnerId): int;
 }
+

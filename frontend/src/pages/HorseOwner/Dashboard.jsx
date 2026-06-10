@@ -1,15 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import HorseOwnerLayout from '../../components/HorseOwner/HorseOwnerLayout';
 import AddNewHorseModal from '../../components/HorseOwner/AddNewHorseModal';
-
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [totalHorses, setTotalHorses] = useState(0);
+
+  useEffect(() => {
+    axios.get('http://localhost:8000/api/owners/10/horses/count')
+      .then((response) => {
+        setTotalHorses(response.data.count);
+      })
+      .catch((err) => {
+        console.error('Error fetching horse count:', err);
+      });
+  }, []);
 
   const handleSuccess = () => {
-    navigate('/horse-owner/horses');
+    navigate('/horse-owner/horses', {
+      state: {
+        success: true,
+        title: 'Horse Added',
+        msg: 'New horse has been added successfully!'
+      }
+    });
   };
 
   return (
@@ -22,7 +39,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
             <p className="text-gray-500 text-sm">Total Horses</p>
-            <p className="text-3xl font-bold text-gray-800">12</p>
+            <p className="text-3xl font-bold text-gray-800">{totalHorses}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
             <p className="text-gray-500 text-sm">Active Jockeys</p>
