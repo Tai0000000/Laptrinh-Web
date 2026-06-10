@@ -1,13 +1,20 @@
-<?php
-// ── JockeyController ──────────────────────────────────────────────────────────
-class JockeyController {
+﻿<?php
+
+namespace App\\Http\\Controllers\\API;
+
+use App\\Http\\Controllers\\Controller;
+use PDO;
+use Throwable;
+
+// â”€â”€ JockeyController â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+class JockeyController extends Controller {
     public function __construct(private PDO $db, private ?array $user) {}
 
     public function handle(string $method, string $path, array $parts): void {
         Auth::role($this->user,['jockey']);
         $jockey=$this->db->prepare('SELECT id FROM jockeys WHERE user_id=?');
         $jockey->execute([$this->user['id']]); $j=$jockey->fetch();
-        if (!$j) jsonOut(['success'=>false,'message'=>'Profile jockey không tồn tại'],404);
+        if (!$j) jsonOut(['success'=>false,'message'=>'Profile jockey khÃ´ng tá»“n táº¡i'],404);
         $jId=(int)$j['id'];
 
         $sub   = $parts[1]??'';
@@ -45,7 +52,7 @@ class JockeyController {
             'active_horses'  => (int)$horses->fetchColumn(),
             'upcoming'       => (int)$upcoming->fetchColumn(),
             'win_rate'       => $t>0 ? round($w/$t*100,1) : 0,
-            'license_number' => $lic->fetchColumn() ?: '—',
+            'license_number' => $lic->fetchColumn() ?: 'â€”',
         ]]);
     }
 
@@ -87,7 +94,7 @@ class JockeyController {
     private function invitationHistory(int $jId): void {
         $s=$this->db->prepare("SELECT hj.id,hj.status,h.name AS horse_name,r.name AS race_name,
             r.race_date AS invited_at,
-            (SELECT CONCAT('Hạng ',rr.finish_position) FROM race_results rr
+            (SELECT CONCAT('Háº¡ng ',rr.finish_position) FROM race_results rr
              JOIN registrations reg ON reg.id=rr.registration_id
              WHERE reg.horse_id=h.id AND reg.jockey_id=hj.jockey_id AND reg.race_id=hj.race_id LIMIT 1) AS result
             FROM horse_jockey hj JOIN horses h ON h.id=hj.horse_id
@@ -99,10 +106,10 @@ class JockeyController {
     private function respondInvitation(int $jId, int $invId): void {
         $b=json_decode(file_get_contents('php://input'),true)??[];
         $status=$b['status']??'';
-        if (!in_array($status,['accepted','rejected'])) jsonOut(['success'=>false,'message'=>'Status không hợp lệ'],422);
+        if (!in_array($status,['accepted','rejected'])) jsonOut(['success'=>false,'message'=>'Status khÃ´ng há»£p lá»‡'],422);
         $check=$this->db->prepare("SELECT * FROM horse_jockey WHERE id=? AND jockey_id=? AND status='pending'");
         $check->execute([$invId,$jId]); $inv=$check->fetch();
-        if (!$inv) jsonOut(['success'=>false,'message'=>'Lời mời không tồn tại hoặc đã phản hồi'],404);
+        if (!$inv) jsonOut(['success'=>false,'message'=>'Lá»i má»i khÃ´ng tá»“n táº¡i hoáº·c Ä‘Ã£ pháº£n há»“i'],404);
         $this->db->beginTransaction();
         try {
             $this->db->prepare('UPDATE horse_jockey SET status=? WHERE id=?')->execute([$status,$invId]);
@@ -117,7 +124,7 @@ class JockeyController {
                 }
             }
             $this->db->commit();
-            jsonOut(['success'=>true,'message'=>$status==='accepted'?'Đã chấp nhận lời mời':'Đã từ chối lời mời']);
+            jsonOut(['success'=>true,'message'=>$status==='accepted'?'ÄÃ£ cháº¥p nháº­n lá»i má»i':'ÄÃ£ tá»« chá»‘i lá»i má»i']);
         } catch(Throwable $e) { $this->db->rollBack(); throw $e; }
     }
 
@@ -141,3 +148,4 @@ class JockeyController {
         $s->execute([$jId]); jsonOut(['success'=>true,'data'=>$s->fetchAll()]);
     }
 }
+
