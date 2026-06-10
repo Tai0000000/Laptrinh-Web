@@ -1,5 +1,5 @@
 import React from 'react';
-import HorseOwnerLayout from '../../components/HorseOwnerLayout';
+import HorseOwnerLayout from '../../components/HorseOwner/HorseOwnerLayout';
 
 const ResultsRewards = () => {
   const results = [

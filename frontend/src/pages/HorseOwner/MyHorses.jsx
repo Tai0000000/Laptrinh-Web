@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import HorseOwnerLayout from '../../components/HorseOwnerLayout';
+import HorseOwnerLayout from '../../components/HorseOwner/HorseOwnerLayout';
+import AddNewHorseModal from '../../components/HorseOwner/AddNewHorseModal';
 
 const MyHorses = () => {
-  const navigate = useNavigate();
   const [horses, setHorses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  useEffect(() => {
+
+  const fetchHorses = () => {
+    setLoading(true);
     axios.get('http://localhost:8000/api/owners/10/horses')
       .then((response) => {
         setHorses(response.data.data || response.data);
@@ -20,6 +22,10 @@ const MyHorses = () => {
         setError('Failed to fetch horses data.');
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchHorses();
   }, []);
 
   return (
@@ -31,7 +37,7 @@ const MyHorses = () => {
             <p className="text-gray-600 mt-2">Manage your horses collection</p>
           </div>
           <button
-            onClick={() => navigate('/horse-owner/horses/new')}
+            onClick={() => setIsModalOpen(true)}
             className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
           >
             + Add New Horse
@@ -85,6 +91,13 @@ const MyHorses = () => {
           </div>
         )}
       </div>
+
+      {/* Add New Horse Modal */}
+      <AddNewHorseModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSuccess={fetchHorses} 
+      />
     </HorseOwnerLayout>
   );
 };
