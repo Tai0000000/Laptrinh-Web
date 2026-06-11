@@ -5,6 +5,8 @@ import Login from './pages/Login';
 import Tournaments from './pages/Tournaments';
 import TournamentDetail from './pages/TournamentDetail';
 import RaceDetail from './pages/RaceDetail';
+import Predictions from './pages/Predictions';
+import Dashboard from './pages/Dashboard';
 import Navbar from './components/Navbar';
 import { SocketProvider } from './context/SocketContext';
 
@@ -39,6 +41,9 @@ function App() {
               <Route path="/tournaments" element={<Tournaments />} />
               <Route path="/tournaments/:id" element={<TournamentDetail />} />
               <Route path="/races/:id" element={<RaceDetail />} />
+
+              <Route path="/predictions" element={<Predictions />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               
               {/* Horse Owner Dashboard Routes */}
               <Route path="/blank" element={<Blank />} /> 
@@ -55,6 +60,7 @@ function App() {
               <Route path="/referee/races" element={<RefereeRaces />} />
               <Route path="/referee/violations" element={<RefereeViolations />} />
               <Route path="/referee/schedule" element={<RefereeSchedule />} />
+
             </Routes>
           </main>
         </div>

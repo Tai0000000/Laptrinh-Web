@@ -11,7 +11,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property int $race_id
  * @property int $registration_id
+
+ * @property int $rank
+
  * @property int|null $rank
+
  * @property string|null $finish_time
  * @property string|null $notes
  * @property Carbon $created_at
@@ -23,8 +27,8 @@ class RaceResult extends Model
 {
     use HasFactory;
 
-    protected $table = 'race_results';
 
+    protected $table = 'race_results';
     protected $fillable = [
         'race_id',
         'registration_id',
@@ -36,26 +40,18 @@ class RaceResult extends Model
     protected $casts = [
         'race_id' => 'integer',
         'registration_id' => 'integer',
+
         'rank' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
-
-    /**
-     * Get the race associated with this result
-     *
-     * @return BelongsTo
-     */
     public function race(): BelongsTo
     {
         return $this->belongsTo(Race::class);
     }
 
-    /**
-     * Get the registration associated with this result
-     *
-     * @return BelongsTo
-     */
+
+
     public function registration(): BelongsTo
     {
         return $this->belongsTo(Registration::class);
