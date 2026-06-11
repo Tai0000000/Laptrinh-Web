@@ -8,14 +8,48 @@ return new class extends Migration
 {
     public function up()
     {
-        // Bảng Users (đã tồn tại trong Laravel, nhưng thêm vai trò)
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
-            $table->enum('role', ['horse_owner', 'jockey', 'referee', 'spectator', 'admin'])->default('spectator');
+            $table->enum('role', ['horse_owner', 'jockey', 'race_referee', 'spectator', 'admin'])->default('spectator');
             $table->rememberToken();
+            $table->timestamps();
+        });
+
+        // Bảng Horse Owners (Chủ ngựa)
+        Schema::create('horse_owners', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->unique()->constrained('users')->onDelete('cascade');
+            $table->timestamps();
+        });
+
+        // Bảng Jockeys (Nài ngựa)
+        Schema::create('jockeys', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->unique()->constrained('users')->onDelete('cascade');
+            $table->timestamps();
+        });
+
+        // Bảng Race Referees (Trọng tài)
+        Schema::create('race_referees', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->unique()->constrained('users')->onDelete('cascade');
+            $table->timestamps();
+        });
+
+        // Bảng Spectators (Khán giả)
+        Schema::create('spectators', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->unique()->constrained('users')->onDelete('cascade');
+            $table->timestamps();
+        });
+
+        // Bảng Admins (Quản trị viên)
+        Schema::create('admins', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->unique()->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
 
@@ -25,7 +59,7 @@ return new class extends Migration
             $table->string('name');
             $table->integer('age');
             $table->string('breed');
-            $table->foreignId('owner_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('horse_owner_id')->constrained('horse_owners')->onDelete('cascade');
             $table->string('status')->default('active');
             $table->timestamps();
         });
@@ -91,6 +125,11 @@ return new class extends Migration
         Schema::dropIfExists('races');
         Schema::dropIfExists('tournaments');
         Schema::dropIfExists('horses');
+        Schema::dropIfExists('admins');
+        Schema::dropIfExists('spectators');
+        Schema::dropIfExists('race_referees');
+        Schema::dropIfExists('jockeys');
+        Schema::dropIfExists('horse_owners');
         Schema::dropIfExists('users');
     }
 };
