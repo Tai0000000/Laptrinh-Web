@@ -1,151 +1,268 @@
-﻿<?php
+<?php
 
-namespace App\\Http\\Controllers\\API;
+namespace App\Http\Controllers\API;
 
-use App\\Http\\Controllers\\Controller;
-use PDO;
-use Throwable;
+use App\Http\Controllers\Controller;
+use App\Models\HorseJockey;
+use App\Models\RaceResult;
+use App\Models\Registration;
+use App\Models\User;
+use Illuminate\Http\Request;
 
-// â”€â”€ JockeyController â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-class JockeyController extends Controller {
-    public function __construct(private PDO $db, private ?array $user) {}
-
-    public function handle(string $method, string $path, array $parts): void {
-        Auth::role($this->user,['jockey']);
-        $jockey=$this->db->prepare('SELECT id FROM jockeys WHERE user_id=?');
-        $jockey->execute([$this->user['id']]); $j=$jockey->fetch();
-        if (!$j) jsonOut(['success'=>false,'message'=>'Profile jockey khÃ´ng tá»“n táº¡i'],404);
-        $jId=(int)$j['id'];
-
-        $sub   = $parts[1]??'';
-        $resId = is_numeric($parts[2]??'') ? (int)$parts[2] : null;
-        $action= $parts[3]??'';
-
-        match(true) {
-            $path==='stats'                               => $this->stats($jId),
-            $path==='races'                               => $this->myRaces($jId),
-            $path==='races/upcoming'                      => $this->upcomingRaces($jId),
-            $path==='invitations/pending'                 => $this->pendingInvitations($jId),
-            $path==='invitations/history'                 => $this->invitationHistory($jId),
-            $method==='PUT'&&$sub==='invitations'&&$action==='respond'&&$resId => $this->respondInvitation($jId,$resId),
-            $path==='performance/results'                 => $this->performanceResults($jId),
-            $path==='performance/best-times'              => $this->bestTimes($jId),
-            default => jsonOut(['success'=>false,'message'=>'Not found'],404),
-        };
-    }
-
-    private function stats(int $jId): void {
-        $total=$this->db->prepare('SELECT COUNT(*) FROM race_results rr JOIN registrations reg ON reg.id=rr.registration_id WHERE reg.jockey_id=?');
-        $total->execute([$jId]);
-        $wins=$this->db->prepare("SELECT COUNT(*) FROM race_results rr JOIN registrations reg ON reg.id=rr.registration_id WHERE reg.jockey_id=? AND rr.finish_position=1");
-        $wins->execute([$jId]);
-        $horses=$this->db->prepare("SELECT COUNT(DISTINCT hj.horse_id) FROM horse_jockey hj WHERE hj.jockey_id=? AND hj.status='accepted'");
-        $horses->execute([$jId]);
-        $upcoming=$this->db->prepare("SELECT COUNT(*) FROM registrations reg JOIN races r ON r.id=reg.race_id WHERE reg.jockey_id=? AND r.race_date>=NOW() AND r.status IN('scheduled','in_progress')");
-        $upcoming->execute([$jId]);
-        $lic=$this->db->prepare('SELECT license_number FROM jockeys WHERE id=?');
-        $lic->execute([$jId]);
-        $t=(int)$total->fetchColumn(); $w=(int)$wins->fetchColumn();
-        jsonOut(['success'=>true,'data'=>[
-            'total_races'    => $t,
-            'wins'           => $w,
-            'active_horses'  => (int)$horses->fetchColumn(),
-            'upcoming'       => (int)$upcoming->fetchColumn(),
-            'win_rate'       => $t>0 ? round($w/$t*100,1) : 0,
-            'license_number' => $lic->fetchColumn() ?: 'â€”',
-        ]]);
-    }
-
-    private function myRaces(int $jId): void {
-        $s=$this->db->prepare("SELECT r.id,r.name AS race_name,r.race_date,r.distance,r.status,
-            t.name AS tournament,h.name AS horse_name,uo.full_name AS owner_name,
-            reg.lane_number,reg.status AS reg_status
-            FROM registrations reg
-            JOIN races r ON r.id=reg.race_id JOIN tournaments t ON t.id=r.tournament_id
-            JOIN horses h ON h.id=reg.horse_id JOIN users uo ON uo.id=h.owner_id
-            WHERE reg.jockey_id=? ORDER BY r.race_date DESC");
-        $s->execute([$jId]); jsonOut(['success'=>true,'data'=>$s->fetchAll()]);
-    }
-
-    private function upcomingRaces(int $jId): void {
-        $s=$this->db->prepare("SELECT r.id,r.name AS race_name,r.race_date,r.distance,r.status,
-            t.name AS tournament,h.name AS horse_name,uo.full_name AS owner_name,
-            reg.lane_number,reg.status AS reg_status
-            FROM registrations reg
-            JOIN races r ON r.id=reg.race_id JOIN tournaments t ON t.id=r.tournament_id
-            JOIN horses h ON h.id=reg.horse_id JOIN users uo ON uo.id=h.owner_id
-            WHERE reg.jockey_id=? AND r.race_date>=NOW() AND r.status IN('scheduled','in_progress')
-            ORDER BY r.race_date ASC LIMIT 5");
-        $s->execute([$jId]); jsonOut(['success'=>true,'data'=>$s->fetchAll()]);
-    }
-
-    private function pendingInvitations(int $jId): void {
-        $s=$this->db->prepare("SELECT hj.id,hj.race_id,hj.status,
-            h.name AS horse_name,h.breed,h.age,h.weight,uo.full_name AS owner_name,
-            r.race_date,r.name AS race_name,r.distance,t.name AS tournament,
-            (SELECT COUNT(*) FROM race_results rr2 JOIN registrations reg2 ON reg2.id=rr2.registration_id
-             WHERE reg2.horse_id=h.id AND rr2.finish_position=1) AS wins
-            FROM horse_jockey hj JOIN horses h ON h.id=hj.horse_id JOIN users uo ON uo.id=h.owner_id
-            JOIN races r ON r.id=hj.race_id JOIN tournaments t ON t.id=r.tournament_id
-            WHERE hj.jockey_id=? AND hj.status='pending' ORDER BY hj.id DESC");
-        $s->execute([$jId]); jsonOut(['success'=>true,'data'=>$s->fetchAll()]);
-    }
-
-    private function invitationHistory(int $jId): void {
-        $s=$this->db->prepare("SELECT hj.id,hj.status,h.name AS horse_name,r.name AS race_name,
-            r.race_date AS invited_at,
-            (SELECT CONCAT('Háº¡ng ',rr.finish_position) FROM race_results rr
-             JOIN registrations reg ON reg.id=rr.registration_id
-             WHERE reg.horse_id=h.id AND reg.jockey_id=hj.jockey_id AND reg.race_id=hj.race_id LIMIT 1) AS result
-            FROM horse_jockey hj JOIN horses h ON h.id=hj.horse_id
-            JOIN races r ON r.id=hj.race_id JOIN tournaments t ON t.id=r.tournament_id
-            WHERE hj.jockey_id=? AND hj.status IN('accepted','rejected') ORDER BY hj.id DESC LIMIT 20");
-        $s->execute([$jId]); jsonOut(['success'=>true,'data'=>$s->fetchAll()]);
-    }
-
-    private function respondInvitation(int $jId, int $invId): void {
-        $b=json_decode(file_get_contents('php://input'),true)??[];
-        $status=$b['status']??'';
-        if (!in_array($status,['accepted','rejected'])) jsonOut(['success'=>false,'message'=>'Status khÃ´ng há»£p lá»‡'],422);
-        $check=$this->db->prepare("SELECT * FROM horse_jockey WHERE id=? AND jockey_id=? AND status='pending'");
-        $check->execute([$invId,$jId]); $inv=$check->fetch();
-        if (!$inv) jsonOut(['success'=>false,'message'=>'Lá»i má»i khÃ´ng tá»“n táº¡i hoáº·c Ä‘Ã£ pháº£n há»“i'],404);
-        $this->db->beginTransaction();
+class JockeyController extends Controller
+{
+    // GET /api/jockey/stats
+    public function stats(Request $request)
+    {
         try {
-            $this->db->prepare('UPDATE horse_jockey SET status=? WHERE id=?')->execute([$status,$invId]);
-            if ($status==='accepted') {
-                $reg=$this->db->prepare('SELECT id FROM registrations WHERE race_id=? AND horse_id=?');
-                $reg->execute([$inv['race_id'],$inv['horse_id']]); $regRow=$reg->fetch();
-                if ($regRow) {
-                    $this->db->prepare('UPDATE registrations SET jockey_id=? WHERE id=?')->execute([$jId,$regRow['id']]);
-                } else {
-                    $ins=$this->db->prepare('INSERT INTO registrations(race_id,horse_id,jockey_id,status,confirmed_by_owner) VALUES(?,?,?,?,1)');
-                    $ins->execute([$inv['race_id'],$inv['horse_id'],$jId,'pending']);
-                }
+            $userId = $request->user()->id;
+            $regs   = Registration::where('jockey_id', $userId)->get();
+            $total  = $regs->count();
+
+            $wins = RaceResult::whereHas(
+                'registration', fn($q) => $q->where('jockey_id', $userId)
+            )->where('rank', 1)->count();
+
+            $activeHorses = $regs
+                ->whereIn('status', ['pending', 'confirmed'])
+                ->pluck('horse_id')->unique()->count();
+
+            $upcoming = Registration::where('jockey_id', $userId)
+                ->whereHas('race', fn($q) => $q->whereNotNull('race_time')
+                    ->where('race_time', '>', now()))
+                ->count();
+
+            return response()->json(['success' => true, 'data' => [
+                'total_races'    => $total,
+                'wins'           => $wins,
+                'active_horses'  => $activeHorses,
+                'upcoming'       => $upcoming,
+                'win_rate'       => $total > 0 ? round($wins / $total * 100, 1) : 0,
+                // TODO: thêm cột license_number vào bảng jockeys khi cần
+                'license_number' => '—',
+            ]]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // GET /api/jockey/races/upcoming
+    public function upcomingRaces(Request $request)
+    {
+        try {
+            $rows = Registration::with(['race.tournament', 'horse.owner'])
+                ->where('jockey_id', $request->user()->id)
+                ->whereHas('race', fn($q) => $q->where('race_time', '>', now()))
+                ->get()
+                ->sortBy(fn($r) => $r->race->race_time)
+                ->take(5)
+                ->map(fn($r) => [
+                    'id'          => $r->id,
+                    'race_date'   => $r->race->race_time,
+                    'race_name'   => $r->race->tournament->name ?? 'Cuộc đua',
+                    'tournament'  => $r->race->tournament->name ?? '—',
+                    'distance'    => $r->race->distance,
+                    'horse_name'  => $r->horse->name ?? '—',
+                    'owner_name'  => $r->horse->owner->name ?? '—',
+                    'lane_number' => $r->lane_number ?? null,
+                    'reg_status'  => $r->status,
+                    'status'      => $r->race->status,
+                ])
+                ->values();
+
+            return response()->json(['success' => true, 'data' => $rows]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // GET /api/jockey/races
+    public function races(Request $request)
+    {
+        try {
+            $rows = Registration::with(['race.tournament', 'horse.owner'])
+                ->where('jockey_id', $request->user()->id)
+                ->orderByDesc('created_at')
+                ->get()
+                ->map(fn($r) => [
+                    'id'          => $r->id,
+                    'race_date'   => $r->race->race_time,
+                    'race_name'   => $r->race->tournament->name ?? 'Cuộc đua',
+                    'tournament'  => $r->race->tournament->name ?? '—',
+                    'distance'    => $r->race->distance,
+                    'horse_name'  => $r->horse->name ?? '—',
+                    'owner_name'  => $r->horse->owner->name ?? '—',
+                    'lane_number' => $r->lane_number ?? null,
+                    'reg_status'  => $r->status,
+                    'status'      => $r->race->status,
+                ])
+                ->values();
+
+            return response()->json(['success' => true, 'data' => $rows]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // GET /api/jockey/invitations/pending
+    public function invitationsPending(Request $request)
+    {
+        try {
+            $rows = HorseJockey::with(['horse.owner', 'race.tournament'])
+                ->where('jockey_id', $request->user()->id)
+                ->where('status', 'pending')
+                ->orderByDesc('created_at')
+                ->get()
+                ->map(fn($inv) => [
+                    'id'         => $inv->id,
+                    'horse_name' => $inv->horse->name ?? '—',
+                    'breed'      => $inv->horse->breed ?? '—',
+                    'age'        => $inv->horse->age ?? '—',
+                    'weight'     => '—',
+                    'wins'       => $this->countHorseWins($inv->horse_id),
+                    'owner_name' => $inv->horse->owner->name ?? '—',
+                    'race_name'  => $inv->race->tournament->name ?? '—',
+                    'tournament' => $inv->race->tournament->name ?? '—',
+                    'race_date'  => $inv->race->race_time,
+                    'distance'   => $inv->race->distance,
+                ])
+                ->values();
+
+            return response()->json(['success' => true, 'data' => $rows]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // GET /api/jockey/invitations/history
+    public function invitationsHistory(Request $request)
+    {
+        try {
+            $rows = HorseJockey::with(['horse', 'race.tournament'])
+                ->where('jockey_id', $request->user()->id)
+                ->whereIn('status', ['accepted', 'rejected'])
+                ->orderByDesc('updated_at')
+                ->get()
+                ->map(fn($inv) => [
+                    'id'         => $inv->id,
+                    'horse_name' => $inv->horse->name ?? '—',
+                    'race_name'  => $inv->race->tournament->name ?? '—',
+                    'invited_at' => $inv->created_at,
+                    'status'     => $inv->status,
+                    'result'     => $this->getInviteResult($inv),
+                ])
+                ->values();
+
+            return response()->json(['success' => true, 'data' => $rows]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // PUT /api/jockey/invitations/{invite}/respond
+    public function respondInvitation(Request $request, HorseJockey $invite)
+    {
+        try {
+            if ($invite->jockey_id !== $request->user()->id) {
+                return response()->json(['success' => false, 'message' => 'Không có quyền phản hồi lời mời này.'], 403);
             }
-            $this->db->commit();
-            jsonOut(['success'=>true,'message'=>$status==='accepted'?'ÄÃ£ cháº¥p nháº­n lá»i má»i':'ÄÃ£ tá»« chá»‘i lá»i má»i']);
-        } catch(Throwable $e) { $this->db->rollBack(); throw $e; }
+
+            if ($invite->status !== 'pending') {
+                return response()->json(['success' => false, 'message' => 'Lời mời này đã được phản hồi rồi.'], 422);
+            }
+
+            $data = $request->validate([
+                'status' => 'required|in:accepted,rejected',
+                'reason' => 'nullable|string|max:500',
+            ]);
+
+            $invite->update($data);
+
+            if ($data['status'] === 'accepted') {
+                Registration::updateOrCreate(
+                    ['race_id' => $invite->race_id, 'horse_id' => $invite->horse_id],
+                    ['jockey_id' => $invite->jockey_id, 'status' => 'confirmed']
+                );
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $data['status'] === 'accepted' ? 'Đã chấp nhận lời mời.' : 'Đã từ chối lời mời.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
-    private function performanceResults(int $jId): void {
-        $s=$this->db->prepare("SELECT rr.id,rr.finish_position,rr.finish_time,rr.prize_amount,
-            r.name AS race_name,r.race_date,r.distance,t.name AS tournament,h.name AS horse_name
-            FROM race_results rr JOIN registrations reg ON reg.id=rr.registration_id
-            JOIN races r ON r.id=reg.race_id JOIN tournaments t ON t.id=r.tournament_id
-            JOIN horses h ON h.id=reg.horse_id
-            WHERE reg.jockey_id=? ORDER BY r.race_date DESC LIMIT 50");
-        $s->execute([$jId]); jsonOut(['success'=>true,'data'=>$s->fetchAll()]);
+    // GET /api/jockey/performance/results
+    public function performanceResults(Request $request)
+    {
+        try {
+            $rows = RaceResult::with(['registration.race.tournament', 'registration.horse'])
+                ->whereHas('registration', fn($q) => $q->where('jockey_id', $request->user()->id))
+                ->orderByDesc('created_at')
+                ->get()
+                ->map(fn($r) => [
+                    'id'              => $r->id,
+                    'race_name'       => $r->registration->race->tournament->name ?? 'Cuộc đua',
+                    'horse_name'      => $r->registration->horse->name ?? '—',
+                    'race_date'       => $r->registration->race->race_time,
+                    'finish_position' => $r->rank,
+                    'finish_time'     => $r->finish_time,
+                    'prize_amount'    => $r->prize_amount ?? 0,
+                ])
+                ->values();
+
+            return response()->json(['success' => true, 'data' => $rows]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
-    private function bestTimes(int $jId): void {
-        $s=$this->db->prepare("SELECT ROW_NUMBER() OVER (ORDER BY rr.finish_time ASC) AS `rank`,
-            r.name AS race_name,h.name AS horse_name,rr.finish_time AS finish_time
-            FROM race_results rr JOIN registrations reg ON reg.id=rr.registration_id
-            JOIN races r ON r.id=reg.race_id JOIN tournaments t ON t.id=r.tournament_id
-            JOIN horses h ON h.id=reg.horse_id
-            WHERE reg.jockey_id=? AND rr.finish_time IS NOT NULL ORDER BY rr.finish_time ASC LIMIT 3");
-        $s->execute([$jId]); jsonOut(['success'=>true,'data'=>$s->fetchAll()]);
+    // GET /api/jockey/performance/best-times
+    public function performanceBestTimes(Request $request)
+    {
+        try {
+            $rows = RaceResult::with(['registration.race.tournament', 'registration.horse'])
+                ->whereHas('registration', fn($q) => $q->where('jockey_id', $request->user()->id))
+                ->whereNotNull('finish_time')
+                ->orderBy('finish_time')
+                ->limit(3)
+                ->get()
+                ->map(fn($r, $i) => [
+                    'rank'        => $i + 1,
+                    'race_name'   => $r->registration->race->tournament->name ?? 'Cuộc đua',
+                    'horse_name'  => $r->registration->horse->name ?? '—',
+                    'finish_time' => $r->finish_time,
+                ])
+                ->values();
+
+            return response()->json(['success' => true, 'data' => $rows]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // ── Private helpers ────────────────────────────────────────────────────
+
+    private function countHorseWins(int $horseId): int
+    {
+        return RaceResult::whereHas(
+            'registration', fn($q) => $q->where('horse_id', $horseId)
+        )->where('rank', 1)->count();
+    }
+
+    private function getInviteResult(HorseJockey $inv): ?string
+    {
+        if ($inv->status !== 'accepted') return null;
+
+        $result = RaceResult::whereHas(
+            'registration',
+            fn($q) => $q->where('race_id', $inv->race_id)
+                        ->where('horse_id', $inv->horse_id)
+                        ->where('jockey_id', $inv->jockey_id)
+        )->first();
+
+        return $result ? "Hạng {$result->rank}" : null;
     }
 }
-
