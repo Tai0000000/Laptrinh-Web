@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const linkClass = ({ isActive }) =>
@@ -10,11 +10,19 @@ const linkClass = ({ isActive }) =>
 function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
+
+  // Hide global navbar for admin portal (role có thể là string hoặc enum object)
+  const role = user?.role?.value ?? user?.role;
+  if (location.pathname === '/dashboard' && role === 'admin') {
+    return null;
+  }
+
 
   return (
     <header className="sticky top-0 z-20 border-b border-white/70 bg-white/70 backdrop-blur-xl">
