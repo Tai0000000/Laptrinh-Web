@@ -3,7 +3,7 @@
   "description": "Horse Racing Backend using Laravel",
   "type": "project",
   "require": {
-    "php": "^8.3",
+    "php": "^8.2",
     "laravel/framework": "^11.0",
     "laravel/sanctum": "^4.0",
     "firebase/php-jwt": "^6.10"
@@ -23,5 +23,15 @@
       "@php artisan key:generate --ansi",
       "@php artisan storage:link"
     ]
+  },
+  "config": {
+    "allow-plugins": {
+      "php-http/discovery": true
+    },
+    "policy": {
+      "advisories": {
+        "block": false
+      }
+    }
   }
 }

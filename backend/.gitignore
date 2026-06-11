@@ -12,3 +12,4 @@ bootstrap/cache/
 *.swo
 *~
 .phpunit.result.cache
+database/*.sqlite

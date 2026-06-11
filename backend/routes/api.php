@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\AdminController;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\BetController;
 use App\Http\Controllers\API\HorseController;
@@ -38,8 +39,13 @@ Route::middleware('jwt.auth')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
 
-    // Admin-only: Tournaments
+    // Admin-only: Dashboard stats & activity + Tournaments
     Route::middleware('jwt.auth:admin')->group(function () {
+        // Overview KPI & activity feed
+        Route::get('/admin/stats', [AdminController::class, 'stats']);
+        Route::get('/admin/recent-activity', [AdminController::class, 'recentActivity']);
+
+        // Tournaments CRUD
         Route::post('/tournaments', [TournamentController::class, 'store']);
         Route::get('/tournaments', [TournamentController::class, 'index']);
         Route::get('/tournaments/{id}', [TournamentController::class, 'show']);
