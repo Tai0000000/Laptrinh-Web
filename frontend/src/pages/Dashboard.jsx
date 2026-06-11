@@ -1,13 +1,624 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import AdminLayout from '../components/AdminLayout';
+import api from '../api/axios';
 
+/* ═══════════════════════════════════════════════════════════
+   MOCK DATA — dùng khi API chưa sẵn sàng
+═══════════════════════════════════════════════════════════ */
+const MOCK_STATS = {
+    total_tournaments:     6,
+    total_horses:          24,
+    total_jockeys:         12,
+    total_bets:            87,
+    total_users:           142,
+    active_races:          3,
+    completed_races:       14,
+    pending_registrations: 5,
+    user_growth_percent:   18.5,
+};
+
+const MOCK_ACTIVITY = [
+    { icon: '💸', color: 'amber',   badge: 'Cược mới',       description: 'Nguyễn Văn An đặt cược 500,000 VNĐ vào Golden Cup 2026',        time_ago: '2 phút trước'   },
+    { icon: '👤', color: 'emerald', badge: 'Thành viên mới', description: 'Trần Thị Bình đăng ký tài khoản với vai trò Khán giả',             time_ago: '8 phút trước'   },
+    { icon: '📋', color: 'blue',    badge: 'pending',         description: 'Ngựa "Thunder King" đăng ký tham gia Golden Cup 2026',            time_ago: '15 phút trước'  },
+    { icon: '💸', color: 'amber',   badge: 'Cược mới',       description: 'Lê Văn Cường đặt cược 1,200,000 VNĐ vào Spring Tournament',       time_ago: '22 phút trước'  },
+    { icon: '👤', color: 'emerald', badge: 'Thành viên mới', description: 'Phạm Thị Dung đăng ký tài khoản với vai trò Chủ ngựa',            time_ago: '35 phút trước'  },
+    { icon: '📋', color: 'blue',    badge: 'confirmed',       description: 'Ngựa "Storm Runner" đăng ký tham gia Spring Tournament 2026',     time_ago: '1 giờ trước'    },
+    { icon: '💸', color: 'amber',   badge: 'Cược mới',       description: 'Hoàng Văn Em đặt cược 300,000 VNĐ vào cuộc đua buổi sáng',        time_ago: '1 giờ 20 phút'  },
+    { icon: '👤', color: 'emerald', badge: 'Thành viên mới', description: 'Vũ Thị Giang đăng ký tài khoản với vai trò Nài ngựa',             time_ago: '2 giờ trước'    },
+    { icon: '📋', color: 'blue',    badge: 'pending',         description: 'Ngựa "Golden Flash" đăng ký tham gia Golden Cup 2026',            time_ago: '2 giờ 45 phút'  },
+    { icon: '💸', color: 'amber',   badge: 'Cược mới',       description: 'Đỗ Văn Hải đặt cược 750,000 VNĐ vào cuộc đua chiều',             time_ago: '3 giờ trước'    },
+    { icon: '👤', color: 'emerald', badge: 'Thành viên mới', description: 'Ngô Thị Hoa đăng ký tài khoản với vai trò Trọng tài',             time_ago: '4 giờ trước'    },
+    { icon: '📋', color: 'blue',    badge: 'rejected',        description: 'Ngựa "Dark Shadow" đăng ký tham gia Spring Tournament 2026',     time_ago: '5 giờ trước'    },
+];
+
+/* ═══════════════════════════════════════════════════════════
+   KPI CARD COMPONENT
+═══════════════════════════════════════════════════════════ */
+const KPI_COLORS = {
+    emerald: {
+        border:  'border-emerald-500/40',
+        from:    'from-emerald-500/20',
+        to:      'to-emerald-500/5',
+        glow:    'bg-emerald-400',
+        text:    'text-emerald-400',
+        ring:    'ring-emerald-500/30',
+    },
+    amber: {
+        border:  'border-amber-500/40',
+        from:    'from-amber-500/20',
+        to:      'to-amber-500/5',
+        glow:    'bg-amber-400',
+        text:    'text-amber-400',
+        ring:    'ring-amber-500/30',
+    },
+    sky: {
+        border:  'border-sky-500/40',
+        from:    'from-sky-500/20',
+        to:      'to-sky-500/5',
+        glow:    'bg-sky-400',
+        text:    'text-sky-400',
+        ring:    'ring-sky-500/30',
+    },
+    violet: {
+        border:  'border-violet-500/40',
+        from:    'from-violet-500/20',
+        to:      'to-violet-500/5',
+        glow:    'bg-violet-400',
+        text:    'text-violet-400',
+        ring:    'ring-violet-500/30',
+    },
+    rose: {
+        border:  'border-rose-500/40',
+        from:    'from-rose-500/20',
+        to:      'to-rose-500/5',
+        glow:    'bg-rose-400',
+        text:    'text-rose-400',
+        ring:    'ring-rose-500/30',
+    },
+    teal: {
+        border:  'border-teal-500/40',
+        from:    'from-teal-500/20',
+        to:      'to-teal-500/5',
+        glow:    'bg-teal-400',
+        text:    'text-teal-400',
+        ring:    'ring-teal-500/30',
+    },
+};
+
+const KpiCard = ({ icon, label, value, sub, color = 'emerald', loading }) => {
+    const c = KPI_COLORS[color] ?? KPI_COLORS.emerald;
+    return (
+        <div
+            className={`group relative overflow-hidden rounded-3xl border ${c.border}
+                        bg-gradient-to-br ${c.from} ${c.to}
+                        p-6 backdrop-blur-xl
+                        transition-all duration-300
+                        hover:-translate-y-1 hover:shadow-2xl hover:ring-1 ${c.ring}`}
+        >
+            {/* Animated glow orb */}
+            <div
+                className={`pointer-events-none absolute -right-10 -top-10 h-32 w-32
+                            rounded-full ${c.glow} opacity-10 blur-3xl
+                            transition-all duration-500 group-hover:opacity-20`}
+            />
+
+            {/* Header row */}
+            <div className="flex items-start justify-between">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/8 text-2xl shadow-inner">
+                    {icon}
+                </div>
+                {sub !== undefined && !loading && (
+                    <span
+                        className={`mt-1 rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-bold
+                                    ${sub >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}
+                    >
+                        {sub >= 0 ? '▲' : '▼'} {Math.abs(sub)}%
+                    </span>
+                )}
+            </div>
+
+            {/* Label */}
+            <p className="mt-4 text-xs font-medium tracking-wide text-slate-400 uppercase">
+                {label}
+            </p>
+
+            {/* Value */}
+            {loading ? (
+                <div className="mt-2 h-9 w-24 animate-pulse rounded-xl bg-white/10" />
+            ) : (
+                <p className={`mt-1 text-4xl font-black tracking-tight text-white`}>
+                    {value}
+                </p>
+            )}
+        </div>
+    );
+};
+
+/* ═══════════════════════════════════════════════════════════
+   ACTIVITY BADGE
+═══════════════════════════════════════════════════════════ */
+const BADGE_COLORS = {
+    amber:   'bg-amber-500/15   text-amber-300   border-amber-500/30',
+    blue:    'bg-sky-500/15     text-sky-300     border-sky-500/30',
+    emerald: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+    rose:    'bg-rose-500/15    text-rose-300    border-rose-500/30',
+};
+
+const ActivityBadge = ({ color, text }) => (
+    <span
+        className={`inline-flex shrink-0 items-center rounded-full border
+                    px-2.5 py-0.5 text-[11px] font-semibold
+                    ${BADGE_COLORS[color] ?? BADGE_COLORS.emerald}`}
+    >
+        {text}
+    </span>
+);
+
+/* ═══════════════════════════════════════════════════════════
+   ADMIN OVERVIEW TAB
+═══════════════════════════════════════════════════════════ */
+const AdminOverview = () => {
+    const [stats,         setStats]         = useState(null);
+    const [activity,      setActivity]      = useState([]);
+    const [loadingStats,  setLoadingStats]  = useState(true);
+    const [loadingFeed,   setLoadingFeed]   = useState(true);
+    const [usingMock,     setUsingMock]     = useState(false);
+
+    const loadData = useCallback(async () => {
+        setLoadingStats(true);
+        setLoadingFeed(true);
+
+        // ── Stats ──
+        try {
+            const res = await api.get('/admin/stats');
+            setStats(res.data);
+            setUsingMock(false);
+        } catch {
+            setStats(MOCK_STATS);
+            setUsingMock(true);
+        } finally {
+            setLoadingStats(false);
+        }
+
+        // ── Activity feed ──
+        try {
+            const res = await api.get('/admin/recent-activity');
+            setActivity(res.data?.length ? res.data : MOCK_ACTIVITY);
+        } catch {
+            setActivity(MOCK_ACTIVITY);
+        } finally {
+            setLoadingFeed(false);
+        }
+    }, []);
+
+    useEffect(() => { loadData(); }, [loadData]);
+
+    /* KPI definitions */
+    const kpiCards = [
+        { icon: '🏆', label: 'Tổng giải đấu',              value: stats?.total_tournaments       ?? '—', color: 'emerald' },
+        { icon: '🐴', label: 'Ngựa đua',                    value: stats?.total_horses            ?? '—', color: 'amber'   },
+        { icon: '🤠', label: 'Nài ngựa (Jockey)',           value: stats?.total_jockeys           ?? '—', color: 'sky'     },
+        { icon: '💸', label: 'Dự đoán / Cược',              value: stats?.total_bets              ?? '—', color: 'violet'  },
+        { icon: '👥', label: 'Người dùng',                  value: stats?.total_users             ?? '—', sub: stats?.user_growth_percent, color: 'teal' },
+        { icon: '🚦', label: 'Cuộc đua đang / sắp diễn ra', value: stats?.active_races           ?? '—', color: 'rose'    },
+        { icon: '✅', label: 'Cuộc đua hoàn thành',         value: stats?.completed_races        ?? '—', color: 'emerald' },
+        { icon: '⏳', label: 'Đăng ký chờ duyệt',           value: stats?.pending_registrations  ?? '—', color: 'amber'   },
+    ];
+
+    const pending = stats?.pending_registrations ?? 0;
+
+    return (
+        <div className="space-y-8">
+
+            {/* ── Page header ── */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400 mb-1">
+                        Quản trị hệ thống
+                    </p>
+                    <h2 className="text-3xl font-black tracking-tight text-white">
+                        Tổng quan
+                    </h2>
+                    <p className="mt-1 text-sm text-slate-400">
+                        Số liệu hoạt động theo thời gian thực · Điều khiển nhanh
+                    </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    {usingMock && (
+                        <span className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-400">
+                            ⚠️ Dữ liệu mẫu — API chưa kết nối
+                        </span>
+                    )}
+                    <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2 text-xs text-slate-400">
+                        <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                        Live
+                    </div>
+                    <button
+                        onClick={loadData}
+                        className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-slate-300 transition hover:bg-white/10 hover:text-white"
+                    >
+                        🔄 Làm mới
+                    </button>
+                </div>
+            </div>
+
+            {/* ── KPI Grid (4 cols) ── */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {kpiCards.map((card, i) => (
+                    <KpiCard key={i} {...card} loading={loadingStats} />
+                ))}
+            </div>
+
+            {/* ── Bottom row ── */}
+            <div className="grid gap-6 xl:grid-cols-3">
+
+                {/* ─ Activity Feed (2/3) ─ */}
+                <div className="xl:col-span-2 flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-950/50 backdrop-blur-xl">
+
+                    {/* Feed header */}
+                    <div className="flex items-center justify-between border-b border-white/5 px-6 py-5">
+                        <div>
+                            <h3 className="text-base font-bold text-white">Hoạt động gần đây</h3>
+                            <p className="mt-0.5 text-xs text-slate-500">
+                                Các sự kiện mới nhất trên hệ thống
+                            </p>
+                        </div>
+                        <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400">
+                            ● Live
+                        </span>
+                    </div>
+
+                    {/* Feed body */}
+                    {loadingFeed ? (
+                        <div className="space-y-4 p-6">
+                            {[...Array(6)].map((_, i) => (
+                                <div key={i} className="flex animate-pulse items-center gap-4">
+                                    <div className="h-11 w-11 shrink-0 rounded-2xl bg-white/8" />
+                                    <div className="flex-1 space-y-2">
+                                        <div className="h-3 w-3/4 rounded-full bg-white/8" />
+                                        <div className="h-2.5 w-1/3 rounded-full bg-white/5" />
+                                    </div>
+                                    <div className="h-5 w-20 shrink-0 rounded-full bg-white/8" />
+                                </div>
+                            ))}
+                        </div>
+                    ) : activity.length === 0 ? (
+                        <div className="flex flex-1 flex-col items-center justify-center py-20 text-slate-600">
+                            <span className="mb-3 text-5xl">📭</span>
+                            <p className="text-sm">Chưa có hoạt động nào.</p>
+                        </div>
+                    ) : (
+                        <div className="flex-1 overflow-y-auto divide-y divide-white/[0.04] max-h-[480px]">
+                            {activity.map((item, idx) => (
+                                <div
+                                    key={idx}
+                                    className="flex items-start gap-4 px-6 py-4 transition-colors duration-150 hover:bg-white/[0.03]"
+                                >
+                                    {/* Icon */}
+                                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-xl">
+                                        {item.icon}
+                                    </div>
+
+                                    {/* Text */}
+                                    <div className="min-w-0 flex-1">
+                                        <p className="line-clamp-2 text-sm leading-snug text-slate-200">
+                                            {item.description}
+                                        </p>
+                                        <p className="mt-1 text-xs text-slate-500">
+                                            {item.time_ago}
+                                        </p>
+                                    </div>
+
+                                    {/* Badge */}
+                                    <ActivityBadge color={item.color} text={item.badge} />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* ─ Right column (1/3) ─ */}
+                <div className="flex flex-col gap-4">
+
+                    {/* Quick Actions */}
+                    <div className="rounded-3xl border border-white/10 bg-slate-950/50 p-6 backdrop-blur-xl">
+                        <h3 className="text-sm font-bold uppercase tracking-wide text-slate-300">
+                            Thao tác nhanh
+                        </h3>
+                        <p className="mb-5 mt-1 text-xs text-slate-500">
+                            Phím tắt chức năng quản trị
+                        </p>
+
+                        <div className="flex flex-col gap-2.5">
+                            {/* Primary CTA */}
+                            <button className="group flex w-full items-center gap-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-3.5 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-emerald-500/30">
+                                <span className="text-base transition-transform group-hover:scale-110">🏗️</span>
+                                Tạo giải đấu mới
+                            </button>
+
+                            <button className="group flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10">
+                                <span className="text-base transition-transform group-hover:scale-110">🚦</span>
+                                Cấu hình cuộc đua
+                            </button>
+
+                            <button className="group flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10">
+                                <span className="text-base transition-transform group-hover:scale-110">👮</span>
+                                Phân công trọng tài
+                            </button>
+
+                            <button className="group flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10">
+                                <span className="text-base transition-transform group-hover:scale-110">📊</span>
+                                Báo cáo giải đấu
+                            </button>
+
+                            {/* Pending badge button */}
+                            <button className="group relative flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10">
+                                <span className="text-base transition-transform group-hover:scale-110">⏳</span>
+                                Duyệt đăng ký chờ
+                                {pending > 0 && (
+                                    <span className="ml-auto flex h-5 w-5 shrink-0 animate-bounce items-center justify-center rounded-full bg-rose-500 text-[10px] font-black text-white">
+                                        {pending}
+                                    </span>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* System Health */}
+                    <div className="rounded-3xl border border-white/10 bg-slate-950/50 p-6 backdrop-blur-xl">
+                        <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-300">
+                            Trạng thái hệ thống
+                        </h3>
+                        <div className="space-y-3.5">
+                            {[
+                                { label: 'API Backend',      ok: !usingMock, status: usingMock ? 'Ngoại tuyến' : 'Hoạt động' },
+                                { label: 'Cơ sở dữ liệu',   ok: !usingMock, status: usingMock ? 'Ngoại tuyến' : 'Hoạt động' },
+                                { label: 'Đặt cược online',  ok: true,        status: 'Đang bật'   },
+                                { label: 'Chế độ bảo trì',   ok: false,       status: 'Tắt'        },
+                            ].map((s) => (
+                                <div key={s.label} className="flex items-center justify-between">
+                                    <span className="text-xs text-slate-400">{s.label}</span>
+                                    <span
+                                        className={`flex items-center gap-1.5 text-xs font-semibold
+                                                    ${s.ok ? 'text-emerald-400' : 'text-slate-500'}`}
+                                    >
+                                        <span
+                                            className={`h-1.5 w-1.5 rounded-full
+                                                        ${s.ok ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'}`}
+                                        />
+                                        {s.status}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    );
+};
+
+/* ═══════════════════════════════════════════════════════════
+   ADMIN TOURNAMENTS TAB
+═══════════════════════════════════════════════════════════ */
+const AdminTournaments = () => (
+    <div className="space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h2 className="text-2xl font-black text-white">Quản lý Giải đấu</h2>
+                <p className="text-sm text-slate-400">Thêm, sửa và thiết lập lịch thi đấu cho các giải đua ngựa.</p>
+            </div>
+            <button className="self-start rounded-2xl bg-emerald-500 px-6 py-3 text-sm font-bold text-slate-950 transition hover:bg-emerald-400 hover:shadow-lg hover:shadow-emerald-500/30">
+                + Thêm giải đấu
+            </button>
+        </div>
+
+        <div className="space-y-4">
+            {[
+                { name: 'Spring Tournament 2026', time: '01/03/2026 – 15/03/2026', loc: 'Phú Thọ, TP.HCM',     status: 'Hoàn thành', cls: 'bg-slate-800 text-slate-400 border-slate-700'          },
+                { name: 'Golden Cup 2026',        time: '10/06/2026 – 20/06/2026', loc: 'Đại Nam, Bình Dương', status: 'Sắp diễn ra', cls: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+                { name: 'Autumn Race 2026',       time: '05/09/2026 – 20/09/2026', loc: 'Đà Lạt, Lâm Đồng',   status: 'Lên kế hoạch', cls: 'bg-sky-500/20 text-sky-400 border-sky-500/30'            },
+            ].map((t) => (
+                <div
+                    key={t.name}
+                    className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-slate-900/40 p-6 backdrop-blur-xl transition hover:border-white/20 md:flex-row md:items-center md:justify-between"
+                >
+                    <div>
+                        <h3 className="text-base font-bold text-white">{t.name}</h3>
+                        <p className="mt-1 text-xs text-slate-500">
+                            {t.time} · {t.loc}
+                        </p>
+                    </div>
+                    <span className={`self-start rounded-full border px-3 py-1 text-xs font-bold md:self-center ${t.cls}`}>
+                        {t.status}
+                    </span>
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
+/* ═══════════════════════════════════════════════════════════
+   ADMIN USERS TAB
+═══════════════════════════════════════════════════════════ */
+const AdminUsers = () => {
+    const users = [
+        { name: 'Nguyen Van An',   email: 'an.owner@horse.vn',     role: 'Chủ ngựa',   roleColor: 'bg-amber-500/15 text-amber-400 border-amber-500/30'   },
+        { name: 'Tran Thi Binh',   email: 'binh.owner@horse.vn',   role: 'Chủ ngựa',   roleColor: 'bg-amber-500/15 text-amber-400 border-amber-500/30'   },
+        { name: 'Le Van Cuong',    email: 'cuong.jockey@horse.vn', role: 'Nài ngựa',   roleColor: 'bg-sky-500/15 text-sky-400 border-sky-500/30'         },
+        { name: 'Pham Thi Dung',   email: 'dung.jockey@horse.vn',  role: 'Nài ngựa',   roleColor: 'bg-sky-500/15 text-sky-400 border-sky-500/30'         },
+        { name: 'Hoang Van Em',    email: 'em.referee@horse.vn',   role: 'Trọng tài',  roleColor: 'bg-violet-500/15 text-violet-400 border-violet-500/30' },
+        { name: 'Vu Thi Giang',    email: 'giang.spec@horse.vn',   role: 'Khán giả',   roleColor: 'bg-slate-700 text-slate-300 border-slate-600'         },
+    ];
+    return (
+        <div className="space-y-6">
+            <div>
+                <h2 className="text-2xl font-black text-white">Danh sách người dùng</h2>
+                <p className="text-sm text-slate-400">Xem và thay đổi quyền tài khoản trên hệ thống.</p>
+            </div>
+            <div className="overflow-x-auto rounded-3xl border border-white/10 bg-slate-900/30">
+                <table className="w-full border-collapse text-left text-sm">
+                    <thead>
+                        <tr className="border-b border-white/10 bg-slate-900/60 text-xs font-bold uppercase tracking-wide text-slate-400">
+                            <th className="px-6 py-4">Tên</th>
+                            <th className="px-6 py-4">Email</th>
+                            <th className="px-6 py-4">Vai trò</th>
+                            <th className="px-6 py-4">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.04] text-slate-200">
+                        {users.map((u, i) => (
+                            <tr key={i} className="transition-colors duration-150 hover:bg-white/[0.03]">
+                                <td className="px-6 py-4 font-semibold">{u.name}</td>
+                                <td className="px-6 py-4 text-slate-400">{u.email}</td>
+                                <td className="px-6 py-4">
+                                    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${u.roleColor}`}>
+                                        {u.role}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <button className="text-xs font-bold text-emerald-400 transition hover:text-emerald-300">
+                                        Chi tiết →
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+};
+
+/* ═══════════════════════════════════════════════════════════
+   ADMIN SETTINGS TAB
+═══════════════════════════════════════════════════════════ */
+const AdminSettings = () => (
+    <div className="space-y-6">
+        <div>
+            <h2 className="text-2xl font-black text-white">Cài đặt hệ thống</h2>
+            <p className="text-sm text-slate-400">Cấu hình các thông số và tính năng quản lý cốt lõi.</p>
+        </div>
+        <div className="rounded-3xl border border-white/10 bg-slate-900/40 p-6 space-y-6">
+            <div className="flex flex-col gap-4 border-b border-white/5 pb-6 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h3 className="font-bold text-white">Phí hoa hồng cược (%)</h3>
+                    <p className="text-xs text-slate-500">Tỷ lệ hoa hồng trích từ mỗi lượt đặt cược.</p>
+                </div>
+                <input type="number" defaultValue={10}
+                    className="w-24 rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-center font-bold text-emerald-400 outline-none focus:border-emerald-400" />
+            </div>
+            <div className="flex flex-col gap-4 border-b border-white/5 pb-6 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h3 className="font-bold text-white">Trạng thái đặt cược trực tuyến</h3>
+                    <p className="text-xs text-slate-500">Cho phép hoặc chặn khán giả đặt cược vào cuộc đua.</p>
+                </div>
+                <span className="self-start rounded-full border border-emerald-500/30 bg-emerald-500/15 px-3 py-0.5 text-xs font-bold text-emerald-400">
+                    Đang hoạt động
+                </span>
+            </div>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h3 className="font-bold text-white">Live Stream cuộc đua</h3>
+                    <p className="text-xs text-slate-500">Bật luồng phát trực tiếp cho các cuộc đua.</p>
+                </div>
+                <button className="self-start rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-bold transition hover:bg-slate-700">
+                    Kích hoạt
+                </button>
+            </div>
+        </div>
+    </div>
+);
+
+/* ═══════════════════════════════════════════════════════════
+   ROLE DASHBOARDS (non-admin)
+═══════════════════════════════════════════════════════════ */
+const HorseOwnerDashboard = () => (
+    <div className="space-y-4">
+        <h2 className="text-xl font-bold text-slate-900">Quản lý Ngựa đua</h2>
+        <p className="text-sm text-slate-600">Điều phối ngựa đua, thuê nài ngựa và đăng ký các giải đấu sắp tới.</p>
+        <div className="grid gap-4 pt-2 sm:grid-cols-2">
+            {[
+                { icon: '🐴', title: 'Quản lý Ngựa',   desc: 'Đăng ký ngựa mới và cập nhật thông tin chuồng trại.' },
+                { icon: '🏆', title: 'Đăng ký Giải',    desc: 'Ghi danh ngựa vào Spring Tournament hoặc Golden Cup.' },
+                { icon: '🤠', title: 'Thuê Nài ngựa',   desc: 'Gửi lời mời hợp tác tới các nài ngựa đang hoạt động.' },
+                { icon: '💰', title: 'Theo dõi Doanh thu', desc: 'Xem thưởng giải đấu và xếp hạng bảng điểm.' },
+            ].map((c) => (
+                <div key={c.title} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                    <h3 className="font-semibold text-slate-900">{c.icon} {c.title}</h3>
+                    <p className="mt-1 text-xs text-slate-500">{c.desc}</p>
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
+const JockeyDashboard = () => (
+    <div className="space-y-4">
+        <h2 className="text-xl font-bold text-slate-900">Trung tâm Nài ngựa</h2>
+        <p className="text-sm text-slate-600">Xem lời mời tham gia đua, lịch thi đấu và thành tích cá nhân.</p>
+        <div className="grid gap-4 pt-2 sm:grid-cols-2">
+            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                <h3 className="font-semibold text-slate-900">✉️ Lời mời chờ xử lý</h3>
+                <p className="mt-1 text-xs text-slate-500">Chấp nhận hoặc từ chối đề xuất đua từ chủ ngựa.</p>
+            </div>
+            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                <h3 className="font-semibold text-slate-900">📅 Lịch thi đấu</h3>
+                <p className="mt-1 text-xs text-slate-500">Kiểm tra ngày, giờ và địa điểm các cuộc đua.</p>
+            </div>
+        </div>
+    </div>
+);
+
+const RefereeDashboard = () => (
+    <div className="space-y-4">
+        <h2 className="text-xl font-bold text-slate-900">Cổng Trọng tài</h2>
+        <p className="text-sm text-slate-600">Xác nhận thông tin ngựa/nài, nhập thời gian kết thúc chính thức và ghi nhật ký sự cố.</p>
+        <div className="grid gap-4 pt-2 sm:grid-cols-2">
+            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                <h3 className="font-semibold text-slate-900">📝 Ghi kết quả đua</h3>
+                <p className="mt-1 text-xs text-slate-500">Nhập xếp hạng, thời gian chạy và ghi chú chính thức.</p>
+            </div>
+            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                <h3 className="font-semibold text-slate-900">🚦 Điều khiển trạng thái</h3>
+                <p className="mt-1 text-xs text-slate-500">Đánh dấu cuộc đua đang diễn ra, hoàn thành hoặc hủy bỏ.</p>
+            </div>
+        </div>
+    </div>
+);
+
+const SpectatorDashboard = () => (
+    <div className="space-y-4">
+        <h2 className="text-xl font-bold text-slate-900">Cổng Khán giả</h2>
+        <p className="text-sm text-slate-600">Xem đua trực tiếp, kiểm tra bảng giải đấu và đặt dự đoán cho các cuộc thi sắp tới.</p>
+        <div className="grid gap-4 pt-2 sm:grid-cols-2">
+            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                <h3 className="font-semibold text-slate-900">💸 Dự đoán &amp; Đặt cược</h3>
+                <p className="mt-1 text-xs text-slate-500">Đặt cược vào cặp ngựa &amp; nài ngựa yêu thích của bạn.</p>
+            </div>
+            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                <h3 className="font-semibold text-slate-900">📊 Bảng xếp hạng Live</h3>
+                <p className="mt-1 text-xs text-slate-500">Xem thứ hạng mùa giải hiện tại và bảng điểm.</p>
+            </div>
+        </div>
+    </div>
+);
+
+/* ═══════════════════════════════════════════════════════════
+   MAIN DASHBOARD PAGE
+═══════════════════════════════════════════════════════════ */
 const Dashboard = () => {
     const { user, loading } = useAuth();
+    const [activeTab, setActiveTab] = useState('overview');
 
     if (loading) {
         return (
             <div className="flex min-h-[60vh] items-center justify-center">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-900 border-t-transparent"></div>
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-900 border-t-transparent" />
             </div>
         );
     }
@@ -15,25 +626,31 @@ const Dashboard = () => {
     if (!user) {
         return (
             <div className="mx-auto max-w-4xl px-4 py-10 text-slate-600">
-                Please log in to view the dashboard.
+                Vui lòng đăng nhập để xem dashboard.
             </div>
         );
     }
 
-    const renderRoleDashboard = () => {
-        switch (user.role) {
-            case 'horse_owner':
-                return <HorseOwnerDashboard />;
-            case 'jockey':
-                return <JockeyDashboard />;
-            case 'race_referee':
-                return <RefereeDashboard />;
-            case 'spectator':
-                return <SpectatorDashboard />;
-            case 'admin':
-                return <AdminDashboard />;
-            default:
-                return <div className="text-rose-600 font-medium">Invalid account role detected.</div>;
+    const role = user.role?.value ?? user.role;
+
+    if (role === 'admin') {
+        return (
+            <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab}>
+                {activeTab === 'overview'    && <AdminOverview />}
+                {activeTab === 'tournaments' && <AdminTournaments />}
+                {activeTab === 'users'       && <AdminUsers />}
+                {activeTab === 'settings'    && <AdminSettings />}
+            </AdminLayout>
+        );
+    }
+
+    const renderRole = () => {
+        switch (role) {
+            case 'horse_owner':  return <HorseOwnerDashboard />;
+            case 'jockey':       return <JockeyDashboard />;
+            case 'race_referee': return <RefereeDashboard />;
+            case 'spectator':    return <SpectatorDashboard />;
+            default:             return <div className="text-rose-600 font-medium">Vai trò tài khoản không hợp lệ.</div>;
         }
     };
 
@@ -42,110 +659,16 @@ const Dashboard = () => {
             <div className="rounded-3xl border border-white/70 bg-white/80 p-8 shadow-glow backdrop-blur-xl">
                 <h1 className="mb-2 text-3xl font-black text-slate-900">Dashboard</h1>
                 <p className="mb-6 text-slate-600">
-                    Welcome back, <strong className="text-slate-950">{user.name}</strong>! You are logged in as{' '}
+                    Xin chào, <strong className="text-slate-950">{user.name}</strong>! Bạn đang đăng nhập với vai trò{' '}
                     <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-800 capitalize">
-                        {user.role?.replace('_', ' ')}
+                        {role?.replace('_', ' ')}
                     </span>
                 </p>
                 <hr className="my-6 border-slate-200" />
-                {renderRoleDashboard()}
+                {renderRole()}
             </div>
         </div>
     );
 };
-
-// Sub-dashboards for specific roles
-const HorseOwnerDashboard = () => (
-    <div className="space-y-4">
-        <h2 className="text-xl font-bold text-slate-900">Horse Owner Management</h2>
-        <p className="text-sm text-slate-600">Access and coordinate your racing horses, hire jockeys, and apply for upcoming races.</p>
-        <div className="grid gap-4 sm:grid-cols-2 pt-2">
-            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <h3 className="font-semibold text-slate-900">🐴 Manage Horses</h3>
-                <p className="mt-1 text-xs text-slate-500">Register new horses and update existing stables.</p>
-            </div>
-            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <h3 className="font-semibold text-slate-900">🏆 Race Sign Up</h3>
-                <p className="mt-1 text-xs text-slate-500">Enroll your horses into Spring Tournament or Golden Cup.</p>
-            </div>
-            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <h3 className="font-semibold text-slate-900">🤠 Hire Jockeys</h3>
-                <p className="mt-1 text-xs text-slate-500">Send racing proposals to active jockeys.</p>
-            </div>
-            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <h3 className="font-semibold text-slate-900">💰 Track Earnings</h3>
-                <p className="mt-1 text-xs text-slate-500">View tournament rewards and leaderboard placements.</p>
-            </div>
-        </div>
-    </div>
-);
-
-const JockeyDashboard = () => (
-    <div className="space-y-4">
-        <h2 className="text-xl font-bold text-slate-900">Jockey Racing Center</h2>
-        <p className="text-sm text-slate-600">Review pending ride offers from owners, view schedule, and track racing career highlights.</p>
-        <div className="grid gap-4 sm:grid-cols-2 pt-2">
-            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <h3 className="font-semibold text-slate-900">✉️ Pending Invitations</h3>
-                <p className="mt-1 text-xs text-slate-500">Accept or reject ride offers from horse owners.</p>
-            </div>
-            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <h3 className="font-semibold text-slate-900">📅 Race Schedule</h3>
-                <p className="mt-1 text-xs text-slate-500">Check dates, times, and race locations.</p>
-            </div>
-        </div>
-    </div>
-);
-
-const RefereeDashboard = () => (
-    <div className="space-y-4">
-        <h2 className="text-xl font-bold text-slate-900">Race Referee Hub</h2>
-        <p className="text-sm text-slate-600">Validate horse/jockey details on track, enter official finish times, and submit incident logs.</p>
-        <div className="grid gap-4 sm:grid-cols-2 pt-2">
-            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <h3 className="font-semibold text-slate-900">📝 Record Race Results</h3>
-                <p className="mt-1 text-xs text-slate-500">Input race rankings, final times, and official comments.</p>
-            </div>
-            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <h3 className="font-semibold text-slate-900">🚦 Live Status Controls</h3>
-                <p className="mt-1 text-xs text-slate-500">Mark races as ongoing, finished, or cancelled.</p>
-            </div>
-        </div>
-    </div>
-);
-
-const SpectatorDashboard = () => (
-    <div className="space-y-4">
-        <h2 className="text-xl font-bold text-slate-900">Spectator Portal</h2>
-        <p className="text-sm text-slate-600">Watch live races, check tournament tables, and place predictions on upcoming contests.</p>
-        <div className="grid gap-4 sm:grid-cols-2 pt-2">
-            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <h3 className="font-semibold text-slate-900">💸 Prediction & Betting</h3>
-                <p className="mt-1 text-xs text-slate-500">Place cược (bets) on your favorite horse & jockey duos.</p>
-            </div>
-            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <h3 className="font-semibold text-slate-900">📊 Live Rankings</h3>
-                <p className="mt-1 text-xs text-slate-500">Check current season standings and leaderboard status.</p>
-            </div>
-        </div>
-    </div>
-);
-
-const AdminDashboard = () => (
-    <div className="space-y-4">
-        <h2 className="text-xl font-bold text-slate-900">System Admin Control Room</h2>
-        <p className="text-sm text-slate-600">Oversee users, setup racing tournaments, declare races, and manage global system variables.</p>
-        <div className="grid gap-4 sm:grid-cols-2 pt-2">
-            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <h3 className="font-semibold text-slate-900">👥 User Directory</h3>
-                <p className="mt-1 text-xs text-slate-500">Inspect and coordinate spectator, jockey, and owner accounts.</p>
-            </div>
-            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <h3 className="font-semibold text-slate-900">🏗️ Create Tournaments</h3>
-                <p className="mt-1 text-xs text-slate-500">Configure new tournaments, schedules, and race details.</p>
-            </div>
-        </div>
-    </div>
-);
 
 export default Dashboard;
