@@ -22,4 +22,4 @@ RUN mkdir -p storage/framework/{cache,sessions,views} && chmod -R 777 storage
 
 EXPOSE 8000
 
-CMD sh -c 'php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000'
+CMD php artisan serve --host=0.0.0.0 --port=8000
