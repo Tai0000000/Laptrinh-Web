@@ -7,13 +7,11 @@ use App\Http\Controllers\API\BetController;
 use App\Http\Controllers\API\TournamentController;
 use App\Http\Controllers\API\RaceController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes (Các tuyến đường API)
-|--------------------------------------------------------------------------
-*/
+use App\Http\Controllers\API\HorseController;
+use App\Http\Controllers\API\HorseOwnerController;
+use App\Http\Controllers\API\RefereeController;
+use App\Http\Controllers\API\ResultController;
 
-// Health check
 Route::get('/health', function () {
     return response()->json([
         'status' => 'ok',
@@ -43,8 +41,32 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/bets/{bet}', [BetController::class, 'show']);
     Route::post('/races/{race}/bet', [BetController::class, 'placeBet']);
     Route::delete('/bets/{bet}', [BetController::class, 'destroy']);
+
+    // Referee routes
+    Route::get('/referee/races', [RefereeController::class, 'index']);
+    Route::get('/referee/races/{id}', [RefereeController::class, 'show']);
+    Route::post('/referee/violations', [RefereeController::class, 'logViolation']);
+    Route::post('/referee/races/{race}/results', [ResultController::class, 'store']);
+    Route::get('/referee/races/{race}/results', [ResultController::class, 'show']);
 });
 
 // Public routes
 Route::get('/public/tournaments', [TournamentController::class, 'index']);
 Route::get('/public/races/live', [RaceController::class, 'liveRaces']);
+=======
+
+// Horse routes (public for testing)
+Route::get('/owners/{ownerId}/horses', [HorseController::class, 'getHorsesByOwner']);
+Route::get('/owners/{ownerId}/horses/count', [HorseController::class, 'countHorsesByOwner']);
+Route::get('/horses/{horseId}', [HorseController::class, 'getHorseById']);
+
+Route::post('/horses', [HorseController::class, 'createHorse']);
+Route::put('/horses/{horseId}', [HorseController::class, 'updateHorse']);
+Route::delete('/horses/{horseId}', [HorseController::class, 'deleteHorse']);
+
+// Horse Owner routes (public for testing)
+Route::get('/owners/{ownerId}', [HorseOwnerController::class, 'getHorseOwnerById']);
+Route::post('/owners', [HorseOwnerController::class, 'createHorseOwner']);
+Route::put('/owners/{ownerId}', [HorseOwnerController::class, 'updateHorseOwner']);
+Route::delete('/owners/{ownerId}', [HorseOwnerController::class, 'deleteHorseOwner']);
+
