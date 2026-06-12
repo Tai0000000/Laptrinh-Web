@@ -47,4 +47,10 @@ class HorseService implements IHorseService
         }
         return $dtos;
     }
+
+    public function countHorsesByOwner(int $ownerId): int
+    {
+        return $this->horseRepository->countHorsesByOwnerId($ownerId);
+    }
 }
+

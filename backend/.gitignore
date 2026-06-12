@@ -12,3 +12,5 @@ bootstrap/cache/
 *.swo
 *~
 .phpunit.result.cache
+/public/storage
+

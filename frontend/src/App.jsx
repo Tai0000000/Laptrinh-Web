@@ -5,6 +5,8 @@ import Login from './pages/Login';
 import Tournaments from './pages/Tournaments';
 import TournamentDetail from './pages/TournamentDetail';
 import RaceDetail from './pages/RaceDetail';
+import Predictions from './pages/Predictions';
+import Dashboard from './pages/Dashboard';
 import Navbar from './components/Navbar';
 import { SocketProvider } from './context/SocketContext';
 
@@ -12,8 +14,8 @@ import { SocketProvider } from './context/SocketContext';
 import Blank from './pages/Blank';
 import Dashboard from './pages/HorseOwner/Dashboard';
 import MyHorses from './pages/HorseOwner/MyHorses';
-import AddNewHorse from './pages/HorseOwner/AddNewHorse';
 import MyJockeys from './pages/HorseOwner/MyJockeys';
+
 import RaceRegistrations from './pages/HorseOwner/RaceRegistrations';
 import TournamentsRaces from './pages/HorseOwner/TournamentsRaces';
 import ResultsRewards from './pages/HorseOwner/ResultsRewards';
@@ -39,12 +41,14 @@ function App() {
               <Route path="/tournaments" element={<Tournaments />} />
               <Route path="/tournaments/:id" element={<TournamentDetail />} />
               <Route path="/races/:id" element={<RaceDetail />} />
+
+              <Route path="/predictions" element={<Predictions />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               
               {/* Horse Owner Dashboard Routes */}
               <Route path="/blank" element={<Blank />} /> 
               <Route path="/horse-owner/dashboard" element={<Dashboard />} />
               <Route path="/horse-owner/horses" element={<MyHorses />} />
-              <Route path="/horse-owner/horses/new" element={<AddNewHorse />} />
               <Route path="/horse-owner/jockeys" element={<MyJockeys />} />
               <Route path="/horse-owner/race-registrations" element={<RaceRegistrations />} />
               <Route path="/horse-owner/tournaments-races" element={<TournamentsRaces />} />
@@ -56,6 +60,7 @@ function App() {
               <Route path="/referee/races" element={<RefereeRaces />} />
               <Route path="/referee/violations" element={<RefereeViolations />} />
               <Route path="/referee/schedule" element={<RefereeSchedule />} />
+
             </Routes>
           </main>
         </div>

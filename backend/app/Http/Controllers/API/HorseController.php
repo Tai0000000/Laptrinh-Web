@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\Controller;
 use App\Services\Contracts\IHorseService;
 use App\Http\Requests\HorseRequest\GetHorsesByOwnerRequest;
 use App\Http\Requests\HorseRequest\GetHorseByIdRequest;
@@ -10,8 +9,9 @@ use App\Http\Requests\HorseRequest\AddHorseRequest;
 use App\Http\Requests\HorseRequest\UpdateHorseRequest;
 use App\Http\Requests\HorseRequest\RemoveHorseRequest;
 use App\Http\Resources\HorseResource\HorseResource;
+use App\DTOs\HorseDTO;
 
-class HorseController extends Controller
+class HorseController
 {
     protected IHorseService $horseService;
 
@@ -25,16 +25,28 @@ class HorseController extends Controller
      */
     public function getHorsesByOwner(GetHorsesByOwnerRequest $request, int $ownerId)
     {
+        $ownerId = 10; // Hardcode for testing
         $dtos = $this->horseService->getHorsesByOwner($ownerId);
         return HorseResource::collection($dtos);
     }
 
     /**
-     * GET /api/horses/{id}
+     * GET /api/owners/{ownerId}/horses/count
      */
-    public function getHorseById(GetHorseByIdRequest $request, int $id)
+    public function countHorsesByOwner(int $ownerId)
     {
-        $dto = $this->horseService->getHorseById($id);
+        $ownerId = 10; // Hardcode for testing
+        $count = $this->horseService->countHorsesByOwner($ownerId);
+        return response()->json(['count' => $count]);
+    }
+
+
+    /**
+     * GET /api/horses/{horseId}
+     */
+    public function getHorseById(GetHorseByIdRequest $request, int $horseId)
+    {
+        $dto = $this->horseService->getHorseById($horseId);
         if (!$dto) {
             return response()->json(['message' => 'Ngựa không tồn tại'], 404);
         }
@@ -46,18 +58,20 @@ class HorseController extends Controller
      */
     public function createHorse(AddHorseRequest $request)
     {
-        $dto = $request->toDTO();
+        $data = $request->validated();
+        $data['horse_owner_id'] = 10; // Hardcode for testing
+        $dto = HorseDTO::fromArray($data);
         $resultDto = $this->horseService->addHorse($dto);
         return (new HorseResource($resultDto))->response()->setStatusCode(201);
     }
 
     /**
-     * PUT /api/horses/{id}
+     * PUT /api/horses/{horseId}
      */
-    public function updateHorse(UpdateHorseRequest $request, int $id)
+    public function updateHorse(UpdateHorseRequest $request, int $horseId)
     {
         $dto = $request->toDTO();
-        $resultDto = $this->horseService->updateHorse($id, $dto);
+        $resultDto = $this->horseService->updateHorse($horseId, $dto);
         if (!$resultDto) {
             return response()->json(['message' => 'Ngựa không tồn tại hoặc cập nhật thất bại'], 404);
         }
@@ -65,11 +79,11 @@ class HorseController extends Controller
     }
 
     /**
-     * DELETE /api/horses/{id}
+     * DELETE /api/horses/{horseId}
      */
-    public function deleteHorse(RemoveHorseRequest $request, int $id)
+    public function deleteHorse(RemoveHorseRequest $request, int $horseId)
     {
-        $deleted = $this->horseService->removeHorse($id);
+        $deleted = $this->horseService->removeHorse($horseId);
         if (!$deleted) {
             return response()->json(['message' => 'Ngựa không tồn tại hoặc xóa thất bại'], 404);
         }

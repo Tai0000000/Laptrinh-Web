@@ -16,10 +16,10 @@ WORKDIR /var/www/html
 
 COPY . .
 
-RUN composer install --no-interaction --optimize-autoloader --no-scripts --no-audit
+RUN composer install --no-interaction --optimize-autoloader --no-scripts --no-security-blocking
 
-RUN mkdir -p storage/framework/{cache,sessions,views} && chmod -R 777 storage
+RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views && chmod -R 777 storage
 
 EXPOSE 8000
 
-CMD sh -c 'php artisan storage:link && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000'
+

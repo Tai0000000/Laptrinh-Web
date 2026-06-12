@@ -1,9 +1,34 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import HorseOwnerLayout from '../../components/HorseOwnerLayout';
+import axios from 'axios';
+import HorseOwnerLayout from '../../components/HorseOwner/HorseOwnerLayout';
+import AddNewHorseModal from '../../components/HorseOwner/AddNewHorseModal';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [totalHorses, setTotalHorses] = useState(0);
+
+  useEffect(() => {
+    axios.get('http://localhost:8000/api/owners/10/horses/count')
+      .then((response) => {
+        setTotalHorses(response.data.count);
+      })
+      .catch((err) => {
+        console.error('Error fetching horse count:', err);
+      });
+  }, []);
+
+  const handleSuccess = () => {
+    navigate('/horse-owner/horses', {
+      state: {
+        success: true,
+        title: 'Horse Added',
+        msg: 'New horse has been added successfully!'
+      }
+    });
+  };
+
   return (
     <HorseOwnerLayout>
       <div className="max-w-7xl">
@@ -14,7 +39,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
             <p className="text-gray-500 text-sm">Total Horses</p>
-            <p className="text-3xl font-bold text-gray-800">12</p>
+            <p className="text-3xl font-bold text-gray-800">{totalHorses}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
             <p className="text-gray-500 text-sm">Active Jockeys</p>
@@ -55,7 +80,7 @@ const Dashboard = () => {
             <h2 className="text-xl font-bold text-gray-800 mb-4">Quick Actions</h2>
             <div className="space-y-3">
               <button 
-                onClick={() => navigate('/horse-owner/horses/new')}
+                onClick={() => setIsModalOpen(true)}
                 className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition-colors">
                 Add New Horse
               </button>
@@ -69,6 +94,13 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Add New Horse Modal */}
+      <AddNewHorseModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSuccess={handleSuccess} 
+      />
     </HorseOwnerLayout>
   );
 };

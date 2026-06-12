@@ -1,28 +1,8 @@
 services:
-  db:
-    image: mysql:8.0
-    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-    environment:
-      MYSQL_DATABASE: horse_racing
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_USER: horse_user
-      MYSQL_PASSWORD: horse_pass
-    ports:
-      - "3306:3306"
-    volumes:
-      - db_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 20s
-      retries: 10
-
   backend:
     build:
       context: ./backend
     container_name: horse_racing_api
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
       APP_NAME: "Horse Racing API"
       APP_ENV: local
@@ -30,13 +10,14 @@ services:
       APP_KEY: base64:${APP_KEY:-3f6vZnbqSV6fJWj9R8V2x3k7G8L9m0Q1p2w3e4r5t6y7u8i9o0a1s2d3f4g5h6j7}
       APP_URL: http://localhost:8000
       DB_CONNECTION: mysql
-      DB_HOST: db
+      DB_HOST: mysql_db
       DB_PORT: 3306
-      DB_DATABASE: horse_racing
-      DB_USERNAME: horse_user
-      DB_PASSWORD: horse_pass
+      DB_DATABASE: horse_racing_db
+      DB_USERNAME: root
+      DB_PASSWORD: root123
       SANCTUM_STATEFUL_DOMAINS: localhost,127.0.0.1
       SESSION_DOMAIN: localhost
+      CACHE_DRIVER: array
     ports:
       - "8000:8000"
     volumes:
@@ -45,6 +26,9 @@ services:
       - /var/www/html/bootstrap/cache
       - /var/www/html/storage
     working_dir: /var/www/html
+    networks:
+      - mysql-demo_default
 
-volumes:
-  db_data:
+networks:
+  mysql-demo_default:
+    external: true

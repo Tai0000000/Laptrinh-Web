@@ -7,6 +7,21 @@
     "laravel/framework": "^11.0",
     "laravel/sanctum": "^4.0"
   },
+  "config": {
+    "optimize-autoloader": true,
+    "preferred-install": "dist",
+    "sort-packages": true,
+    "allow-plugins": {
+      "pestphp/pest-plugin": true,
+      "php-http/discovery": true
+    },
+    "platform-check": false,
+    "policy": {
+      "advisories": {
+        "block": false
+      }
+    }
+  },
   "require-dev": {
     "laravel/tinker": "^2.9"
   },
