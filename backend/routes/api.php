@@ -2,16 +2,16 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\BetController;
 use App\Http\Controllers\API\TournamentController;
+use App\Http\Controllers\API\RaceController;
+
 use App\Http\Controllers\API\HorseController;
 use App\Http\Controllers\API\HorseOwnerController;
 use App\Http\Controllers\API\RefereeController;
 use App\Http\Controllers\API\ResultController;
 
-
-// Health check endpoint
 Route::get('/health', function () {
     return response()->json([
         'status' => 'ok',
@@ -20,19 +20,23 @@ Route::get('/health', function () {
     ]);
 });
 
-// Authentication routes (stub)
-Route::post('/login', function() { return response()->json(['message' => 'Login stub']); });
-Route::post('/register', function() { return response()->json(['message' => 'Register stub']); });
+// Authentication
+Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/register', [AuthController::class, 'register'])->name('register');
 
-// Protected routes
+// Protected routes (requires auth)
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', function(Request $request) { return $request->user(); });
-    Route::post('/logout', function() { return response()->json(['message' => 'Logout stub']); });
-    
+    // User
+    Route::get('/user', [AuthController::class, 'user']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+
     // Tournament routes
     Route::apiResource('tournaments', TournamentController::class);
 
-    // Bet routes
+    // Race routes
+    Route::apiResource('races', RaceController::class);
+
+    // Betting routes
     Route::get('/bets', [BetController::class, 'index']);
     Route::get('/bets/{bet}', [BetController::class, 'show']);
     Route::post('/races/{race}/bet', [BetController::class, 'placeBet']);
@@ -42,12 +46,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/referee/races', [RefereeController::class, 'index']);
     Route::get('/referee/races/{id}', [RefereeController::class, 'show']);
     Route::post('/referee/violations', [RefereeController::class, 'logViolation']);
+    Route::get('/referee/violations', [RefereeController::class, 'getViolations']);
     Route::post('/referee/races/{race}/results', [ResultController::class, 'store']);
     Route::get('/referee/races/{race}/results', [ResultController::class, 'show']);
 });
 
 // Public routes
 Route::get('/public/tournaments', [TournamentController::class, 'index']);
+Route::get('/public/races/live', [RaceController::class, 'liveRaces']);
 
 // Horse routes (public for testing)
 Route::get('/owners/{ownerId}/horses', [HorseController::class, 'getHorsesByOwner']);
@@ -63,3 +69,4 @@ Route::get('/owners/{ownerId}', [HorseOwnerController::class, 'getHorseOwnerById
 Route::post('/owners', [HorseOwnerController::class, 'createHorseOwner']);
 Route::put('/owners/{ownerId}', [HorseOwnerController::class, 'updateHorseOwner']);
 Route::delete('/owners/{ownerId}', [HorseOwnerController::class, 'deleteHorseOwner']);
+

@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
-            $table->enum('role', ['horse_owner', 'jockey', 'race_referee', 'spectator', 'admin'])->default('spectator');
+            $table->enum('role', ['horse_owner', 'jockey', 'referee', 'spectator', 'admin'])->default('spectator');
             $table->rememberToken();
             $table->timestamps();
         });
@@ -78,6 +78,7 @@ return new class extends Migration
         Schema::create('races', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tournament_id')->constrained()->onDelete('cascade');
+            $table->string('name');
             $table->dateTime('race_time');
             $table->integer('distance'); // tính bằng mét
             $table->string('status')->default('scheduled'); // đã lên lịch, đang diễn ra, đã hoàn thành, đã hủy
@@ -90,6 +91,7 @@ return new class extends Migration
             $table->foreignId('race_id')->constrained()->onDelete('cascade');
             $table->foreignId('horse_id')->constrained()->onDelete('cascade');
             $table->foreignId('jockey_id')->constrained('users')->onDelete('cascade');
+            $table->integer('lane')->nullable();
             $table->enum('status', ['pending', 'confirmed', 'rejected', 'withdrawn'])->default('pending');
             $table->timestamps();
         });
