@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
  * @property int $id
  * @property int $race_id
  * @property int $horse_id
  * @property int $jockey_id
-
+ * @property int $lane
  * @property string $status
  * @property Carbon $created_at
  * @property Carbon $updated_at
@@ -27,20 +28,15 @@ class Registration extends Model
         'race_id',
         'horse_id',
         'jockey_id',
-
         'lane',
         'status', // pending, confirmed, rejected, withdrawn
-    ];
-
-    protected $casts = [
-        'lane' => 'integer',
-        'status',
     ];
 
     protected $casts = [
         'race_id' => 'integer',
         'horse_id' => 'integer',
         'jockey_id' => 'integer',
+        'lane' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

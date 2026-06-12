@@ -46,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/referee/races', [RefereeController::class, 'index']);
     Route::get('/referee/races/{id}', [RefereeController::class, 'show']);
     Route::post('/referee/violations', [RefereeController::class, 'logViolation']);
+    Route::get('/referee/violations', [RefereeController::class, 'getViolations']);
     Route::post('/referee/races/{race}/results', [ResultController::class, 'store']);
     Route::get('/referee/races/{race}/results', [ResultController::class, 'show']);
 });
@@ -53,7 +54,6 @@ Route::middleware('auth:sanctum')->group(function () {
 // Public routes
 Route::get('/public/tournaments', [TournamentController::class, 'index']);
 Route::get('/public/races/live', [RaceController::class, 'liveRaces']);
-=======
 
 // Horse routes (public for testing)
 Route::get('/owners/{ownerId}/horses', [HorseController::class, 'getHorsesByOwner']);

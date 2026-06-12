@@ -25,21 +25,12 @@ class Race extends Model
     ];
 
     protected $casts = [
-        'race_time' => 'datetime',
-        'race_time',
-        'distance',
-        'status',
-    ];
-
-    protected $casts = [
         'tournament_id' => 'integer',
         'race_time' => 'datetime',
         'distance' => 'integer',
-
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
-
 
     public function tournament(): BelongsTo
     {
@@ -51,9 +42,13 @@ class Race extends Model
         return $this->hasMany(Registration::class);
     }
 
-    
     public function results(): HasMany
     {
         return $this->hasMany(RaceResult::class);
+    }
+
+    public function violations(): HasMany
+    {
+        return $this->hasMany(Violation::class);
     }
 }
