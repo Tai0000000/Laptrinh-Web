@@ -10,11 +10,11 @@ services:
       APP_KEY: base64:${APP_KEY:-3f6vZnbqSV6fJWj9R8V2x3k7G8L9m0Q1p2w3e4r5t6y7u8i9o0a1s2d3f4g5h6j7}
       APP_URL: http://localhost:8000
       DB_CONNECTION: mysql
-      DB_HOST: mysql_db
+      DB_HOST: db
       DB_PORT: 3306
-      DB_DATABASE: horse_racing_db
-      DB_USERNAME: root
-      DB_PASSWORD: root123
+      DB_DATABASE: horse_racing
+      DB_USERNAME: horse_user
+      DB_PASSWORD: horse_pass
       SANCTUM_STATEFUL_DOMAINS: localhost,127.0.0.1
       SESSION_DOMAIN: localhost
       CACHE_DRIVER: array
@@ -27,8 +27,8 @@ services:
       - /var/www/html/storage
     working_dir: /var/www/html
     networks:
-      - mysql-demo_default
+      - laptrinh-web_default
 
 networks:
-  mysql-demo_default:
+  laptrinh-web_default:
     external: true

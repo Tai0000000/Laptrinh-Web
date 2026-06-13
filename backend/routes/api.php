@@ -53,7 +53,6 @@ Route::middleware('auth:sanctum')->group(function () {
 // Public routes
 Route::get('/public/tournaments', [TournamentController::class, 'index']);
 Route::get('/public/races/live', [RaceController::class, 'liveRaces']);
-=======
 
 // Horse routes (public for testing)
 Route::get('/owners/{ownerId}/horses', [HorseController::class, 'getHorsesByOwner']);

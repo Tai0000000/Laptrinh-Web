@@ -1,17 +1,47 @@
-import { useState, useEffect } from 'react'
-import { useApi } from '../../context/AuthContext.jsx'
-import { Icon, Badge, fmtDate } from '../../components/UI.jsx'
+import { useState, useEffect } from 'react';
+import { Icon, Badge, fmtDate } from '../../components/UI';
 
 export default function JockeyInvitations() {
-  const api = useApi()
   const [pending, setPending]       = useState([])
   const [history, setHistory]       = useState([])
   const [responding, setResponding] = useState(null)
   const [error, setError]           = useState(null)
 
   const loadInvitations = () => {
-    api.get('/jockey/invitations/pending').then(d => { if (d?.success) setPending(d.data) })
-    api.get('/jockey/invitations/history').then(d => { if (d?.success) setHistory(d.data) })
+    // Mock data
+    setPending([
+      {
+        id: 1,
+        horse_name: 'Ngựa A',
+        breed: 'Thoroughbred',
+        age: 5,
+        weight: 450,
+        wins: 10,
+        owner_name: 'Nguyễn Văn A',
+        race_name: 'Cuộc đua số 1',
+        tournament: 'Giải đua ngựa mùa xuân',
+        race_date: new Date().toISOString(),
+        distance: 1000,
+      },
+    ])
+    setHistory([
+      {
+        id: 2,
+        horse_name: 'Ngựa B',
+        race_name: 'Cuộc đua số 2',
+        invited_at: new Date(Date.now() - 259200000).toISOString(),
+        status: 'accepted',
+        result: 'Thắng',
+      },
+      {
+        id: 3,
+        horse_name: 'Ngựa C',
+        race_name: 'Cuộc đua số 3',
+        invited_at: new Date(Date.now() - 518400000).toISOString(),
+        status: 'rejected',
+        result: null,
+      },
+    ])
   }
 
   useEffect(() => { loadInvitations() }, [])
@@ -19,13 +49,11 @@ export default function JockeyInvitations() {
   const respond = async (id, status) => {
     setResponding(id)
     setError(null)
-    const res = await api.put(`/jockey/invitations/${id}/respond`, { status })
-    setResponding(null)
-    if (!res?.success) {
-      setError(res?.message || 'Không thể phản hồi lời mời. Vui lòng thử lại.')
-      return
-    }
-    loadInvitations()
+    // Mock respond
+    setTimeout(() => {
+      setResponding(null)
+      loadInvitations()
+    }, 500)
   }
 
   return (
