@@ -49,3 +49,6 @@ services:
 networks:
   mysql-demo_default:
     external: true
+
+volumes:
+  db_data:
