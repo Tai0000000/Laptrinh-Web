@@ -405,42 +405,400 @@ const AdminOverview = () => {
 /* ═══════════════════════════════════════════════════════════
    ADMIN TOURNAMENTS TAB
 ═══════════════════════════════════════════════════════════ */
-const AdminTournaments = () => (
-    <div className="space-y-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <h2 className="text-2xl font-black text-white">Quản lý Giải đấu</h2>
-                <p className="text-sm text-slate-400">Thêm, sửa và thiết lập lịch thi đấu cho các giải đua ngựa.</p>
-            </div>
-            <button className="self-start rounded-2xl bg-emerald-500 px-6 py-3 text-sm font-bold text-slate-950 transition hover:bg-emerald-400 hover:shadow-lg hover:shadow-emerald-500/30">
-                + Thêm giải đấu
-            </button>
-        </div>
+const getTournamentStatus = (startDate, endDate) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-        <div className="space-y-4">
-            {[
-                { name: 'Spring Tournament 2026', time: '01/03/2026 – 15/03/2026', loc: 'Phú Thọ, TP.HCM',     status: 'Hoàn thành', cls: 'bg-slate-800 text-slate-400 border-slate-700'          },
-                { name: 'Golden Cup 2026',        time: '10/06/2026 – 20/06/2026', loc: 'Đại Nam, Bình Dương', status: 'Sắp diễn ra', cls: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
-                { name: 'Autumn Race 2026',       time: '05/09/2026 – 20/09/2026', loc: 'Đà Lạt, Lâm Đồng',   status: 'Lên kế hoạch', cls: 'bg-sky-500/20 text-sky-400 border-sky-500/30'            },
-            ].map((t) => (
-                <div
-                    key={t.name}
-                    className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-slate-900/40 p-6 backdrop-blur-xl transition hover:border-white/20 md:flex-row md:items-center md:justify-between"
-                >
-                    <div>
-                        <h3 className="text-base font-bold text-white">{t.name}</h3>
-                        <p className="mt-1 text-xs text-slate-500">
-                            {t.time} · {t.loc}
-                        </p>
-                    </div>
-                    <span className={`self-start rounded-full border px-3 py-1 text-xs font-bold md:self-center ${t.cls}`}>
-                        {t.status}
-                    </span>
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(endDate);
+    end.setHours(0, 0, 0, 0);
+
+    if (today < start) {
+        return {
+            key: 'scheduled',
+            label: 'Sắp diễn ra',
+            cls: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+        };
+    } else if (today > end) {
+        return {
+            key: 'completed',
+            label: 'Hoàn thành',
+            cls: 'bg-slate-800 text-slate-400 border-slate-700'
+        };
+    } else {
+        return {
+            key: 'ongoing',
+            label: 'Đang diễn ra',
+            cls: 'bg-sky-500/20 text-sky-400 border-sky-500/30'
+        };
+    }
+};
+
+const AdminTournaments = () => {
+    const [tournaments, setTournaments] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [filterStatus, setFilterStatus] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Modal & Form State
+    const [showModal, setShowModal] = useState(false);
+    const [currentTournament, setCurrentTournament] = useState(null); // null = create, object = edit
+    const [formData, setFormData] = useState({
+        name: '',
+        start_date: '',
+        end_date: '',
+        location: ''
+    });
+    const [formError, setFormError] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+
+    const fetchTournaments = useCallback(async () => {
+        setLoading(true);
+        setError('');
+        try {
+            const res = await api.get('/tournaments');
+            setTournaments(Array.isArray(res.data) ? res.data : []);
+        } catch (err) {
+            console.error('Failed to fetch tournaments', err);
+            setError(err.response?.data?.message || 'Không thể tải danh sách giải đấu. Vui lòng thử lại.');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchTournaments();
+    }, [fetchTournaments]);
+
+    const openCreateModal = () => {
+        setCurrentTournament(null);
+        setFormData({
+            name: '',
+            start_date: '',
+            end_date: '',
+            location: ''
+        });
+        setFormError('');
+        setShowModal(true);
+    };
+
+    const openEditModal = (t) => {
+        setCurrentTournament(t);
+        // Format dates to YYYY-MM-DD for HTML5 date input
+        const formatDateForInput = (dStr) => {
+            if (!dStr) return '';
+            const date = new Date(dStr);
+            if (isNaN(date.getTime())) return '';
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+        setFormData({
+            name: t.name || '',
+            start_date: formatDateForInput(t.start_date),
+            end_date: formatDateForInput(t.end_date),
+            location: t.location || ''
+        });
+        setFormError('');
+        setShowModal(true);
+    };
+
+    const handleDelete = async (id, name) => {
+        if (!window.confirm(`Bạn có chắc chắn muốn xóa giải đấu "${name}"? Tất cả thông tin cuộc đua liên quan sẽ bị xóa. Thao tác này không thể khôi phục.`)) {
+            return;
+        }
+        try {
+            await api.delete(`/tournaments/${id}`);
+            fetchTournaments();
+        } catch (err) {
+            console.error('Failed to delete tournament', err);
+            alert(err.response?.data?.message || 'Không thể xóa giải đấu.');
+        }
+    };
+
+    const handleSave = async (e) => {
+        e.preventDefault();
+        setFormError('');
+        setSubmitting(true);
+
+        if (!formData.name.trim() || !formData.start_date || !formData.end_date || !formData.location.trim()) {
+            setFormError('Vui lòng điền đầy đủ các thông tin bắt buộc.');
+            setSubmitting(false);
+            return;
+        }
+
+        if (new Date(formData.end_date) < new Date(formData.start_date)) {
+            setFormError('Ngày kết thúc không được nhỏ hơn ngày bắt đầu.');
+            setSubmitting(false);
+            return;
+        }
+
+        try {
+            if (currentTournament) {
+                await api.put(`/tournaments/${currentTournament.id}`, formData);
+            } else {
+                await api.post('/tournaments', formData);
+            }
+            setShowModal(false);
+            fetchTournaments();
+        } catch (err) {
+            console.error('Failed to save tournament', err);
+            setFormError(err.response?.data?.message || 'Lỗi khi lưu thông tin giải đấu.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const filteredTournaments = tournaments.filter(t => {
+        const statusObj = getTournamentStatus(t.start_date, t.end_date);
+        if (filterStatus !== 'all' && statusObj.key !== filterStatus) {
+            return false;
+        }
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            return (t.name?.toLowerCase().includes(query) || t.location?.toLowerCase().includes(query));
+        }
+        return true;
+    });
+
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '—';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('vi-VN');
+    };
+
+    return (
+        <div className="space-y-6">
+            {/* Header section */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h2 className="text-2xl font-black text-white">Quản lý Giải đấu</h2>
+                    <p className="text-sm text-slate-400">Thêm, sửa, xóa và theo dõi tiến trình các giải đua ngựa.</p>
                 </div>
-            ))}
+                <button
+                    onClick={openCreateModal}
+                    className="self-start rounded-2xl bg-emerald-500 px-6 py-3.5 text-sm font-bold text-slate-950 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-400 hover:shadow-lg hover:shadow-emerald-500/30"
+                >
+                    + Thêm giải đấu
+                </button>
+            </div>
+
+            {/* Controls Row: Search & Filter Tabs */}
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between rounded-3xl border border-white/10 bg-slate-950/40 p-4 backdrop-blur-xl">
+                {/* Search bar */}
+                <div className="relative w-full md:w-80">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+                    <input
+                        type="text"
+                        placeholder="Tìm theo tên hoặc địa điểm..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-950/50 border border-white/10 rounded-2xl text-sm text-slate-200 outline-none transition focus:border-emerald-400"
+                    />
+                </div>
+
+                {/* Filter Tabs */}
+                <div className="flex items-center gap-1.5 overflow-x-auto">
+                    {[
+                        { id: 'all', label: 'Tất cả' },
+                        { id: 'scheduled', label: 'Sắp diễn ra' },
+                        { id: 'ongoing', label: 'Đang diễn ra' },
+                        { id: 'completed', label: 'Hoàn thành' },
+                    ].map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setFilterStatus(tab.id)}
+                            className={`rounded-xl px-4 py-2 text-xs font-semibold transition-all ${
+                                filterStatus === tab.id
+                                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/10'
+                                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                            }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* List/Table content */}
+            {loading ? (
+                <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                        <div key={i} className="h-28 w-full animate-pulse rounded-3xl bg-white/5 border border-white/5" />
+                    ))}
+                </div>
+            ) : error ? (
+                <div className="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-6 text-center text-rose-400">
+                    <p className="font-semibold">{error}</p>
+                    <button
+                        onClick={fetchTournaments}
+                        className="mt-3 rounded-2xl border border-rose-500/20 bg-rose-500/20 px-4 py-2 text-xs font-bold transition hover:bg-rose-500/30"
+                    >
+                        🔄 Thử lại
+                    </button>
+                </div>
+            ) : filteredTournaments.length === 0 ? (
+                <div className="rounded-3xl border border-white/10 bg-slate-950/20 p-12 text-center text-slate-500">
+                    <span className="mb-3 block text-4xl">🏆</span>
+                    <p className="text-sm font-medium">Không tìm thấy giải đấu nào.</p>
+                </div>
+            ) : (
+                <div className="overflow-x-auto rounded-3xl border border-white/10 bg-slate-950/20">
+                    <table className="w-full border-collapse text-left text-sm">
+                        <thead>
+                            <tr className="border-b border-white/10 bg-slate-950/50 text-xs font-bold uppercase tracking-wide text-slate-400">
+                                <th className="px-6 py-4">Tên giải đấu</th>
+                                <th className="px-6 py-4">Thời gian</th>
+                                <th className="px-6 py-4">Địa điểm</th>
+                                <th className="px-6 py-4">Trạng thái</th>
+                                <th className="px-6 py-4 text-right">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/[0.04] text-slate-200">
+                            {filteredTournaments.map((t) => {
+                                const statusObj = getTournamentStatus(t.start_date, t.end_date);
+                                return (
+                                    <tr key={t.id} className="transition-colors duration-150 hover:bg-white/[0.02]">
+                                        <td className="px-6 py-5 font-bold text-white">{t.name}</td>
+                                        <td className="px-6 py-5 text-slate-300">
+                                            {formatDate(t.start_date)} – {formatDate(t.end_date)}
+                                        </td>
+                                        <td className="px-6 py-5 text-slate-400">{t.location}</td>
+                                        <td className="px-6 py-5">
+                                            <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold ${statusObj.cls}`}>
+                                                {statusObj.label}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-5 text-right space-x-2">
+                                            <button
+                                                onClick={() => openEditModal(t)}
+                                                className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-300 transition hover:bg-white/10 hover:text-white"
+                                            >
+                                                ✏️ Sửa
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(t.id, t.name)}
+                                                className="rounded-xl border border-rose-500/25 bg-rose-500/10 px-3 py-1.5 text-xs font-bold text-rose-400 transition hover:bg-rose-500/20"
+                                            >
+                                                🗑️ Xóa
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {/* CREATE / EDIT MODAL OVERLAY */}
+            {showModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-fade-in">
+                    <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-white/10 bg-slate-900 p-6 shadow-2xl md:p-8 animate-scale-up">
+                        {/* Modal Header */}
+                        <div className="mb-6 flex items-center justify-between">
+                            <h3 className="text-xl font-bold text-white">
+                                {currentTournament ? '✏️ Sửa giải đấu' : '🏗️ Tạo giải đấu mới'}
+                            </h3>
+                            <button
+                                onClick={() => setShowModal(false)}
+                                className="h-8 w-8 rounded-full bg-white/5 text-slate-400 transition hover:bg-white/10 hover:text-white"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* Modal Form */}
+                        <form onSubmit={handleSave} className="space-y-4">
+                            {formError && (
+                                <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-xs font-medium text-rose-400">
+                                    ⚠️ {formError}
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400">
+                                    Tên giải đấu <span className="text-rose-400">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="Ví dụ: Golden Cup 2026"
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-200 outline-none transition focus:border-emerald-400"
+                                />
+                            </div>
+
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400">
+                                        Ngày bắt đầu <span className="text-rose-400">*</span>
+                                    </label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={formData.start_date}
+                                        onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                                        className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-200 outline-none transition focus:border-emerald-400"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400">
+                                        Ngày kết thúc <span className="text-rose-400">*</span>
+                                    </label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={formData.end_date}
+                                        onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                                        className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-200 outline-none transition focus:border-emerald-400"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400">
+                                    Địa điểm tổ chức <span className="text-rose-400">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="Ví dụ: Đại Nam, Bình Dương"
+                                    value={formData.location}
+                                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-200 outline-none transition focus:border-emerald-400"
+                                />
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="pt-4 flex items-center justify-end gap-3 border-t border-white/5">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowModal(false)}
+                                    className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/10 hover:text-white"
+                                >
+                                    Hủy bỏ
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={submitting}
+                                    className="rounded-2xl bg-emerald-500 px-6 py-3 text-sm font-bold text-slate-950 transition hover:bg-emerald-400 disabled:opacity-50 disabled:pointer-events-none"
+                                >
+                                    {submitting ? 'Đang lưu...' : 'Lưu lại'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
-    </div>
-);
+    );
+};
 
 /* ═══════════════════════════════════════════════════════════
    ADMIN USERS TAB
