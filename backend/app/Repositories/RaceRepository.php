@@ -9,17 +9,17 @@ class RaceRepository implements IRaceRepository
 {
     public function getAll(): mixed
     {
-        return Race::with('tournament')->get();
+        return Race::with('tournament')->withCount('registrations')->get();
     }
 
     public function findById(int $id): mixed
     {
-        return Race::with(['tournament', 'registrations.horse', 'registrations.jockey'])->find($id);
+        return Race::with(['tournament', 'registrations.horse', 'registrations.jockey'])->withCount('registrations')->find($id);
     }
 
     public function findByTournament(int $tournamentId): mixed
     {
-        return Race::where('tournament_id', $tournamentId)->with('tournament')->get();
+        return Race::where('tournament_id', $tournamentId)->with('tournament')->withCount('registrations')->get();
     }
 
     public function create(array $data): mixed

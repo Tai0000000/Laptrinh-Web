@@ -78,8 +78,10 @@ return new class extends Migration
         Schema::create('races', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tournament_id')->constrained()->onDelete('cascade');
+            $table->string('round')->default('Vòng 1');
             $table->dateTime('race_time');
             $table->integer('distance'); // in meters
+            $table->integer('max_horses')->default(8);
             $table->string('status')->default('scheduled'); // scheduled, ongoing, finished, cancelled
             $table->timestamps();
         });

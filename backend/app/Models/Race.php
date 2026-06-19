@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Race extends Model
 {
-    protected $fillable = ['tournament_id', 'race_time', 'distance', 'status'];
+    protected $fillable = ['tournament_id', 'round', 'race_time', 'distance', 'max_horses', 'status'];
 
     protected $casts = [
         'race_time' => 'datetime',
         'distance'  => 'integer',
+        'max_horses' => 'integer',
     ];
 
     public function tournament(): BelongsTo
