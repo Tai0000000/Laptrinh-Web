@@ -455,6 +455,185 @@ const AdminTournaments = () => {
     const [formError, setFormError] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
+    // Race Management States
+    const [selectedTournamentForRaces, setSelectedTournamentForRaces] = useState(null);
+    const [races, setRaces] = useState([]);
+    const [loadingRaces, setLoadingRaces] = useState(false);
+    const [showRaceModal, setShowRaceModal] = useState(false); // Modal displaying race list
+    const [showRaceFormModal, setShowRaceFormModal] = useState(false); // Modal for add/edit race form
+    const [currentRace, setCurrentRace] = useState(null); // null = create, object = edit
+    const [raceFormData, setRaceFormData] = useState({
+        round: 'Vòng 1',
+        race_time: '',
+        distance: 1000,
+        max_horses: 8,
+        status: 'scheduled'
+    });
+    const [raceFormError, setRaceFormError] = useState('');
+    const [submittingRace, setSubmittingRace] = useState(false);
+
+    // Fetch races of selected tournament
+    const fetchRaces = useCallback(async (tournamentId) => {
+        setLoadingRaces(true);
+        try {
+            const res = await api.get(`/races?tournament_id=${tournamentId}`);
+            setRaces(Array.isArray(res.data) ? res.data : []);
+        } catch (err) {
+            console.error('Failed to fetch races', err);
+            alert('Không thể tải danh sách cuộc đua.');
+        } finally {
+            setLoadingRaces(false);
+        }
+    }, []);
+
+    // Open race list management modal
+    const openRaceManagement = (t) => {
+        setSelectedTournamentForRaces(t);
+        setShowRaceModal(true);
+        fetchRaces(t.id);
+    };
+
+    // Open add race form modal
+    const openCreateRaceModal = () => {
+        setCurrentRace(null);
+        let defaultTime = '';
+        if (selectedTournamentForRaces) {
+            const startDate = new Date(selectedTournamentForRaces.start_date);
+            const year = startDate.getFullYear();
+            const month = String(startDate.getMonth() + 1).padStart(2, '0');
+            const day = String(startDate.getDate()).padStart(2, '0');
+            defaultTime = `${year}-${month}-${day}T08:00`;
+        }
+        setRaceFormData({
+            round: 'Vòng 1',
+            race_time: defaultTime,
+            distance: 1000,
+            max_horses: 8,
+            status: 'scheduled'
+        });
+        setRaceFormError('');
+        setShowRaceFormModal(true);
+    };
+
+    // Open edit race form modal
+    const openEditRaceModal = (race) => {
+        setCurrentRace(race);
+        const formatDatetimeForInput = (dtStr) => {
+            if (!dtStr) return '';
+            const dt = new Date(dtStr);
+            if (isNaN(dt.getTime())) return '';
+            const year = dt.getFullYear();
+            const month = String(dt.getMonth() + 1).padStart(2, '0');
+            const day = String(dt.getDate()).padStart(2, '0');
+            const hours = String(dt.getHours()).padStart(2, '0');
+            const minutes = String(dt.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        };
+        setRaceFormData({
+            round: race.round || 'Vòng 1',
+            race_time: formatDatetimeForInput(race.race_time),
+            distance: race.distance || 1000,
+            max_horses: race.max_horses || 8,
+            status: race.status || 'scheduled'
+        });
+        setRaceFormError('');
+        setShowRaceFormModal(true);
+    };
+
+    // Save race (create or update)
+    const handleSaveRace = async (e) => {
+        e.preventDefault();
+        setRaceFormError('');
+        setSubmittingRace(true);
+
+        if (!raceFormData.round.trim() || !raceFormData.race_time || !raceFormData.distance || !raceFormData.max_horses) {
+            setRaceFormError('Vui lòng điền đầy đủ thông tin.');
+            setSubmittingRace(false);
+            return;
+        }
+
+        const distanceVal = parseInt(raceFormData.distance);
+        if (isNaN(distanceVal) || distanceVal < 100 || distanceVal > 5000) {
+            setRaceFormError('Khoảng cách phải từ 100m đến 5000m.');
+            setSubmittingRace(false);
+            return;
+        }
+
+        const maxHorsesVal = parseInt(raceFormData.max_horses);
+        if (isNaN(maxHorsesVal) || maxHorsesVal < 2 || maxHorsesVal > 30) {
+            setRaceFormError('Số ngựa tối đa phải từ 2 đến 30.');
+            setSubmittingRace(false);
+            return;
+        }
+
+        if (selectedTournamentForRaces) {
+            const raceDate = new Date(raceFormData.race_time);
+            const startLimit = new Date(selectedTournamentForRaces.start_date);
+            startLimit.setHours(0, 0, 0, 0);
+            const endLimit = new Date(selectedTournamentForRaces.end_date);
+            endLimit.setHours(23, 59, 59, 999);
+
+            if (raceDate < startLimit || raceDate > endLimit) {
+                const formatDateStr = (dStr) => {
+                    const d = new Date(dStr);
+                    return d.toLocaleDateString('vi-VN');
+                };
+                setRaceFormError(`Thời gian cuộc đua phải nằm trong khoảng thời gian diễn ra giải đấu (${formatDateStr(selectedTournamentForRaces.start_date)} - ${formatDateStr(selectedTournamentForRaces.end_date)}).`);
+                setSubmittingRace(false);
+                return;
+            }
+        }
+
+        if (currentRace && maxHorsesVal < (currentRace.registrations_count || 0)) {
+            setRaceFormError(`Số ngựa tối đa không thể nhỏ hơn số ngựa hiện đang đăng ký (${currentRace.registrations_count} ngựa).`);
+            setSubmittingRace(false);
+            return;
+        }
+
+        try {
+            const payload = {
+                ...raceFormData,
+                tournament_id: selectedTournamentForRaces.id,
+                distance: distanceVal,
+                max_horses: maxHorsesVal
+            };
+
+            if (currentRace) {
+                await api.put(`/races/${currentRace.id}`, payload);
+            } else {
+                await api.post('/races', payload);
+            }
+            setShowRaceFormModal(false);
+            fetchRaces(selectedTournamentForRaces.id);
+        } catch (err) {
+            console.error('Failed to save race', err);
+            setRaceFormError(err.response?.data?.message || 'Có lỗi xảy ra khi lưu cuộc đua.');
+        } finally {
+            setSubmittingRace(false);
+        }
+    };
+
+    // Delete race
+    const handleDeleteRace = async (id, round) => {
+        const race = races.find(r => r.id === id);
+        if (race && race.status === 'finished') {
+            alert('Không thể xóa cuộc đua đã hoàn thành.');
+            return;
+        }
+
+        if (!window.confirm(`Bạn có chắc chắn muốn xóa cuộc đua thuộc "${round}"? Thao tác này không thể khôi phục.`)) {
+            return;
+        }
+
+        try {
+            await api.delete(`/races/${id}`);
+            fetchRaces(selectedTournamentForRaces.id);
+        } catch (err) {
+            console.error('Failed to delete race', err);
+            alert(err.response?.data?.message || 'Không thể xóa cuộc đua.');
+        }
+    };
+
     const fetchTournaments = useCallback(async () => {
         setLoading(true);
         setError('');
@@ -675,6 +854,12 @@ const AdminTournaments = () => {
                                         </td>
                                         <td className="px-6 py-5 text-right space-x-2">
                                             <button
+                                                onClick={() => openRaceManagement(t)}
+                                                className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-400 transition hover:bg-emerald-500/20"
+                                            >
+                                                🏁 Cuộc đua
+                                            </button>
+                                            <button
                                                 onClick={() => openEditModal(t)}
                                                 className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-300 transition hover:bg-white/10 hover:text-white"
                                             >
@@ -790,6 +975,268 @@ const AdminTournaments = () => {
                                     className="rounded-2xl bg-emerald-500 px-6 py-3 text-sm font-bold text-slate-950 transition hover:bg-emerald-400 disabled:opacity-50 disabled:pointer-events-none"
                                 >
                                     {submitting ? 'Đang lưu...' : 'Lưu lại'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* RACES MANAGEMENT MODAL OVERLAY */}
+            {showRaceModal && selectedTournamentForRaces && (
+                <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-fade-in">
+                    <div className="w-full max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-slate-900 p-6 shadow-2xl md:p-8 animate-scale-up flex flex-col max-h-[85vh]">
+                        {/* Modal Header */}
+                        <div className="mb-6 flex items-center justify-between border-b border-white/5 pb-4">
+                            <div>
+                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                    🏁 Quản lý cuộc đua - {selectedTournamentForRaces.name}
+                                </h3>
+                                <p className="text-xs text-slate-400 mt-1">
+                                    Thời gian giải đấu: {formatDate(selectedTournamentForRaces.start_date)} – {formatDate(selectedTournamentForRaces.end_date)}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowRaceModal(false)}
+                                className="h-8 w-8 rounded-full bg-white/5 text-slate-400 transition hover:bg-white/10 hover:text-white"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* Modal Actions */}
+                        <div className="mb-4 flex items-center justify-between">
+                            <h4 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Danh sách cuộc đua</h4>
+                            <button
+                                onClick={openCreateRaceModal}
+                                className="rounded-xl bg-emerald-500 px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-emerald-400"
+                            >
+                                + Thêm cuộc đua
+                            </button>
+                        </div>
+
+                        {/* Modal Body - Race List */}
+                        <div className="flex-1 overflow-y-auto min-h-[250px] border border-white/5 rounded-2xl bg-slate-950/30">
+                            {loadingRaces ? (
+                                <div className="space-y-3 p-6">
+                                    {[...Array(2)].map((_, i) => (
+                                        <div key={i} className="h-16 w-full animate-pulse rounded-2xl bg-white/5" />
+                                    ))}
+                                </div>
+                            ) : races.length === 0 ? (
+                                <div className="py-16 text-center text-slate-500">
+                                    <span className="block text-4xl mb-2">🏁</span>
+                                    <p className="text-sm">Chưa có cuộc đua nào được tạo trong giải đấu này.</p>
+                                </div>
+                            ) : (
+                                <table className="w-full border-collapse text-left text-xs">
+                                    <thead>
+                                        <tr className="border-b border-white/10 bg-slate-950/50 font-bold uppercase tracking-wider text-slate-400">
+                                            <th className="px-4 py-3">Vòng</th>
+                                            <th className="px-4 py-3">Thời gian đua</th>
+                                            <th className="px-4 py-3">Khoảng cách</th>
+                                            <th className="px-4 py-3">Số ngựa đăng ký</th>
+                                            <th className="px-4 py-3">Trạng thái</th>
+                                            <th className="px-4 py-3 text-right">Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/[0.04] text-slate-200">
+                                        {races.map((race) => {
+                                            const statusLabels = {
+                                                scheduled: { label: 'Sắp diễn ra', cls: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+                                                ongoing: { label: 'Đang diễn ra', cls: 'bg-sky-500/20 text-sky-400 border-sky-500/30' },
+                                                finished: { label: 'Hoàn thành', cls: 'bg-slate-800 text-slate-400 border-slate-700' },
+                                                cancelled: { label: 'Đã hủy', cls: 'bg-rose-500/20 text-rose-400 border-rose-500/30' }
+                                            };
+                                            const statusInfo = statusLabels[race.status] || { label: race.status, cls: 'bg-slate-700 text-slate-300' };
+                                            const isFinished = race.status === 'finished';
+                                            const currentRegCount = race.registrations_count ?? (race.registrations ? race.registrations.length : 0);
+
+                                            return (
+                                                <tr key={race.id} className="transition-colors duration-150 hover:bg-white/[0.02]">
+                                                    <td className="px-4 py-4 font-bold text-white">{race.round}</td>
+                                                    <td className="px-4 py-4 text-slate-300">
+                                                        {new Date(race.race_time).toLocaleString('vi-VN')}
+                                                    </td>
+                                                    <td className="px-4 py-4 text-slate-400">{race.distance}m</td>
+                                                    <td className="px-4 py-4 font-semibold">
+                                                        <span className={currentRegCount >= race.max_horses ? 'text-amber-400' : 'text-slate-300'}>
+                                                            {currentRegCount}
+                                                        </span>
+                                                        <span className="text-slate-500"> / {race.max_horses}</span>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold ${statusInfo.cls}`}>
+                                                            {statusInfo.label}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-4 text-right space-x-2">
+                                                        <button
+                                                            onClick={() => openEditRaceModal(race)}
+                                                            className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 font-bold text-slate-300 transition hover:bg-white/10 hover:text-white"
+                                                        >
+                                                            ✏️ Sửa
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteRace(race.id, race.round)}
+                                                            disabled={isFinished}
+                                                            className={`rounded-lg border px-2.5 py-1.5 font-bold transition ${
+                                                                isFinished
+                                                                    ? 'border-slate-800 bg-slate-900 text-slate-600 cursor-not-allowed opacity-40'
+                                                                    : 'border-rose-500/25 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
+                                                            }`}
+                                                            title={isFinished ? "Không thể xóa cuộc đua đã hoàn thành" : ""}
+                                                        >
+                                                            🗑️ Xóa
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="mt-6 pt-4 border-t border-white/5 flex justify-end">
+                            <button
+                                onClick={() => setShowRaceModal(false)}
+                                className="rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/10 hover:text-white"
+                            >
+                                Đóng
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* CREATE / EDIT RACE FORM MODAL OVERLAY */}
+            {showRaceFormModal && selectedTournamentForRaces && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-4 backdrop-blur-sm animate-fade-in">
+                    <div className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-slate-900 p-6 shadow-2xl animate-scale-up">
+                        {/* Form Modal Header */}
+                        <div className="mb-6 flex items-center justify-between">
+                            <h3 className="text-lg font-bold text-white">
+                                {currentRace ? '✏️ Sửa cuộc đua' : '🏁 Thêm cuộc đua mới'}
+                            </h3>
+                            <button
+                                onClick={() => setShowRaceFormModal(false)}
+                                className="h-8 w-8 rounded-full bg-white/5 text-slate-400 transition hover:bg-white/10 hover:text-white"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* Form Modal Body */}
+                        <form onSubmit={handleSaveRace} className="space-y-4">
+                            {raceFormError && (
+                                <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-xs font-medium text-rose-400">
+                                    ⚠️ {raceFormError}
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400">
+                                    Vòng đua <span className="text-rose-400">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="Ví dụ: Vòng 1, Vòng 2, Chung kết"
+                                    value={raceFormData.round}
+                                    onChange={(e) => setRaceFormData({ ...raceFormData, round: e.target.value })}
+                                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-200 outline-none transition focus:border-emerald-400"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400">
+                                    Thời gian đua <span className="text-rose-400">*</span>
+                                </label>
+                                <input
+                                    type="datetime-local"
+                                    required
+                                    value={raceFormData.race_time}
+                                    onChange={(e) => setRaceFormData({ ...raceFormData, race_time: e.target.value })}
+                                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-200 outline-none transition focus:border-emerald-400"
+                                />
+                                <p className="text-[10px] text-slate-500 mt-1">
+                                    Giới hạn giải đấu: {formatDate(selectedTournamentForRaces.start_date)} đến {formatDate(selectedTournamentForRaces.end_date)}
+                                </p>
+                            </div>
+
+                            <div className="grid gap-4 grid-cols-2">
+                                <div>
+                                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400">
+                                        Khoảng cách (m) <span className="text-rose-400">*</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        required
+                                        min="100"
+                                        max="5000"
+                                        placeholder="Ví dụ: 1200"
+                                        value={raceFormData.distance}
+                                        onChange={(e) => setRaceFormData({ ...raceFormData, distance: e.target.value })}
+                                        className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-200 outline-none transition focus:border-emerald-400"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400">
+                                        Số ngựa tối đa <span className="text-rose-400">*</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        required
+                                        min="2"
+                                        max="30"
+                                        placeholder="Ví dụ: 8"
+                                        value={raceFormData.max_horses}
+                                        onChange={(e) => setRaceFormData({ ...raceFormData, max_horses: e.target.value })}
+                                        className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-200 outline-none transition focus:border-emerald-400"
+                                    />
+                                    {currentRace && (
+                                        <p className="text-[9px] text-slate-500 mt-1">
+                                            Hiện đang đăng ký: {currentRace.registrations_count || 0}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {currentRace && (
+                                <div>
+                                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400">
+                                        Trạng thái
+                                    </label>
+                                    <select
+                                        value={raceFormData.status}
+                                        onChange={(e) => setRaceFormData({ ...raceFormData, status: e.target.value })}
+                                        className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-200 outline-none transition focus:border-emerald-400"
+                                    >
+                                        <option value="scheduled">Sắp diễn ra</option>
+                                        <option value="ongoing">Đang diễn ra</option>
+                                        <option value="finished">Hoàn thành</option>
+                                        <option value="cancelled">Đã hủy</option>
+                                    </select>
+                                </div>
+                            )}
+
+                            {/* Form Action Buttons */}
+                            <div className="pt-4 flex items-center justify-end gap-3 border-t border-white/5">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowRaceFormModal(false)}
+                                    className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/10 hover:text-white"
+                                >
+                                    Hủy bỏ
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={submittingRace}
+                                    className="rounded-2xl bg-emerald-500 px-6 py-3 text-sm font-bold text-slate-950 transition hover:bg-emerald-400 disabled:opacity-50 disabled:pointer-events-none"
+                                >
+                                    {submittingRace ? 'Đang lưu...' : 'Lưu lại'}
                                 </button>
                             </div>
                         </form>
