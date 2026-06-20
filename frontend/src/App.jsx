@@ -6,18 +6,23 @@ import Register from './pages/Register';
 import Tournaments from './pages/Tournaments';
 import TournamentDetail from './pages/TournamentDetail';
 import RaceDetail from './pages/RaceDetail';
+
 import Predictions from './pages/Predictions';
 import SpectatorDashboard from './pages/Dashboard';
 import Navbar from './components/Navbar';
 import { SocketProvider } from './context/SocketContext';
 import { useAuth } from './context/AuthContext';
 
+import Navbar from './components/Navbar';
+import { SocketProvider } from './context/SocketContext';
+import { AuthProvider } from './context/AuthContext';
+
+
 // Horse Owner Pages
 import Blank from './pages/Blank';
 import HorseOwnerDashboard from './pages/HorseOwner/Dashboard';
 import MyHorses from './pages/HorseOwner/MyHorses';
 import MyJockeys from './pages/HorseOwner/MyJockeys';
-
 import RaceRegistrations from './pages/HorseOwner/RaceRegistrations';
 import TournamentsRaces from './pages/HorseOwner/TournamentsRaces';
 import ResultsRewards from './pages/HorseOwner/ResultsRewards';
@@ -28,6 +33,29 @@ import RefereeDashboard from './pages/Referee/Dashboard';
 import RefereeRaces from './pages/Referee/Races';
 import RefereeViolations from './pages/Referee/Violations';
 import RefereeSchedule from './pages/Referee/Schedule';
+import RefereeResultEntry from './pages/Referee/ResultEntry';
+import RefereeMonitor from './pages/Referee/Monitor';
+import RefereeHistory from './pages/Referee/History';
+
+// Jockey Pages
+import JockeyOverview from './pages/jockey/JockeyOverview';
+import JockeyInvitations from './pages/jockey/JockeyInvitations';
+import JockeySchedule from './pages/jockey/JockeySchedule';
+import JockeyPerformance from './pages/jockey/JockeyPerformance';
+import JockeySidebar from './components/Jockey/JockeySidebar';
+
+function JockeyPortal() {
+  const [page, setPage] = React.useState('overview');
+  return (
+    <div style={{ background: '#131315', minHeight: '100vh', display: 'flex' }}>
+      <JockeySidebar active={page} setPage={setPage} />
+      {page === 'overview' && <JockeyOverview />}
+      {page === 'schedule' && <JockeySchedule />}
+      {page === 'invitations' && <JockeyInvitations />}
+      {page === 'performance' && <JockeyPerformance />}
+    </div>
+  );
+}
 
 // Jockey Pages
 import JockeyOverview from './pages/jockey/JockeyOverview';
@@ -50,6 +78,7 @@ function App() {
   }
 
   return (
+
     <SocketProvider>
       <Router>
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -77,11 +106,35 @@ function App() {
               <Route path="/horse-owner/results-rewards" element={<ResultsRewards />} />
               <Route path="/horse-owner/settings" element={<AccountSettings />} />
 
-              {/* Referee Dashboard Routes */}
-              <Route path="/referee/dashboard" element={<RefereeDashboard />} />
-              <Route path="/referee/races" element={<RefereeRaces />} />
-              <Route path="/referee/violations" element={<RefereeViolations />} />
-              <Route path="/referee/schedule" element={<RefereeSchedule />} />
+    <AuthProvider>
+      <SocketProvider>
+        <Router>
+          <Routes>
+
+            <Route path="/jockey/*" element={<JockeyPortal />} />
+
+            <Route path="*" element={
+              <div className="min-h-screen bg-transparent">
+                <Navbar />
+                <main>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/tournaments" element={<Tournaments />} />
+                    <Route path="/tournaments/:id" element={<TournamentDetail />} />
+                    <Route path="/races/:id" element={<RaceDetail />} />
+
+
+                    {/* Horse Owner */}
+                    <Route path="/blank" element={<Blank />} />
+                    <Route path="/horse-owner/dashboard" element={<HorseOwnerDashboard />} />
+                    <Route path="/horse-owner/horses" element={<MyHorses />} />
+                    <Route path="/horse-owner/jockeys" element={<MyJockeys />} />
+                    <Route path="/horse-owner/race-registrations" element={<RaceRegistrations />} />
+                    <Route path="/horse-owner/tournaments-races" element={<TournamentsRaces />} />
+                    <Route path="/horse-owner/results-rewards" element={<ResultsRewards />} />
+                    <Route path="/horse-owner/settings" element={<AccountSettings />} />
+
 
               {/* Jockey Dashboard Routes */}
               <Route path="/jockey/overview" element={<JockeyOverview />} />
@@ -94,6 +147,24 @@ function App() {
         </div>
       </Router>
     </SocketProvider>
+
+                    {/* Referee */}
+                    <Route path="/referee/dashboard" element={<RefereeDashboard />} />
+                    <Route path="/referee/races" element={<RefereeRaces />} />
+                    <Route path="/referee/violations" element={<RefereeViolations />} />
+                    <Route path="/referee/schedule" element={<RefereeSchedule />} />
+                    <Route path="/referee/races/:raceId/results" element={<RefereeResultEntry />} />
+                    <Route path="/referee/races/:raceId/monitor" element={<RefereeMonitor />} />
+                    <Route path="/referee/history" element={<RefereeHistory />} />
+                  </Routes>
+                </main>
+              </div>
+            } />
+          </Routes>
+        </Router>
+      </SocketProvider>
+    </AuthProvider>
+
   );
 }
 

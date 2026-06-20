@@ -44,4 +44,9 @@ class Race extends Model
     {
         return $this->hasMany(RaceResult::class);
     }
+
+    public function violations(): HasMany
+    {
+        return $this->hasMany(Violation::class);
+    }
 }

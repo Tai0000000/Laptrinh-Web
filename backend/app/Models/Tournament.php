@@ -21,9 +21,15 @@ class Tournament extends Model
         'end_date',
     ];
 
+
     protected $casts = [
         'start_date' => 'datetime',
         'end_date' => 'datetime',
+
+    protected $casts = [
+        'start_date' => 'date',
+        'end_date' => 'date',
+
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

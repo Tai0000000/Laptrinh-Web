@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Race;
+use App\Models\Violation;
 use Illuminate\Http\Request;
 
 class RefereeController extends Controller
@@ -81,12 +82,21 @@ class RefereeController extends Controller
                 'notes' => 'nullable|string',
             ]);
 
-            // Save violation logic. If there is a separate violations table or model in the future,
-            // the team can implement it. For now, we stub the response to prevent 500.
+            $violation = Violation::create([
+                'race_id' => $validated['race_id'],
+                'registration_id' => $validated['registration_id'],
+                'referee_id' => $request->user()->id,
+                'violation_type' => $validated['violation_type'],
+                'notes' => $validated['notes'] ?? null,
+                'status' => 'pending',
+            ]);
+
+            $violation->load(['race', 'registration.horse', 'registration.jockey']);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Violation logged successfully',
-                'data' => $validated
+                'data' => $violation
             ], 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -97,6 +107,68 @@ class RefereeController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error logging violation: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get violations, optionally filtered by race_id.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getViolations(Request $request)
+    {
+        $query = Violation::with(['race', 'registration.horse', 'registration.jockey']);
+
+        if ($request->has('race_id')) {
+            $query->where('race_id', $request->race_id);
+        }
+
+        $violations = $query->orderBy('created_at', 'desc')->get();
+
+        return response()->json(['success' => true, 'data' => $violations]);
+    }
+
+    /**
+     * Update race status (start or end a race).
+     *
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateRaceStatus(Request $request, $id)
+    {
+        try {
+            $validated = $request->validate([
+                'status' => 'required|string|in:scheduled,active,completed,cancelled',
+            ]);
+
+            $race = Race::find($id);
+            if (!$race) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Race not found'
+                ], 404);
+            }
+
+            $race->update(['status' => $validated['status']]);
+            $race->load(['tournament', 'registrations.horse', 'registrations.jockey', 'violations']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Race status updated successfully',
+                'data' => $race
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating race status: ' . $e->getMessage()
             ], 500);
         }
     }
