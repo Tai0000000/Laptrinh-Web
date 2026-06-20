@@ -13,6 +13,7 @@ const Monitor = () => {
   // Timer state
   const [elapsedTime, setElapsedTime] = useState(0);
   const timerRef = useRef(null);
+  const [isStarted, setIsStarted] = useState(false);
 
   // Speed simulation state (visual only)
   const [speeds, setSpeeds] = useState({});
@@ -35,20 +36,38 @@ const Monitor = () => {
   useEffect(() => {
     fetchRace();
     fetchViolations();
+  }, [raceId]);
 
-    // Start timer simulation
-    timerRef.current = setInterval(() => {
-      setElapsedTime(prev => prev + 1);
-    }, 1000);
-
+  // Handle timer start/stop
+  useEffect(() => {
+    if (isStarted) {
+      timerRef.current = setInterval(() => {
+        setElapsedTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [raceId]);
+  }, [isStarted]);
 
-  // Simulate progress/speeds when race is active
+  // Initialize speeds/progress when race data is loaded
   useEffect(() => {
-    if (!race || race.status !== 'active') return;
+    if (!race) return;
+    const initialSpeeds = {};
+    const initialProgress = {};
+    (race.registrations || []).forEach(reg => {
+      initialSpeeds[reg.id] = 0;
+      initialProgress[reg.id] = 0;
+    });
+    setSpeeds(initialSpeeds);
+    setProgress(initialProgress);
+  }, [race]);
+
+  // Simulate progress/speeds when race is active and started
+  useEffect(() => {
+    if (!race || race.status !== 'active' || !isStarted) return;
 
     // Initialize speeds/progress
     const initialSpeeds = {};
@@ -196,6 +215,7 @@ const Monitor = () => {
       case 'lane_deviation': return 'Lấn làn đường';
       case 'jockey_conduct': return 'Hành vi nài ngựa';
       case 'equipment_violation': return 'Lỗi thiết bị';
+      case 'disqualification': return 'Truất quyền thi đấu';
       default: return type;
     }
   };
@@ -240,13 +260,23 @@ const Monitor = () => {
           </div>
 
           {race && race.status === 'active' && (
-            <button
-              onClick={handleEndRace}
-              className="bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-750 text-white font-bold py-3 px-6 rounded-xl text-sm transition-all duration-300 shadow-lg shadow-rose-500/15 active:scale-[0.98] flex items-center space-x-2 border border-rose-600/30"
-            >
-              <span className="w-2.5 h-2.5 bg-white rounded-full animate-ping mr-1"></span>
-              <span>Kết thúc cuộc đua</span>
-            </button>
+            isStarted ? (
+              <button
+                onClick={handleEndRace}
+                className="bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-750 text-white font-bold py-3 px-6 rounded-xl text-sm transition-all duration-300 shadow-lg shadow-rose-500/15 active:scale-[0.98] flex items-center space-x-2 border border-rose-600/30"
+              >
+                <span className="w-2.5 h-2.5 bg-white rounded-full animate-ping mr-1"></span>
+                <span>Kết thúc cuộc đua</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsStarted(true)}
+                className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-750 text-white font-bold py-3 px-6 rounded-xl text-sm transition-all duration-300 shadow-lg shadow-emerald-500/15 active:scale-[0.98] flex items-center space-x-2 border border-emerald-600/30 animate-pulse"
+              >
+                <span className="w-2.5 h-2.5 bg-white rounded-full mr-1"></span>
+                <span>Bắt đầu cuộc đua (GO)</span>
+              </button>
+            )
           )}
         </div>
 
@@ -471,6 +501,7 @@ const Monitor = () => {
                     <option value="false_start">Xuất phát lỗi (False Start)</option>
                     <option value="jockey_conduct">Hành vi nài ngựa không đúng mực (Jockey Conduct)</option>
                     <option value="equipment_violation">Thiết bị không hợp lệ (Equipment Violation)</option>
+                    <option value="disqualification">Truất quyền thi đấu (Disqualification)</option>
                   </select>
                 </div>
 

@@ -24,9 +24,10 @@ const ResultEntry = () => {
       setError('');
       setSuccess('');
 
-      const [raceResponse, resultResponse] = await Promise.all([
+      const [raceResponse, resultResponse, violationResponse] = await Promise.all([
         api.get(`/referee/races/${raceId}`),
         api.get(`/referee/races/${raceId}/results`).catch(() => ({ data: { data: [] } })),
+        api.get(`/referee/violations?race_id=${raceId}`).catch(() => ({ data: { data: [] } })),
       ]);
 
       const raceData = raceResponse.data?.data;
@@ -35,18 +36,27 @@ const ResultEntry = () => {
         existingResults.map((result) => [Number(result.registration_id), result])
       );
 
+      const vList = violationResponse.data?.data || violationResponse.data || [];
+      const dqRegistrationIds = new Set(
+        vList
+          .filter(v => v.violation_type === 'disqualification')
+          .map(v => Number(v.registration_id))
+      );
+
       setRace(raceData);
       setRows((raceData?.registrations || []).map((registration, index) => {
         const existing = resultByRegistration.get(Number(registration.id));
+        const isDq = dqRegistrationIds.has(Number(registration.id));
 
         return {
           registration_id: registration.id,
           lane: registration.lane || index + 1,
           horse_name: registration.horse?.name || 'N/A',
           jockey_name: registration.jockey?.name || registration.jockey?.user?.name || 'N/A',
-          rank: existing?.rank || '',
-          finish_time: existing?.finish_time || '',
-          notes: existing?.notes || '',
+          rank: isDq ? 'DQ' : (existing?.rank || ''),
+          finish_time: isDq ? 'DQ' : (existing?.finish_time || ''),
+          notes: existing?.notes || (isDq ? 'Bị truất quyền thi đấu (Disqualified)' : ''),
+          is_dq: isDq,
         };
       }));
     } catch (err) {
@@ -73,14 +83,15 @@ const ResultEntry = () => {
       return 'Cuộc đua này chưa có ngựa tham gia.';
     }
 
-    const ranks = rows.map((row) => Number(row.rank));
-    const hasEmpty = rows.some((row) => !row.rank || !row.finish_time.trim());
+    const nonDqRows = rows.filter(r => !r.is_dq);
+    const ranks = nonDqRows.map((row) => Number(row.rank));
+    const hasEmpty = nonDqRows.some((row) => !row.rank || !row.finish_time || !row.finish_time.trim());
     const hasInvalidRank = ranks.some((rank) => Number.isNaN(rank) || rank < 1);
     const uniqueRanks = new Set(ranks);
 
-    if (hasEmpty) return 'Vui lòng nhập đầy đủ hạng và thời gian về đích.';
+    if (hasEmpty) return 'Vui lòng nhập đầy đủ hạng và thời gian về đích cho các ngựa hoàn thành.';
     if (hasInvalidRank) return 'Hạng về đích phải là số nguyên lớn hơn 0.';
-    if (uniqueRanks.size !== ranks.length) return 'Mỗi ngựa phải có một hạng riêng, không được trùng.';
+    if (uniqueRanks.size !== ranks.length) return 'Mỗi ngựa hoàn thành phải có một thứ hạng riêng, không trùng lặp.';
 
     return '';
   };
@@ -103,8 +114,8 @@ const ResultEntry = () => {
       await api.post(`/referee/races/${raceId}/results`, {
         results: rows.map((row) => ({
           registration_id: row.registration_id,
-          rank: Number(row.rank),
-          finish_time: row.finish_time,
+          rank: row.is_dq ? null : Number(row.rank),
+          finish_time: row.is_dq ? null : row.finish_time,
           notes: row.notes || null,
         })),
       });
@@ -179,26 +190,35 @@ const ResultEntry = () => {
                   </thead>
                   <tbody className="divide-y divide-slate-800/80">
                     {sortedRows.map((row) => (
-                      <tr key={row.registration_id} className="hover:bg-slate-800/20">
+                      <tr key={row.registration_id} className={`hover:bg-slate-800/20 ${row.is_dq ? 'bg-rose-950/20' : ''}`}>
                         <td className="px-4 py-4 font-bold text-amber-400">{row.lane}</td>
                         <td className="px-4 py-4 font-semibold text-white">{row.horse_name}</td>
                         <td className="px-4 py-4 text-slate-300">{row.jockey_name}</td>
                         <td className="px-4 py-4">
                           <input
-                            type="number"
-                            min="1"
+                            type="text"
+                            disabled={row.is_dq}
                             value={row.rank}
                             onChange={(event) => updateRow(row.registration_id, 'rank', event.target.value)}
-                            className="w-24 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-amber-500"
+                            className={`w-24 rounded-xl border px-3 py-2 text-slate-100 outline-none ${
+                              row.is_dq 
+                                ? 'bg-rose-950/40 border-rose-900/50 text-rose-400 font-bold text-center' 
+                                : 'bg-slate-950 border-slate-700 focus:border-amber-500'
+                            }`}
                             placeholder="1"
                           />
                         </td>
                         <td className="px-4 py-4">
                           <input
                             type="text"
+                            disabled={row.is_dq}
                             value={row.finish_time}
                             onChange={(event) => updateRow(row.registration_id, 'finish_time', event.target.value)}
-                            className="w-36 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-amber-500"
+                            className={`w-36 rounded-xl border px-3 py-2 text-slate-100 outline-none ${
+                              row.is_dq 
+                                ? 'bg-rose-950/40 border-rose-900/50 text-rose-400 font-bold text-center' 
+                                : 'bg-slate-950 border-slate-700 focus:border-amber-500'
+                            }`}
                             placeholder="01:12.530"
                           />
                         </td>
@@ -207,7 +227,11 @@ const ResultEntry = () => {
                             type="text"
                             value={row.notes}
                             onChange={(event) => updateRow(row.registration_id, 'notes', event.target.value)}
-                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-amber-500"
+                            className={`w-full rounded-xl border px-3 py-2 text-slate-100 outline-none ${
+                              row.is_dq 
+                                ? 'bg-rose-950/20 border-rose-900/30 text-rose-350 italic' 
+                                : 'bg-slate-950 border-slate-700 focus:border-amber-500'
+                            }`}
                             placeholder="Ghi chú tùy chọn"
                           />
                         </td>
