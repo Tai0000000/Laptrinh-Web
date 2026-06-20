@@ -11,6 +11,7 @@ use App\Http\Controllers\API\HorseController;
 use App\Http\Controllers\API\HorseOwnerController;
 use App\Http\Controllers\API\RefereeController;
 use App\Http\Controllers\API\ResultController;
+use App\Http\Controllers\API\JockeyController;
 
 Route::get('/health', function () {
     return response()->json([
@@ -50,6 +51,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/referee/races/{id}/status', [RefereeController::class, 'updateRaceStatus']);
     Route::post('/referee/races/{race}/results', [ResultController::class, 'store']);
     Route::get('/referee/races/{race}/results', [ResultController::class, 'show']);
+
+    Route::middleware('role:jockey')->prefix('jockey')->group(function () {
+        // Overview — stats tổng hợp + lịch đua sắp tới
+        Route::get('/stats',          [JockeyController::class, 'stats']);
+        Route::get('/races/upcoming', [JockeyController::class, 'upcomingRaces']);
+
+        // Schedule — toàn bộ lịch đua, filter theo status
+        Route::get('/races',          [JockeyController::class, 'races']);
+
+        // Invitations — pending & history tách riêng, respond dùng PUT
+        Route::get('/invitations/pending',          [JockeyController::class, 'invitationsPending']);
+        Route::get('/invitations/history',          [JockeyController::class, 'invitationsHistory']);
+        Route::put('/invitations/{invite}/respond', [JockeyController::class, 'respondInvitation']);
+
+        // Performance — kết quả & thời gian tốt nhất
+        Route::get('/performance/results',    [JockeyController::class, 'performanceResults']);
+        Route::get('/performance/best-times', [JockeyController::class, 'performanceBestTimes']);
+    });
 });
 
 // Public routes
