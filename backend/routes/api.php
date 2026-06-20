@@ -47,6 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/referee/races/{id}', [RefereeController::class, 'show']);
     Route::post('/referee/violations', [RefereeController::class, 'logViolation']);
     Route::get('/referee/violations', [RefereeController::class, 'getViolations']);
+    Route::put('/referee/races/{id}/status', [RefereeController::class, 'updateRaceStatus']);
     Route::post('/referee/races/{race}/results', [ResultController::class, 'store']);
     Route::get('/referee/races/{race}/results', [ResultController::class, 'show']);
 });

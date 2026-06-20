@@ -30,8 +30,8 @@ class ResultController extends Controller
             $validated = $request->validate([
                 'results' => 'required|array',
                 'results.*.registration_id' => 'required|integer|exists:registrations,id',
-                'results.*.rank' => 'required|integer|min:1',
-                'results.*.finish_time' => 'required|string',
+                'results.*.rank' => 'nullable|integer|min:1',
+                'results.*.finish_time' => 'nullable|string',
                 'results.*.notes' => 'nullable|string',
             ]);
 
@@ -55,6 +55,42 @@ class ResultController extends Controller
 
             // Update race status to completed
             $race->update(['status' => 'completed']);
+
+            // Resolve bets for this race
+            try {
+                $resultsMap = []; // registration_id => rank (int or null)
+                foreach ($validated['results'] as $resData) {
+                    $resultsMap[$resData['registration_id']] = $resData['rank'] !== null ? (int)$resData['rank'] : null;
+                }
+
+                $bets = \App\Models\Bet::whereIn('registration_id', array_keys($resultsMap))
+                    ->where('status', 'pending')
+                    ->get();
+
+                foreach ($bets as $bet) {
+                    if (array_key_exists($bet->registration_id, $resultsMap)) {
+                        $rank = $resultsMap[$bet->registration_id];
+                        $isWinner = false;
+
+                        if ($rank !== null) {
+                            if ($bet->prediction_type === 'win' && $rank === 1) {
+                                $isWinner = true;
+                            } elseif ($bet->prediction_type === 'place' && ($rank === 1 || $rank === 2)) {
+                                $isWinner = true;
+                            } elseif ($bet->prediction_type === 'show' && ($rank === 1 || $rank === 2 || $rank === 3)) {
+                                $isWinner = true;
+                            }
+                        }
+
+                        $bet->update([
+                            'status' => $isWinner ? 'won' : 'lost'
+                        ]);
+                    }
+                }
+            } catch (\Exception $e) {
+                // Log error but don't fail the response if bet resolution fails
+                \Log::error('Error resolving bets for race ' . $raceId . ': ' . $e->getMessage());
+            }
 
             return response()->json([
                 'success' => true,

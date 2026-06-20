@@ -1,13 +1,107 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import RefereeLayout from '../../components/RefereeLayout';
+import api from '../../api/axios';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+  const [races, setRaces] = useState([]);
+  const [violations, setViolations] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const [racesResponse, violationsResponse] = await Promise.all([
+        api.get('/referee/races'),
+        api.get('/referee/violations').catch(() => ({ data: { data: [] } }))
+      ]);
+
+      if (racesResponse.data.success) {
+        setRaces(racesResponse.data.data);
+      }
+      
+      const vList = violationsResponse.data?.data || violationsResponse.data || [];
+      setViolations(vList);
+    } catch (err) {
+      console.error('Error loading dashboard data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const completedCount = races.filter(r => r.status === 'completed').length;
+  const scheduledCount = races.filter(r => r.status === 'scheduled').length;
+  const activeCount = races.filter(r => r.status === 'active' || r.status === 'ongoing').length;
+
   const stats = [
-    { label: 'Cuộc đua hôm nay', value: '4', change: '2 đã hoàn thành', type: 'info', color: 'from-amber-500 to-yellow-600' },
-    { label: 'Kiểm tra trước đua', value: '1', change: 'Hết hạn sau 30 phút', type: 'warning', color: 'from-orange-500 to-amber-600' },
-    { label: 'Vi phạm đã ghi', value: '2', change: 'Cuộc đua số 3 & 4', type: 'error', color: 'from-rose-500 to-red-600' },
-    { label: 'Báo cáo hoàn thành', value: '12', change: 'Tuần này', type: 'success', color: 'from-emerald-500 to-teal-600' },
+    { 
+      label: 'Cuộc đua phân công', 
+      value: loading ? '...' : String(races.length), 
+      change: loading ? 'Đang tải...' : `${completedCount} đã hoàn thành`, 
+      color: 'from-amber-500 to-yellow-600' 
+    },
+    { 
+      label: 'Cần kiểm tra trước đua', 
+      value: loading ? '...' : String(scheduledCount), 
+      change: loading ? 'Đang tải...' : 'Trạng thái: Đã lên lịch', 
+      color: 'from-orange-500 to-amber-600' 
+    },
+    { 
+      label: 'Vi phạm đã ghi', 
+      value: loading ? '...' : String(violations.length), 
+      change: loading ? 'Đang tải...' : 'Tổng số thẻ phạt', 
+      color: 'from-rose-500 to-red-600' 
+    },
+    { 
+      label: 'Báo cáo hoàn thành', 
+      value: loading ? '...' : String(completedCount), 
+      change: loading ? 'Đang tải...' : 'Biên bản đã ký số', 
+      color: 'from-emerald-500 to-teal-600' 
+    },
   ];
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'completed': return 'Đã hoàn thành';
+      case 'active':
+      case 'ongoing': return 'Đang diễn ra';
+      case 'scheduled': return 'Đã lên lịch';
+      case 'cancelled': return 'Đã hủy';
+      default: return status;
+    }
+  };
+
+  const getStatusColorClass = (status) => {
+    if (status === 'completed') return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+    if (status === 'active' || status === 'ongoing') return 'bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse';
+    if (status === 'cancelled') return 'bg-rose-500/10 text-rose-400 border border-rose-500/20';
+    return 'bg-slate-800 text-slate-400 border border-slate-700/50';
+  };
+
+  const formatTime = (raceTime) => {
+    if (!raceTime) return '--:--';
+    try {
+      const date = new Date(raceTime);
+      return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
+    } catch {
+      return '--:--';
+    }
+  };
+
+  const handleRaceRowClick = (race) => {
+    if (race.status === 'completed') {
+      navigate(`/referee/races/${race.id}/results`);
+    } else if (race.status === 'active' || race.status === 'ongoing') {
+      navigate(`/referee/races/${race.id}/monitor`);
+    } else {
+      navigate('/referee/races');
+    }
+  };
 
   return (
     <RefereeLayout>
@@ -53,31 +147,43 @@ const Dashboard = () => {
           <div className="lg:col-span-2 bg-slate-900/40 border border-slate-800/60 rounded-2xl p-6 backdrop-blur-md shadow-lg space-y-6">
             <div className="flex items-center justify-between pb-4 border-b border-slate-800">
               <h2 className="text-lg font-bold text-white tracking-wide">Lịch trình phân công hôm nay</h2>
-              <span className="text-slate-400 text-xs hover:text-amber-400 cursor-pointer transition-colors duration-200">Xem tất cả</span>
+              <span 
+                onClick={() => navigate('/referee/races')} 
+                className="text-slate-400 text-xs hover:text-amber-400 cursor-pointer transition-colors duration-200"
+              >
+                Xem tất cả
+              </span>
             </div>
 
             <div className="space-y-4">
-              {[
-                { time: '14:30', name: 'Chung kết Grand Prix', status: 'Đã hoàn thành', color: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' },
-                { time: '16:00', name: 'Cúp Spring Sprint - Nhóm A', status: 'Đang diễn ra', color: 'bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse' },
-                { time: '17:15', name: 'Cúp Spring Sprint - Nhóm B', status: 'Đã lên lịch', color: 'bg-slate-800 text-slate-400 border border-slate-700/50' },
-                { time: '19:00', name: 'Sunset Classic Derby', status: 'Đã lên lịch', color: 'bg-slate-800 text-slate-400 border border-slate-700/50' },
-              ].map((race, idx) => (
-                <div key={idx} className="flex items-center justify-between p-4 bg-slate-950/40 border border-slate-800/60 rounded-xl hover:bg-slate-900/30 transition-colors duration-300 group">
-                  <div className="flex items-center space-x-4">
-                    <span className="text-sm font-bold text-amber-500 bg-amber-500/5 border border-amber-500/20 px-3 py-1 rounded-lg">
-                      {race.time}
-                    </span>
-                    <div>
-                      <h4 className="text-sm font-bold text-white group-hover:text-amber-400 transition-colors duration-200">{race.name}</h4>
-                      <p className="text-slate-500 text-xs mt-0.5">Địa điểm: Đường đua A • Khoảng cách: 1200m</p>
+              {loading ? (
+                <p className="text-center py-10 text-slate-500 text-xs">Đang tải lịch trình cuộc đua...</p>
+              ) : races.length === 0 ? (
+                <p className="text-center py-10 text-slate-500 text-xs">Không có cuộc đua nào được phân công hôm nay.</p>
+              ) : (
+                races.slice(0, 5).map((race, idx) => (
+                  <div 
+                    key={race.id} 
+                    onClick={() => handleRaceRowClick(race)}
+                    className="flex items-center justify-between p-4 bg-slate-950/40 border border-slate-800/60 rounded-xl hover:bg-slate-900/30 transition-all duration-300 group cursor-pointer hover:border-slate-700/60"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <span className="text-xs font-bold text-amber-500 bg-amber-500/5 border border-amber-500/20 px-3 py-1.5 rounded-lg font-mono">
+                        {formatTime(race.race_time)}
+                      </span>
+                      <div>
+                        <h4 className="text-sm font-bold text-white group-hover:text-amber-400 transition-colors duration-200">
+                          {race.name}
+                        </h4>
+                        <p className="text-slate-500 text-xs mt-0.5">Khoảng cách: {race.distance}m • {race.tournament?.name || 'Giải đấu'}</p>
+                      </div>
                     </div>
+                    <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${getStatusColorClass(race.status)}`}>
+                      {getStatusLabel(race.status)}
+                    </span>
                   </div>
-                  <span className={`text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${race.color}`}>
-                    {race.status}
-                  </span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
@@ -89,13 +195,22 @@ const Dashboard = () => {
               </div>
 
               <div className="space-y-3">
-                <button className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-slate-950 font-bold py-3.5 px-4 rounded-xl transition-all duration-300 shadow-md shadow-amber-500/15 active:scale-[0.98]">
+                <button 
+                  onClick={() => navigate('/referee/races')}
+                  className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-slate-950 font-bold py-3.5 px-4 rounded-xl transition-all duration-300 shadow-md shadow-amber-500/15 active:scale-[0.98]"
+                >
                   Kiểm tra trước cuộc đua
                 </button>
-                <button className="w-full bg-slate-800 hover:bg-slate-750 text-white font-bold py-3.5 px-4 rounded-xl transition-all duration-300 border border-slate-700/50 active:scale-[0.98]">
+                <button 
+                  onClick={() => navigate('/referee/races')}
+                  className="w-full bg-slate-800 hover:bg-slate-750 text-white font-bold py-3.5 px-4 rounded-xl transition-all duration-300 border border-slate-700/50 active:scale-[0.98]"
+                >
                   Nhập kết quả cuộc đua
                 </button>
-                <button className="w-full bg-slate-800 hover:bg-slate-750 text-rose-400 hover:text-rose-300 font-bold py-3.5 px-4 rounded-xl transition-all duration-300 border border-slate-700/50 active:scale-[0.98]">
+                <button 
+                  onClick={() => navigate('/referee/violations')}
+                  className="w-full bg-slate-800 hover:bg-slate-750 text-rose-400 hover:text-rose-300 font-bold py-3.5 px-4 rounded-xl transition-all duration-300 border border-slate-700/50 active:scale-[0.98]"
+                >
                   Ghi thẻ lỗi vi phạm
                 </button>
               </div>
