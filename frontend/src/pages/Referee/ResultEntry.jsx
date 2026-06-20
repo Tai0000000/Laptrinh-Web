@@ -12,6 +12,7 @@ const ResultEntry = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
     fetchRaceAndResults();
@@ -108,8 +109,7 @@ const ResultEntry = () => {
         })),
       });
 
-      setSuccess('Đã lưu kết quả cuộc đua. Admin có thể kiểm tra và công bố kết quả chính thức.');
-      await fetchRaceAndResults();
+      setShowSuccessModal(true);
     } catch (err) {
       const errors = err.response?.data?.errors;
       const firstError = errors ? Object.values(errors).flat()[0] : null;
@@ -245,6 +245,47 @@ const ResultEntry = () => {
           </form>
         )}
       </div>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all duration-300 scale-100">
+            <div className="p-6 text-center space-y-4">
+              {/* Animated Check Icon */}
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 mb-2 animate-bounce">
+                <svg className="h-9 w-9" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+
+              <h3 className="text-xl font-bold text-white">Lưu kết quả thành công!</h3>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Biên bản cuộc đua đã được ký số điện tử và gửi lên hệ thống. Các cược liên quan đã được phân giải tự động.
+              </p>
+            </div>
+
+            <div className="p-6 bg-slate-950/40 border-t border-slate-800/80 flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={() => navigate('/referee/history')}
+                className="flex-1 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-slate-950 font-bold py-3 rounded-xl text-xs transition duration-200 shadow-md shadow-amber-500/15"
+              >
+                Xem lịch sử biên bản
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  fetchRaceAndResults();
+                }}
+                className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-350 font-bold rounded-xl text-xs transition duration-200 border border-slate-700/50"
+              >
+                Ở lại trang này
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </RefereeLayout>
   );
 };
