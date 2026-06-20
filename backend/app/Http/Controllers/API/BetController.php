@@ -36,7 +36,7 @@ class BetController extends Controller
                 'lane' => $bet->registration->lane ?? 'N/A',
                 'prediction_type' => $bet->prediction_type,
                 'status' => $bet->status,
-                'payout' => $bet->status === 'won' ? $bet->amount * 2.5 : 0,
+                'payout' => $bet->reward_amount ?? ($bet->status === 'won' ? $bet->amount * 2.5 : 0),
                 'created_at' => $bet->created_at,
             ];
         });

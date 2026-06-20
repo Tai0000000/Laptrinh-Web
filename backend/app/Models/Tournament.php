@@ -16,19 +16,24 @@ class Tournament extends Model
 
     protected $fillable = [
         'name',
-
         'location',
         'start_date',
         'end_date',
     ];
+
+
+    protected $casts = [
+        'start_date' => 'datetime',
+        'end_date' => 'datetime',
+
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
 
-   
     public function races(): HasMany
     {
         return $this->hasMany(Race::class);

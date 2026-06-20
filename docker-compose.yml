@@ -45,7 +45,15 @@ services:
       - /var/www/html/bootstrap/cache
       - /var/www/html/storage
     working_dir: /var/www/html
+    networks:
+      - laptrinh-web_default
+
+networks:
+  laptrinh-web_default:
+    external: true
+
 
 volumes:
   db_data:
+
 
