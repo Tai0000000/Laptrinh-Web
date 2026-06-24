@@ -1,25 +1,20 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import Navbar from './components/Navbar';
+
+// Main Pages
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Tournaments from './pages/Tournaments';
 import TournamentDetail from './pages/TournamentDetail';
 import RaceDetail from './pages/RaceDetail';
-
 import Predictions from './pages/Predictions';
 import SpectatorDashboard from './pages/Dashboard';
-import Navbar from './components/Navbar';
-import { SocketProvider } from './context/SocketContext';
-import { useAuth } from './context/AuthContext';
-
-import Navbar from './components/Navbar';
-import { SocketProvider } from './context/SocketContext';
-import { AuthProvider } from './context/AuthContext';
-
+import Blank from './pages/Blank';
 
 // Horse Owner Pages
-import Blank from './pages/Blank';
 import HorseOwnerDashboard from './pages/HorseOwner/Dashboard';
 import MyHorses from './pages/HorseOwner/MyHorses';
 import MyJockeys from './pages/HorseOwner/MyJockeys';
@@ -57,12 +52,6 @@ function JockeyPortal() {
   );
 }
 
-// Jockey Pages
-import JockeyOverview from './pages/jockey/JockeyOverview';
-import JockeySchedule from './pages/jockey/JockeySchedule';
-import JockeyInvitations from './pages/jockey/JockeyInvitations';
-import JockeyPerformance from './pages/jockey/JockeyPerformance';
-
 function App() {
   const { loading } = useAuth();
 
@@ -78,93 +67,46 @@ function App() {
   }
 
   return (
-
-    <SocketProvider>
-      <Router>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-          <Navbar />
-          <main>
-            <Routes>
-              {/* Main Routes */}
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/tournaments" element={<Tournaments />} />
-              <Route path="/tournaments/:id" element={<TournamentDetail />} />
-              <Route path="/races/:id" element={<RaceDetail />} />
-
-              <Route path="/predictions" element={<Predictions />} />
-              <Route path="/dashboard" element={<SpectatorDashboard />} />
-              
-              {/* Horse Owner Dashboard Routes */}
-              <Route path="/blank" element={<Blank />} /> 
-              <Route path="/horse-owner/dashboard" element={<HorseOwnerDashboard />} />
-              <Route path="/horse-owner/horses" element={<MyHorses />} />
-              <Route path="/horse-owner/jockeys" element={<MyJockeys />} />
-              <Route path="/horse-owner/race-registrations" element={<RaceRegistrations />} />
-              <Route path="/horse-owner/tournaments-races" element={<TournamentsRaces />} />
-              <Route path="/horse-owner/results-rewards" element={<ResultsRewards />} />
-              <Route path="/horse-owner/settings" element={<AccountSettings />} />
-
-    <AuthProvider>
-      <SocketProvider>
-        <Router>
+    <Router>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <Navbar />
+        <main>
           <Routes>
+            {/* Main Routes */}
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/tournaments" element={<Tournaments />} />
+            <Route path="/tournaments/:id" element={<TournamentDetail />} />
+            <Route path="/races/:id" element={<RaceDetail />} />
+            <Route path="/predictions" element={<Predictions />} />
+            <Route path="/dashboard" element={<SpectatorDashboard />} />
+            <Route path="/blank" element={<Blank />} />
+            
+            {/* Horse Owner Routes */}
+            <Route path="/horse-owner/dashboard" element={<HorseOwnerDashboard />} />
+            <Route path="/horse-owner/horses" element={<MyHorses />} />
+            <Route path="/horse-owner/jockeys" element={<MyJockeys />} />
+            <Route path="/horse-owner/race-registrations" element={<RaceRegistrations />} />
+            <Route path="/horse-owner/tournaments-races" element={<TournamentsRaces />} />
+            <Route path="/horse-owner/results-rewards" element={<ResultsRewards />} />
+            <Route path="/horse-owner/settings" element={<AccountSettings />} />
 
+            {/* Jockey Routes */}
             <Route path="/jockey/*" element={<JockeyPortal />} />
 
-            <Route path="*" element={
-              <div className="min-h-screen bg-transparent">
-                <Navbar />
-                <main>
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/tournaments" element={<Tournaments />} />
-                    <Route path="/tournaments/:id" element={<TournamentDetail />} />
-                    <Route path="/races/:id" element={<RaceDetail />} />
-
-
-                    {/* Horse Owner */}
-                    <Route path="/blank" element={<Blank />} />
-                    <Route path="/horse-owner/dashboard" element={<HorseOwnerDashboard />} />
-                    <Route path="/horse-owner/horses" element={<MyHorses />} />
-                    <Route path="/horse-owner/jockeys" element={<MyJockeys />} />
-                    <Route path="/horse-owner/race-registrations" element={<RaceRegistrations />} />
-                    <Route path="/horse-owner/tournaments-races" element={<TournamentsRaces />} />
-                    <Route path="/horse-owner/results-rewards" element={<ResultsRewards />} />
-                    <Route path="/horse-owner/settings" element={<AccountSettings />} />
-
-
-              {/* Jockey Dashboard Routes */}
-              <Route path="/jockey/overview" element={<JockeyOverview />} />
-              <Route path="/jockey/schedule" element={<JockeySchedule />} />
-              <Route path="/jockey/invitations" element={<JockeyInvitations />} />
-              <Route path="/jockey/performance" element={<JockeyPerformance />} />
-              <Route path="/jockey/dashboard" element={<JockeyOverview />} />
-            </Routes>
-          </main>
-        </div>
-      </Router>
-    </SocketProvider>
-
-                    {/* Referee */}
-                    <Route path="/referee/dashboard" element={<RefereeDashboard />} />
-                    <Route path="/referee/races" element={<RefereeRaces />} />
-                    <Route path="/referee/violations" element={<RefereeViolations />} />
-                    <Route path="/referee/schedule" element={<RefereeSchedule />} />
-                    <Route path="/referee/races/:raceId/results" element={<RefereeResultEntry />} />
-                    <Route path="/referee/races/:raceId/monitor" element={<RefereeMonitor />} />
-                    <Route path="/referee/history" element={<RefereeHistory />} />
-                  </Routes>
-                </main>
-              </div>
-            } />
+            {/* Referee Routes */}
+            <Route path="/referee/dashboard" element={<RefereeDashboard />} />
+            <Route path="/referee/races" element={<RefereeRaces />} />
+            <Route path="/referee/violations" element={<RefereeViolations />} />
+            <Route path="/referee/schedule" element={<RefereeSchedule />} />
+            <Route path="/referee/races/:raceId/results" element={<RefereeResultEntry />} />
+            <Route path="/referee/races/:raceId/monitor" element={<RefereeMonitor />} />
+            <Route path="/referee/history" element={<RefereeHistory />} />
           </Routes>
-        </Router>
-      </SocketProvider>
-    </AuthProvider>
-
+        </main>
+      </div>
+    </Router>
   );
 }
 

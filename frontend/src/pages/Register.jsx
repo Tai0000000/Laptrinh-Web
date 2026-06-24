@@ -65,7 +65,7 @@ const Register = () => {
         <p className="mt-4 text-slate-600">Tạo tài khoản mới để sử dụng hệ thống quản lý đua ngựa.</p>
 
         {error && (
-          <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-2xl">
+          <div className="mt-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm font-medium">
             {error}
           </div>
         )}
@@ -144,7 +144,7 @@ const Register = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-full bg-slate-900 px-6 py-4 font-bold text-white shadow-lg transition hover:-translate-y-1 hover:bg-slate-800 disabled:opacity-50"
+            className="w-full rounded-full bg-slate-900 px-6 py-4 font-bold text-white shadow-lg transition hover:-translate-y-1 hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {loading ? 'Đang đăng ký...' : 'Đăng ký'}
           </button>
