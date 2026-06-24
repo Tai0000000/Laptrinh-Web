@@ -40,18 +40,27 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/var/www/html
       - /var/www/html/vendor
       - /var/www/html/bootstrap/cache
       - /var/www/html/storage
     working_dir: /var/www/html
-    networks:
-      - laptrinh-web_default
 
-networks:
-  laptrinh-web_default:
-    external: true
-
+  websocket:
+    image: php:8.2-cli
+    container_name: horse_racing_websocket
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./websocket-server:/var/www/html
+    working_dir: /var/www/html
+    command: >
+      sh -c "
+        apt-get update &&
+        apt-get install -y git unzip &&
+        curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer &&
+        composer install &&
+        php server.php
+      "
 
 volumes:
   db_data:
