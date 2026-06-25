@@ -8,9 +8,7 @@ use Illuminate\Http\Request;
 
 class RaceController extends Controller
 {
-    /**
-     * Display all races
-     */
+    
     public function index()
     {
         return response()->json(Race::with('tournament', 'registrations.horse', 'registrations.jockey')->get());
@@ -25,9 +23,7 @@ class RaceController extends Controller
         return response()->json($race);
     }
 
-    /**
-     * Store a new race
-     */
+   
     public function store(Request $request)
     {
         $validated = $request->validate([

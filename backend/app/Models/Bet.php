@@ -15,6 +15,7 @@ class Bet extends Model
         'amount',
         'prediction_type', // thắng, hạng nhất, hạng nhì (win, place, show)
         'status',          // đang chờ, thắng, thua (pending, won, lost)
+        'reward_amount',   // tiền thưởng nhận được
     ];
 
     /**

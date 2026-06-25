@@ -1,4 +1,4 @@
-FROM php:8.3-fpm
+FROM php:8.4-fpm
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -22,4 +22,4 @@ RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/fra
 
 EXPOSE 8000
 
-
+CMD sh -c 'php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000'

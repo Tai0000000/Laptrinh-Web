@@ -16,12 +16,16 @@ const LiveLeaderboard = ({ raceId }) => {
   return (
     <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
       <div className="bg-slate-900 px-6 py-4 flex justify-between items-center">
-        <h3 className="text-white font-bold text-lg flex items-center">
-          <span className="relative flex h-3 w-3 mr-3">
+        <h3 className="text-white font-bold text-lg flex items-center gap-3">
+          <span className="relative flex h-3 w-3">
             <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'} opacity-75`}></span>
             <span className={`relative inline-flex rounded-full h-3 w-3 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></span>
           </span>
           Bảng Xếp Hạng Trực Tiếp
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500 text-white text-xs font-semibold uppercase animate-pulse">
+            <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
+            Live
+          </span>
         </h3>
         <span className="text-slate-400 text-sm">Race ID: #{raceId}</span>
       </div>
@@ -55,8 +59,13 @@ const LiveLeaderboard = ({ raceId }) => {
                     <p className="text-xs text-gray-500 italic">Nài ngựa: {horse.jockey}</p>
                   </div>
 
-                  <div className="text-right">
+                  <div className="text-right mr-4">
                     <div className="text-sm font-mono font-bold text-indigo-600">{horse.speed} km/h</div>
+                    <div className="text-xs text-gray-400">Vị trí: {horse.position} / {currentRace.horses.length}</div>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="text-sm font-mono font-bold text-emerald-600">{horse.distance_covered || 0}m</div>
                     <div className="text-xs text-gray-400">Cách đích: {horse.distance_left}m</div>
                   </div>
 
@@ -64,7 +73,7 @@ const LiveLeaderboard = ({ raceId }) => {
                   <div className="ml-4 w-24 h-2 bg-gray-200 rounded-full overflow-hidden hidden sm:block">
                     <div 
                       className="h-full bg-indigo-500 transition-all duration-500" 
-                      style={{ width: `${100 - (horse.distance_left / currentRace.total_distance * 100)}%` }}
+                      style={{ width: `${100 - (horse.distance_left / (currentRace.total_distance || 1000) * 100)}%` }}
                     ></div>
                   </div>
                 </div>

@@ -129,4 +129,47 @@ class RefereeController extends Controller
 
         return response()->json(['success' => true, 'data' => $violations]);
     }
+
+    /**
+     * Update race status (start or end a race).
+     *
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateRaceStatus(Request $request, $id)
+    {
+        try {
+            $validated = $request->validate([
+                'status' => 'required|string|in:scheduled,active,completed,cancelled',
+            ]);
+
+            $race = Race::find($id);
+            if (!$race) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Race not found'
+                ], 404);
+            }
+
+            $race->update(['status' => $validated['status']]);
+            $race->load(['tournament', 'registrations.horse', 'registrations.jockey', 'violations']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Race status updated successfully',
+                'data' => $race
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating race status: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

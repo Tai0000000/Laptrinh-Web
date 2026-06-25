@@ -81,6 +81,7 @@ const Violations = () => {
       case 'lane_deviation': return 'Lấn làn đường';
       case 'jockey_conduct': return 'Hành vi nài ngựa không chuẩn mực';
       case 'equipment_violation': return 'Thiết bị không đúng quy định';
+      case 'disqualification': return 'Truất quyền thi đấu';
       default: return type;
     }
   };
@@ -217,6 +218,7 @@ const Violations = () => {
                   <option value="lane_deviation">Lấn làn đường (Lane Infraction)</option>
                   <option value="jockey_conduct">Hành vi nài ngựa không chuẩn mực</option>
                   <option value="equipment_violation">Thiết bị không đúng quy định</option>
+                  <option value="disqualification">Truất quyền thi đấu (Disqualification)</option>
                 </select>
               </div>
 
