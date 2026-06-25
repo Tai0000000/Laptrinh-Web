@@ -1,5 +1,9 @@
+<<<<<<< HEAD
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+=======
 import React, { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
+>>>>>>> 52c0e70301f4f8ca44b8b30a5c660b9ec94ac2ff
 import { useAuth } from '../context/AuthContext';
 
 const linkClass = ({ isActive }) =>
@@ -8,9 +12,28 @@ const linkClass = ({ isActive }) =>
     isActive ? 'bg-slate-900 text-white shadow-glow' : 'text-slate-600 hover:bg-white/80 hover:text-slate-900',
   ].join(' ');
 
+<<<<<<< HEAD
+function Navbar() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  // Hide global navbar for admin portal (role có thể là string hoặc enum object)
+  const role = user?.role?.value ?? user?.role;
+  if (location.pathname === '/dashboard' && role === 'admin') {
+    return null;
+  }
+
+=======
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, logout } = useAuth();
+>>>>>>> 52c0e70301f4f8ca44b8b30a5c660b9ec94ac2ff
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/70 bg-white/70 backdrop-blur-xl shadow-sm">
@@ -31,6 +54,24 @@ const Navbar = () => {
           <NavLink to="/" className={linkClass} end>
             Trang chủ
           </NavLink>
+<<<<<<< HEAD
+          {user ? (
+            <>
+              <NavLink to="/dashboard" className={linkClass}>
+                Dashboard
+              </NavLink>
+              <button
+                onClick={handleLogout}
+                className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-white/80 hover:text-slate-900 transition"
+              >
+                Đăng xuất
+              </button>
+            </>
+          ) : (
+            <NavLink to="/login" className={linkClass}>
+              Đăng nhập
+            </NavLink>
+=======
           <NavLink to="/tournaments" className={linkClass}>
             Giải đấu
           </NavLink>
@@ -50,6 +91,7 @@ const Navbar = () => {
                 </NavLink>
               )}
             </>
+>>>>>>> 52c0e70301f4f8ca44b8b30a5c660b9ec94ac2ff
           )}
         </nav>
 

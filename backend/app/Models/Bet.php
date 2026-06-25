@@ -2,6 +2,17 @@
 
 namespace App\Models;
 
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class Bet extends Model
+{
+    protected $fillable = ['user_id', 'registration_id', 'amount', 'prediction_type', 'status'];
+
+    protected $casts = ['amount' => 'decimal:2'];
+
+    public function user(): BelongsTo
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -22,9 +33,13 @@ class Bet extends Model
      * Lấy người dùng đã đặt cược.
      */
     public function user()
+
     {
         return $this->belongsTo(User::class);
     }
+
+
+    public function registration(): BelongsTo
 
     /**
      * Lấy thông tin đăng ký cuộc đua mà người dùng đã đặt cược.

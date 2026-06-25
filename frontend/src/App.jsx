@@ -75,6 +75,10 @@ function App() {
             {/* Main Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
+
+            <Route path="/dashboard" element={<Dashboard />} />
+            {/* Add role-specific routes here */}
+
             <Route path="/register" element={<Register />} />
             <Route path="/tournaments" element={<Tournaments />} />
             <Route path="/tournaments/:id" element={<TournamentDetail />} />
@@ -103,6 +107,7 @@ function App() {
             <Route path="/referee/races/:raceId/results" element={<RefereeResultEntry />} />
             <Route path="/referee/races/:raceId/monitor" element={<RefereeMonitor />} />
             <Route path="/referee/history" element={<RefereeHistory />} />
+
           </Routes>
         </main>
       </div>
