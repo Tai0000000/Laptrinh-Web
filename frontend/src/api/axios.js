@@ -5,19 +5,13 @@ const api = axios.create({
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  }
+    'Accept': 'application/json',
+  },
 });
 
-
-// Add request interceptor to attach the authentication token
-api.interceptors.request.use((config) => {
-
-// Request interceptor
+// Đính kèm JWT token vào mỗi request
 api.interceptors.request.use(
   (config) => {
-    // Add auth token if needed
-
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -27,12 +21,13 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor
+// Redirect về login khi token hết hạn
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       window.location.href = '/login';
     }
     return Promise.reject(error);

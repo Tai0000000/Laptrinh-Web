@@ -1,11 +1,14 @@
 import React from 'react';
 
-function AdminSidebar({ activeTab, setActiveTab }) {
+function AdminSidebar({ activeTab, setActiveTab, pendingCount = 0 }) {
   const menuItems = [
-    { id: 'overview', label: 'Tổng quan', icon: '📊' },
-    { id: 'tournaments', label: 'Giải đấu', icon: '🏆' },
-    { id: 'users', label: 'Người dùng', icon: '👥' },
-    { id: 'settings', label: 'Cài đặt', icon: '⚙️' },
+    { id: 'overview',      label: 'Tổng quan',             icon: '📊' },
+    { id: 'tournaments',   label: 'Giải đấu',              icon: '🏆' },
+    { id: 'registrations', label: 'Duyệt đăng ký',         icon: '📋', badge: pendingCount },
+    { id: 'users',         label: 'Người dùng',            icon: '👥' },
+    { id: 'results',       label: 'Nhập kết quả',          icon: '🏁' },
+    { id: 'leaderboard',   label: 'Bảng xếp hạng',         icon: '🥇' },
+    { id: 'settings',      label: 'Cài đặt',               icon: '⚙️' },
   ];
 
   return (
@@ -22,7 +25,7 @@ function AdminSidebar({ activeTab, setActiveTab }) {
       </div>
 
       {/* Navigation menu */}
-      <nav className="flex-1 px-4 py-6 space-y-2">
+      <nav className="flex-1 px-4 py-6 space-y-1">
         {menuItems.map((item) => {
           const isActive = activeTab === item.id;
           return (
@@ -40,7 +43,14 @@ function AdminSidebar({ activeTab, setActiveTab }) {
                 <span className="absolute left-0 top-3 bottom-3 w-1.5 rounded-r bg-emerald-400" />
               )}
               <span className="text-lg">{item.icon}</span>
-              <span>{item.label}</span>
+              <span className="flex-1 text-left">{item.label}</span>
+
+              {/* Badge for pending count */}
+              {item.badge > 0 && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white animate-pulse">
+                  {item.badge > 99 ? '99+' : item.badge}
+                </span>
+              )}
             </button>
           );
         })}
