@@ -11,7 +11,7 @@ import Tournaments from './pages/Tournaments';
 import TournamentDetail from './pages/TournamentDetail';
 import RaceDetail from './pages/RaceDetail';
 import Predictions from './pages/Predictions';
-import SpectatorDashboard from './pages/Dashboard';
+import AdminPanel from './pages/Dashboard';
 import Blank from './pages/Blank';
 
 // Horse Owner Pages
@@ -76,7 +76,8 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
 
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard" element={<AdminPanel />} />
+            <Route path="/admin" element={<AdminPanel />} />
             {/* Add role-specific routes here */}
 
             <Route path="/register" element={<Register />} />
@@ -84,7 +85,7 @@ function App() {
             <Route path="/tournaments/:id" element={<TournamentDetail />} />
             <Route path="/races/:id" element={<RaceDetail />} />
             <Route path="/predictions" element={<Predictions />} />
-            <Route path="/dashboard" element={<SpectatorDashboard />} />
+            <Route path="/dashboard" element={<AdminPanel />} />
             <Route path="/blank" element={<Blank />} />
             
             {/* Horse Owner Routes */}
