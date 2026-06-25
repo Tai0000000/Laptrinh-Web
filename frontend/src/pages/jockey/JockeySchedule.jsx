@@ -1,49 +1,16 @@
-import { useState, useEffect } from 'react';
-import { Badge } from '../../components/UI';
+import { useState, useEffect } from 'react'
+import { useApi } from '../../context/AuthContext.jsx'
+import { Badge } from '../../components/UI.jsx'
 
 export default function JockeySchedule({ initialFilter = 'all' }) {
+  const api = useApi()
   const [races, setRaces]   = useState([])
   const [filter, setFilter] = useState(initialFilter)
 
   useEffect(() => { setFilter(initialFilter) }, [initialFilter])
 
   useEffect(() => {
-    // Mock data
-    setRaces([
-      {
-        id: 1,
-        race_name: 'Cuộc đua số 1',
-        tournament: 'Giải đua ngựa mùa xuân',
-        race_date: new Date().toISOString(),
-        distance: 1000,
-        horse_name: 'Ngựa A',
-        lane_number: 3,
-        reg_status: 'approved',
-        status: 'scheduled',
-      },
-      {
-        id: 2,
-        race_name: 'Cuộc đua số 2',
-        tournament: 'Giải đua ngựa mùa xuân',
-        race_date: new Date(Date.now() + 86400000).toISOString(),
-        distance: 1200,
-        horse_name: 'Ngựa B',
-        lane_number: 5,
-        reg_status: 'pending',
-        status: 'scheduled',
-      },
-      {
-        id: 3,
-        race_name: 'Cuộc đua số 3',
-        tournament: 'Giải đua ngựa mùa đông',
-        race_date: new Date(Date.now() - 172800000).toISOString(),
-        distance: 1500,
-        horse_name: 'Ngựa C',
-        lane_number: 2,
-        reg_status: 'approved',
-        status: 'finished',
-      },
-    ])
+    api.get('/jockey/races').then(d => { if (d?.success) setRaces(d.data) })
   }, [])
 
   const filtered = filter === 'all' ? races : races.filter(r => r.status === filter)

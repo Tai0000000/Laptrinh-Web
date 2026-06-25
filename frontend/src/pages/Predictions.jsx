@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
-import PredictionHistory from '../components/PredictionHistory';
 
 const Predictions = () => {
   const [races, setRaces] = useState([
@@ -17,7 +16,6 @@ const Predictions = () => {
     type: 'win' // win, place, show
   });
   const [message, setMessage] = useState({ text: '', type: '' });
-  const [predictions, setPredictions] = useState([]);
 
   useEffect(() => {
     if (selectedRace) {
@@ -32,42 +30,6 @@ const Predictions = () => {
       setMessage({ text: '', type: '' });
     }
   }, [selectedRace]);
-
-  useEffect(() => {
-    // Lấy lịch sử dự đoán
-    api.get('/bets')
-      .then(res => {
-        // Nếu backend trả về dữ liệu mẫu (Stub)
-        if (res.data.data.length === 0) {
-          const mockPredictions = [
-            { id: 1, race_name: "Vòng loại Bảng A - Sprint", tournament_name: "Grand Royal Derby 2026", horse_name: "Thần Gió", lane: 1, prediction_type: "win", status: "won", payout: 25.0 },
-            { id: 2, race_name: "Vòng loại Bảng B", tournament_name: "Grand Royal Derby 2026", horse_name: "Xích Thố", lane: 2, prediction_type: "place", status: "lost", payout: 0 },
-            { id: 3, race_name: "Chung kết Cup Mùa Hè", tournament_name: "Summer Sprint Cup", horse_name: "Bạch Mã", lane: 3, prediction_type: "show", status: "pending", payout: 0 },
-          ];
-          setPredictions(mockPredictions);
-        } else {
-          setPredictions(res.data.data);
-        }
-      })
-      .catch(err => console.error(err));
-  }, []);
-
-  const fetchPredictions = () => {
-    api.get('/bets')
-      .then(res => {
-        if (res.data.data.length === 0) {
-          const mockPredictions = [
-            { id: 1, race_name: "Vòng loại Bảng A - Sprint", tournament_name: "Grand Royal Derby 2026", horse_name: "Thần Gió", lane: 1, prediction_type: "win", status: "won", payout: 25.0 },
-            { id: 2, race_name: "Vòng loại Bảng B", tournament_name: "Grand Royal Derby 2026", horse_name: "Xích Thố", lane: 2, prediction_type: "place", status: "lost", payout: 0 },
-            { id: 3, race_name: "Chung kết Cup Mùa Hè", tournament_name: "Summer Sprint Cup", horse_name: "Bạch Mã", lane: 3, prediction_type: "show", status: "pending", payout: 0 },
-          ];
-          setPredictions(mockPredictions);
-        } else {
-          setPredictions(res.data.data);
-        }
-      })
-      .catch(err => console.error(err));
-  };
 
   const handleBetSubmit = async (e) => {
     e.preventDefault();
@@ -88,7 +50,6 @@ const Predictions = () => {
         prediction_type: prediction.type
       });
       setMessage({ text: 'Đặt dự đoán thành công! Chúc bạn may mắn.', type: 'success' });
-      fetchPredictions(); // Refresh predictions after successful bet
     } catch (err) {
       setMessage({ text: 'Có lỗi xảy ra khi gửi dự đoán.', type: 'error' });
     }
@@ -243,9 +204,6 @@ const Predictions = () => {
           )}
         </div>
       </div>
-
-      {/* Lịch sử dự đoán */}
-      <PredictionHistory predictions={predictions} />
     </div>
   );
 };

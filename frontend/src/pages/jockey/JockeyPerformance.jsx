@@ -1,55 +1,15 @@
-import { useState, useEffect } from 'react';
-import { Icon, fmtDate } from '../../components/UI';
+import { useState, useEffect } from 'react'
+import { useApi } from '../../context/AuthContext.jsx'
+import { Icon, fmtDate } from '../../components/UI.jsx'
 
 export default function JockeyPerformance() {
+  const api = useApi()
   const [results, setResults]   = useState([])
   const [bestTimes, setBestTimes] = useState([])
 
   useEffect(() => {
-    // Mock data
-    setResults([
-      {
-        id: 1,
-        race_name: 'Cuộc đua số 1',
-        horse_name: 'Ngựa A',
-        race_date: new Date(Date.now() - 86400000).toISOString(),
-        finish_position: 1,
-        finish_time: '120.5',
-        prize_amount: 10000000,
-      },
-      {
-        id: 2,
-        race_name: 'Cuộc đua số 2',
-        horse_name: 'Ngựa B',
-        race_date: new Date(Date.now() - 259200000).toISOString(),
-        finish_position: 2,
-        finish_time: '121.3',
-        prize_amount: 5000000,
-      },
-      {
-        id: 3,
-        race_name: 'Cuộc đua số 3',
-        horse_name: 'Ngựa C',
-        race_date: new Date(Date.now() - 432000000).toISOString(),
-        finish_position: 3,
-        finish_time: '122.1',
-        prize_amount: 2500000,
-      },
-    ])
-    setBestTimes([
-      {
-        rank: 1,
-        race_name: 'Cuộc đua số 1',
-        horse_name: 'Ngựa A',
-        finish_time: '120.5',
-      },
-      {
-        rank: 2,
-        race_name: 'Cuộc đua số 2',
-        horse_name: 'Ngựa B',
-        finish_time: '121.3',
-      },
-    ])
+    api.get('/jockey/performance/results').then(d => { if (d?.success) setResults(d.data) })
+    api.get('/jockey/performance/best-times').then(d => { if (d?.success) setBestTimes(d.data) })
   }, [])
 
   const wins       = results.filter(r => +r.finish_position === 1).length
