@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
-            $table->enum('role', ['horse_owner', 'jockey', 'race_referee', 'spectator', 'admin'])->default('spectator');
+            $table->enum('role', ['horse_owner', 'jockey', 'referee', 'spectator', 'admin'])->default('spectator');
             $table->rememberToken();
             $table->timestamps();
         });
@@ -78,7 +78,11 @@ return new class extends Migration
         Schema::create('races', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tournament_id')->constrained()->onDelete('cascade');
+
             $table->string('round')->default('Vòng 1');
+
+            $table->string('name');
+
             $table->dateTime('race_time');
             $table->integer('distance'); // in meters
             $table->integer('max_horses')->default(8);
@@ -92,6 +96,7 @@ return new class extends Migration
             $table->foreignId('race_id')->constrained()->onDelete('cascade');
             $table->foreignId('horse_id')->constrained()->onDelete('cascade');
             $table->foreignId('jockey_id')->constrained('users')->onDelete('cascade');
+            $table->integer('lane')->nullable();
             $table->enum('status', ['pending', 'confirmed', 'rejected', 'withdrawn'])->default('pending');
             $table->timestamps();
         });

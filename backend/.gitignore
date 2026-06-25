@@ -10,6 +10,10 @@ bootstrap/cache/
 .vscode/
 *.swp
 *.swo
-*~
+**.log
 .phpunit.result.cache
+
 database/*.sqlite
+
+/public/storage
+

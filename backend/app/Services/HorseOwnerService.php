@@ -11,11 +11,17 @@ use App\Repositories\Contracts\IHorseRepository;
 use App\Repositories\Contracts\IRaceRepository;
 use App\Repositories\Contracts\IRegistrationRepository;
 use App\Services\Contracts\IHorseOwnerService;
+
 use Illuminate\Support\Facades\Hash;
+
+use App\Repositories\Contracts\IHorseOwnerRepository;
+use App\DTOs\HorseOwnerDTO;
+
 
 class HorseOwnerService implements IHorseOwnerService
 {
     protected IHorseOwnerRepository $horseOwnerRepository;
+
     protected IHorseRepository $horseRepository;
     protected IRaceRepository $raceRepository;
     protected IRegistrationRepository $registrationRepository;
@@ -194,5 +200,34 @@ class HorseOwnerService implements IHorseOwnerService
     {
         $rewards = $this->horseOwnerRepository->getHorseRewards($horseId);
         return $rewards ? $rewards->toArray() : [];
+
+
+    public function __construct(IHorseOwnerRepository $horseOwnerRepository)
+    {
+        $this->horseOwnerRepository = $horseOwnerRepository;
+    }
+
+    public function getOwnerById(int $id): ?HorseOwnerDTO
+    {
+        $owner = $this->horseOwnerRepository->findHorseOwnerById($id);
+        return $owner ? HorseOwnerDTO::fromModel($owner) : null;
+    }
+
+    public function registerOwner(HorseOwnerDTO $dto): HorseOwnerDTO
+    {
+        $owner = $this->horseOwnerRepository->createHorseOwner($dto->toModelAttributes());
+        return HorseOwnerDTO::fromModel($owner);
+    }
+
+    public function updateOwnerInfo(int $id, HorseOwnerDTO $dto): ?HorseOwnerDTO
+    {
+        $owner = $this->horseOwnerRepository->updateHorseOwner($id, $dto->toModelAttributes());
+        return $owner ? HorseOwnerDTO::fromModel($owner) : null;
+    }
+
+    public function deleteOwnerAccount(int $id): bool
+    {
+        return $this->horseOwnerRepository->deleteHorseOwner($id);
+
     }
 }

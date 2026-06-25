@@ -5,14 +5,16 @@ namespace App\Repositories\Contracts;
 interface IHorseOwnerRepository
 {
     /**
-     * Find horse owner by ID
+
+     * Tìm kiếm chủ ngựa theo ID
      *
      * @param int $id
      * @return mixed
      */
-    public function findById(int $id): mixed;
+    public function findHorseOwnerById(int $id): mixed;
 
     /**
+
      * Find horse owner by user ID
      *
      * @param int $userId
@@ -22,11 +24,14 @@ interface IHorseOwnerRepository
 
     /**
      * Create a new horse owner
+
+     * Thêm chủ ngựa mới
+
      *
      * @param array $data
      * @return mixed
      */
-    public function create(array $data): mixed;
+    public function createHorseOwner(array $data): mixed;
 
     /**
      * Update horse owner details
@@ -35,7 +40,7 @@ interface IHorseOwnerRepository
      * @param array $data
      * @return mixed
      */
-    public function update(int $id, array $data): mixed;
+    public function updateHorseOwner(int $id, array $data): mixed;
 
     /**
      * Delete a horse owner
@@ -43,6 +48,7 @@ interface IHorseOwnerRepository
      * @param int $id
      * @return bool
      */
+
     public function delete(int $id): bool;
 
     /**
@@ -101,4 +107,8 @@ interface IHorseOwnerRepository
      * @return mixed
      */
     public function getHorseRewards(int $horseId): mixed;
+
+    public function deleteHorseOwner(int $id): bool;
+
 }
+

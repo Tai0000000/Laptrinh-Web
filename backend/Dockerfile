@@ -1,4 +1,4 @@
-FROM php:8.3-fpm
+FROM php:8.4-fpm
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -16,9 +16,9 @@ WORKDIR /var/www/html
 
 COPY . .
 
-RUN composer install --no-interaction --optimize-autoloader
+RUN composer install --no-interaction --optimize-autoloader --no-scripts --no-security-blocking
 
-RUN mkdir -p storage/framework/{cache,sessions,views} && chmod -R 777 storage
+RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views && chmod -R 777 storage
 
 EXPOSE 8000
 

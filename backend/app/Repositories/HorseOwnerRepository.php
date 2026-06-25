@@ -9,17 +9,21 @@ use App\Models\Race;
 use App\Models\RaceResult;
 use App\Models\User;
 use App\Repositories\Contracts\IHorseOwnerRepository;
+use App\Models\HorseOwner;
 
 class HorseOwnerRepository implements IHorseOwnerRepository
 {
     /**
-     * Find horse owner by ID
+
+     * Tìm kiếm chủ ngựa theo ID
+
      *
      * @param int $id
      * @return mixed
      */
-    public function findById(int $id): mixed
+    public function findHorseOwnerById(int $id): mixed
     {
+
         return HorseOwner::find($id);
     }
 
@@ -36,11 +40,18 @@ class HorseOwnerRepository implements IHorseOwnerRepository
 
     /**
      * Create a new horse owner
+
+        return HorseOwner::with('user')->find($id);
+    }
+
+    /**
+     * Thêm chủ ngựa mới
+
      *
      * @param array $data
      * @return mixed
      */
-    public function create(array $data): mixed
+    public function createHorseOwner(array $data): mixed
     {
         return HorseOwner::create($data);
     }
@@ -52,11 +63,35 @@ class HorseOwnerRepository implements IHorseOwnerRepository
      * @param array $data
      * @return mixed
      */
-    public function update(int $id, array $data): mixed
+    public function updateHorseOwner(int $id, array $data): mixed
     {
+
         $owner = HorseOwner::find($id);
         if ($owner) {
             $owner->update($data);
+
+        $owner = HorseOwner::with('user')->find($id);
+        if ($owner) {
+            // Update associated user if user details are provided
+            if ($owner->user) {
+                $userData = [];
+                if (isset($data['name'])) $userData['name'] = $data['name'];
+                if (isset($data['email'])) $userData['email'] = $data['email'];
+                if (!empty($userData)) {
+                    $owner->user->update($userData);
+                }
+            }
+            // Update the horse owner record itself
+            $ownerData = array_filter($data, function($key) {
+                return $key === 'user_id';
+            }, ARRAY_FILTER_USE_KEY);
+            if (!empty($ownerData)) {
+                $owner->update($ownerData);
+            }
+            
+            // Reload user relation to return updated data
+            $owner->load('user');
+
             return $owner;
         }
         return null;
@@ -68,13 +103,14 @@ class HorseOwnerRepository implements IHorseOwnerRepository
      * @param int $id
      * @return bool
      */
-    public function delete(int $id): bool
+    public function deleteHorseOwner(int $id): bool
     {
         $owner = HorseOwner::find($id);
         if ($owner) {
             return $owner->delete();
         }
         return false;
+
     }
 
     /**
@@ -181,5 +217,6 @@ class HorseOwnerRepository implements IHorseOwnerRepository
                 'description' => "Reward for rank " . ($res->rank ?? 'N/A') . " in race " . ($res->race->id ?? '')
             ];
         });
+
     }
 }
