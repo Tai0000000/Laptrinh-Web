@@ -2,6 +2,17 @@
 
 namespace App\Services\Contracts;
 
+
+interface IHorseService
+{
+    public function getAllHorses(): mixed;
+    public function getHorseById(int $id): mixed;
+    public function getHorsesByOwner(int $ownerId): mixed;
+    public function createHorse(array $data): mixed;
+    public function updateHorse(int $id, array $data): mixed;
+    public function deleteHorse(int $id): bool;
+}
+
 use App\DTOs\HorseDTO;
 
 interface IHorseService
@@ -21,4 +32,5 @@ interface IHorseService
 
     public function countHorsesByOwner(int $ownerId): int;
 }
+
 

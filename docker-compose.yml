@@ -37,6 +37,8 @@ services:
       DB_PASSWORD: horse_pass
       SANCTUM_STATEFUL_DOMAINS: localhost,127.0.0.1
       SESSION_DOMAIN: localhost
+      JWT_SECRET: ${JWT_SECRET:-horse_racing_super_secret_jwt_key_2026_do_not_share}
+      AUTH_TOKEN_TTL_MINUTES: ${AUTH_TOKEN_TTL_MINUTES:-10080}
     ports:
       - "8000:8000"
     volumes:

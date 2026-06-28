@@ -81,10 +81,12 @@ return new class extends Migration
         Schema::create('races', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tournament_id')->constrained('tournaments')->onDelete('cascade');
+            $table->string('round')->default('Vòng 1');
             $table->string('name');
             $table->dateTime('race_time');
             $table->integer('distance'); // Tính bằng mét
-            $table->enum('status', ['scheduled', 'ongoing', 'completed', 'cancelled'])->default('scheduled');
+            $table->integer('max_horses')->default(8);
+            $table->string('status')->default('scheduled'); // scheduled, ongoing, completed, cancelled
             $table->timestamps();
         });
 
@@ -93,7 +95,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('race_id')->constrained('races')->onDelete('cascade');
             $table->foreignId('horse_id')->constrained('horses')->onDelete('cascade');
-            // Đã sửa: jockey_id phải trỏ trực tiếp về jockeys.id để đảm bảo toàn vẹn dữ liệu
             $table->foreignId('jockey_id')->constrained('jockeys')->onDelete('cascade');
             $table->integer('lane')->nullable();
             $table->enum('status', ['pending', 'confirmed', 'rejected', 'withdrawn'])->default('pending');
@@ -118,7 +119,7 @@ return new class extends Migration
             $table->foreignId('jockey_id')->constrained('jockeys')->onDelete('cascade');
             $table->foreignId('race_id')->constrained('races')->onDelete('cascade');
             $table->enum('status', ['pending', 'accepted', 'rejected'])->default('pending');
-            $table->string('reason')->nullable(); // Lý do từ chối nếu có
+            $table->string('reason')->nullable();
             $table->timestamps();
         });
 
@@ -134,7 +135,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // 14. Bảng Biên bản thi đấu (Referee Report
+        // 14. Bảng Biên bản thi đấu (Referee Report)
         Schema::create('referee_reports', function (Blueprint $table) {
             $table->id();
             $table->foreignId('race_id')->unique()->constrained('races')->onDelete('cascade');
@@ -149,9 +150,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('registration_id')->constrained('registrations')->onDelete('cascade');
-            $table->decimal('amount', 12, 2); // Đổi sang decimal chống sai số tiền tệ
-            $table->string('prediction_type'); // Hạng nhất, Hạng nhì, Hạng ba...
-            $table->enum('status', ['pending', 'won', 'lost'])->default('pending');
+            $table->decimal('amount', 12, 2);
+            $table->string('prediction_type');
+            $table->string('status')->default('pending');
             $table->timestamps();
         });
 
@@ -162,7 +163,7 @@ return new class extends Migration
             $table->foreignId('bet_id')->nullable()->constrained('bets')->onDelete('set null');
             $table->foreignId('winner_user_id')->constrained('users')->onDelete('cascade');
             $table->decimal('amount', 14, 2);
-            $table->enum('prize_type', ['race_reward', 'prediction_reward']); // Thưởng thắng giải hoặc Thưởng dự đoán
+            $table->enum('prize_type', ['race_reward', 'prediction_reward']);
             $table->timestamps();
         });
     }

@@ -2,6 +2,17 @@
 
 namespace App\Models;
 
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class RaceResult extends Model
+{
+    protected $fillable = ['race_id', 'registration_id', 'rank', 'finish_time', 'notes'];
+
+    protected $casts = ['rank' => 'integer'];
+
+
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -45,10 +56,13 @@ class RaceResult extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
     public function race(): BelongsTo
     {
         return $this->belongsTo(Race::class);
     }
+
+
 
 
 

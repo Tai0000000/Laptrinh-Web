@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Services\Contracts\IJockeyService;
+use Illuminate\Http\JsonResponse;
 use App\Models\HorseJockey;
 use App\Models\RaceResult;
 use App\Models\Registration;
 use App\Models\User;
 use Illuminate\Http\Request;
-use App\Services\Contracts\IJockeyService;
 
 class JockeyController extends Controller
 {
@@ -17,6 +18,13 @@ class JockeyController extends Controller
     public function __construct(IJockeyService $jockeyService)
     {
         $this->jockeyService = $jockeyService;
+    }
+
+    public function schedule(Request $request): JsonResponse
+    {
+        $userId = $request->attributes->get('auth_user_id');
+        $schedule = $this->jockeyService->getJockeySchedule($userId);
+        return response()->json($schedule);
     }
     // GET /api/jockey/stats
     public function stats(Request $request)
@@ -271,6 +279,7 @@ class JockeyController extends Controller
         )->first();
 
         return $result ? "Hạng {$result->rank}" : null;
+
     }
 
     // GET /api/jockeys

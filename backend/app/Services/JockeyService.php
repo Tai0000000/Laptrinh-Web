@@ -50,4 +50,14 @@ class JockeyService implements IJockeyService
         }
         return $dtos;
     }
+
+    public function getJockeyByUserId(int $userId): mixed
+    {
+        return $this->jockeyRepository->findByUserId($userId);
+    }
+
+    public function getJockeySchedule(int $jockeyUserId): mixed
+    {
+        return $this->jockeyRepository->getSchedule($jockeyUserId);
+    }
 }

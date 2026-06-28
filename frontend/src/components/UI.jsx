@@ -1,5 +1,3 @@
-import React from 'react';
-
 export function Icon({ name, size = 24, fill = false, style = {}, className = '' }) {
   return (
     <span
@@ -15,22 +13,22 @@ export function Icon({ name, size = 24, fill = false, style = {}, className = ''
     >
       {name}
     </span>
-  );
+  )
 }
 
 const BADGE_MAP = {
-  confirmed:   { label: 'Xác nhận',      bg: 'rgba(91,240,108,0.15)',   color: '#5bf06c',  border: 'rgba(91,240,108,0.3)',  dot: true  },
-  accepted:    { label: 'Đã chấp nhận',  bg: 'rgba(91,240,108,0.15)',   color: '#5bf06c',  border: 'rgba(91,240,108,0.3)',  dot: false },
-  approved:    { label: 'Đã duyệt',      bg: 'rgba(91,240,108,0.15)',   color: '#5bf06c',  border: 'rgba(91,240,108,0.3)',  dot: false },
-  scheduled:   { label: 'Đã lên lịch',   bg: 'rgba(198,198,199,0.1)',   color: '#c6c6c7',  border: 'rgba(198,198,199,0.3)', dot: false },
-  pending:     { label: 'Chờ xác nhận',  bg: 'rgba(198,198,199,0.1)',   color: '#c6c6c7',  border: 'rgba(198,198,199,0.3)', dot: false },
-  in_progress: { label: 'Đang diễn ra',  bg: 'rgba(91,240,108,0.15)',   color: '#5bf06c',  border: 'rgba(91,240,108,0.3)',  dot: true  },
-  finished:    { label: 'Kết thúc',      bg: 'rgba(134,149,130,0.15)',  color: '#869582',  border: 'rgba(134,149,130,0.3)', dot: false },
-  rejected:    { label: 'Từ chối',       bg: 'rgba(255,180,171,0.12)',  color: '#ffb4ab',  border: 'rgba(255,180,171,0.3)', dot: false },
-  cancelled:   { label: 'Đã hủy',        bg: 'rgba(255,180,171,0.12)',  color: '#ffb4ab',  border: 'rgba(255,180,171,0.3)', dot: false },
-  won:         { label: 'Thắng',         bg: 'rgba(91,240,108,0.15)',   color: '#5bf06c',  border: 'rgba(91,240,108,0.3)',  dot: false },
-  lost:        { label: 'Thua',          bg: 'rgba(134,149,130,0.15)',  color: '#869582',  border: 'rgba(134,149,130,0.3)', dot: false },
-};
+  confirmed:   { label: 'Xác nhận',        bg: 'rgba(91,240,108,0.15)',   color: '#5bf06c',  border: 'rgba(91,240,108,0.3)',  dot: true  },
+  accepted:    { label: 'Đã chấp nhận',    bg: 'rgba(91,240,108,0.15)',   color: '#5bf06c',  border: 'rgba(91,240,108,0.3)',  dot: false },
+  approved:    { label: 'Đã duyệt',        bg: 'rgba(91,240,108,0.15)',   color: '#5bf06c',  border: 'rgba(91,240,108,0.3)',  dot: false },
+  scheduled:   { label: 'Đã lên lịch',     bg: 'rgba(198,198,199,0.1)',   color: '#c6c6c7',  border: 'rgba(198,198,199,0.3)', dot: false },
+  pending:     { label: 'Chờ xác nhận',    bg: 'rgba(198,198,199,0.1)',   color: '#c6c6c7',  border: 'rgba(198,198,199,0.3)', dot: false },
+  in_progress: { label: 'Đang diễn ra',    bg: 'rgba(91,240,108,0.15)',   color: '#5bf06c',  border: 'rgba(91,240,108,0.3)',  dot: true  },
+  finished:    { label: 'Kết thúc',        bg: 'rgba(134,149,130,0.15)',  color: '#869582',  border: 'rgba(134,149,130,0.3)', dot: false },
+  rejected:    { label: 'Từ chối',         bg: 'rgba(255,180,171,0.12)',  color: '#ffb4ab',  border: 'rgba(255,180,171,0.3)', dot: false },
+  cancelled:   { label: 'Đã hủy',          bg: 'rgba(255,180,171,0.12)',  color: '#ffb4ab',  border: 'rgba(255,180,171,0.3)', dot: false },
+  won:         { label: 'Thắng',           bg: 'rgba(91,240,108,0.15)',   color: '#5bf06c',  border: 'rgba(91,240,108,0.3)',  dot: false },
+  lost:        { label: 'Thua',            bg: 'rgba(134,149,130,0.15)',  color: '#869582',  border: 'rgba(134,149,130,0.3)', dot: false },
+}
 
 export function Badge({ status, label: customLabel }) {
   const cfg = BADGE_MAP[status] || {
@@ -39,7 +37,7 @@ export function Badge({ status, label: customLabel }) {
     color: '#869582',
     border: 'rgba(134,149,130,0.3)',
     dot: false,
-  };
+  }
 
   return (
     <span style={{
@@ -70,30 +68,30 @@ export function Badge({ status, label: customLabel }) {
       )}
       {customLabel || cfg.label}
     </span>
-  );
+  )
 }
 
 export function fmtDate(dateStr) {
-  if (!dateStr) return '—';
+  if (!dateStr) return '—'
   try {
     return new Date(dateStr).toLocaleDateString('vi-VN', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
-    });
+    })
   } catch {
-    return dateStr;
+    return dateStr
   }
 }
 
 export function fmtDateTime(dateStr) {
-  if (!dateStr) return '—';
+  if (!dateStr) return '—'
   try {
-    const d = new Date(dateStr);
+    const d = new Date(dateStr)
     return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
-      + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
   } catch {
-    return dateStr;
+    return dateStr
   }
 }
 
@@ -109,7 +107,7 @@ export function LoadingSpinner({ size = 32 }) {
         animation: 'spin 0.8s linear infinite',
       }} />
     </div>
-  );
+  )
 }
 
 export function EmptyState({ icon = 'inbox', text = 'Không có dữ liệu' }) {
@@ -124,5 +122,5 @@ export function EmptyState({ icon = 'inbox', text = 'Không có dữ liệu' }) 
       <Icon name={icon} size={40} style={{ color: '#3d4a3b', marginBottom: 12 }} />
       <p style={{ color: '#869582', fontFamily: 'Inter', fontSize: 14 }}>{text}</p>
     </div>
-  );
+  )
 }

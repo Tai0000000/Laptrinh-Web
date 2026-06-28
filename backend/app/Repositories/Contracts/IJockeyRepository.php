@@ -43,4 +43,9 @@ interface IJockeyRepository
      * @return mixed
      */
     public function getAllJockeys(): mixed;
+
+    public function findById(int $id): mixed;
+    public function findByUserId(int $userId): mixed;
+    public function getSchedule(int $jockeyUserId): mixed;
+    public function getAll(): mixed;
 }
