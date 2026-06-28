@@ -12,4 +12,5 @@ interface IRaceService
     public function updateRaceStatus(int $id, string $status): mixed;
     public function deleteRace(int $id): bool;
     public function getLiveRaces(): mixed;
+    public function getRaceScheduleForHorse(int $horseId): array;
 }

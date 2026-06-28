@@ -140,13 +140,22 @@ Route::middleware('jwt.auth')->group(function () {
         Route::get('/horse-owner/profile',                            [HorseOwnerController::class, 'profile']);
         Route::get('/horse-owner/horses',                             [HorseOwnerController::class, 'myHorses']);
         Route::get('/horse-owner/horses-for-race/{raceId}',           [HorseOwnerController::class, 'horsesForRace']);
-        Route::get('/horse-owner/horses/{horseId}/jockeys',           [HorseOwnerController::class, 'jockeysForHorse']);
-        Route::get('/horse-owner/horses/{horseId}/schedule',          [HorseOwnerController::class, 'raceSchedule']);
-        Route::get('/horse-owner/horses/{horseId}/results',           [HorseOwnerController::class, 'raceResults']);
-        Route::get('/horse-owner/horses/{horseId}/rankings',          [HorseOwnerController::class, 'horseRankings']);
-        Route::get('/horse-owner/horses/{horseId}/rewards',           [HorseOwnerController::class, 'horseRewards']);
+        Route::get('/horse-owner/horses/{horseId}/jockeys',           [HorseController::class, 'jockeysForHorse']);
+        Route::get('/horse-owner/horses/{horseId}/schedule',          [HorseController::class, 'schedule']);
+        Route::get('/horse-owner/horses/{horseId}/results',           [HorseController::class, 'results']);
+        Route::get('/horse-owner/horses/{horseId}/rankings',          [HorseController::class, 'rankings']);
+        Route::get('/horse-owner/horses/{horseId}/rewards',           [HorseController::class, 'rewards']);
 
-        Route::get('/jockeys', [HorseOwnerController::class, 'listJockeys']);
+        Route::get('/jockeys', [JockeyController::class, 'listJockeys']);
+
+        // RESTful API endpoints for specific Owner ID (used by frontend)
+        Route::get('/owners/{ownerId}',         [HorseOwnerController::class, 'getHorseOwnerById']);
+        Route::put('/owners/{ownerId}',         [HorseOwnerController::class, 'updateHorseOwner']);
+        Route::delete('/owners/{ownerId}',      [HorseOwnerController::class, 'deleteHorseOwner']);
+        Route::post('/owners',                  [HorseOwnerController::class, 'createHorseOwner']);
+
+        Route::get('/owners/{ownerId}/horses',  [HorseController::class, 'getHorsesByOwner']);
+        Route::get('/owners/{ownerId}/horses/count', [HorseController::class, 'countHorsesByOwner']);
     });
 
     // --------------------------------------------------------

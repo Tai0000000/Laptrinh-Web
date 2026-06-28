@@ -63,7 +63,7 @@ return new class extends Migration
             $table->integer('age');
             $table->string('breed');
             $table->foreignId('horse_owner_id')->constrained('horse_owners')->onDelete('cascade');
-            $table->string('status')->default('active'); // active, injured, retired
+            $table->string('status')->default('active'); // active, injured, retired, resting
             $table->timestamps();
         });
 

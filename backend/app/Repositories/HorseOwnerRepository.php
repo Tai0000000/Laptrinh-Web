@@ -9,7 +9,6 @@ use App\Models\Race;
 use App\Models\RaceResult;
 use App\Models\User;
 use App\Repositories\Contracts\IHorseOwnerRepository;
-use App\Models\HorseOwner;
 
 class HorseOwnerRepository implements IHorseOwnerRepository
 {
@@ -65,11 +64,6 @@ class HorseOwnerRepository implements IHorseOwnerRepository
      */
     public function updateHorseOwner(int $id, array $data): mixed
     {
-
-        $owner = HorseOwner::find($id);
-        if ($owner) {
-            $owner->update($data);
-
         $owner = HorseOwner::with('user')->find($id);
         if ($owner) {
             // Update associated user if user details are provided
@@ -110,7 +104,11 @@ class HorseOwnerRepository implements IHorseOwnerRepository
             return $owner->delete();
         }
         return false;
+    }
 
+    public function delete(int $id): bool
+    {
+        return $this->deleteHorseOwner($id);
     }
 
     /**

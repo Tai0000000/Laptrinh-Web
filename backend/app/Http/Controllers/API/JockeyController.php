@@ -362,4 +362,11 @@ class JockeyController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
+
+    public function listJockeys(): JsonResponse
+    {
+        $jockeys = $this->jockeyService->getAllJockeys();
+        $data = array_map(fn($dto) => $dto->toArray(), $jockeys);
+        return response()->json($data);
+    }
 }

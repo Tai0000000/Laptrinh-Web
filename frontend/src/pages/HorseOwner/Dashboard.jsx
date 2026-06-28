@@ -1,23 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../api/axios';
+import { useAuth } from '../../context/AuthContext';
 import HorseOwnerLayout from '../../components/HorseOwner/HorseOwnerLayout';
 import AddNewHorseModal from '../../components/HorseOwner/AddNewHorseModal';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [totalHorses, setTotalHorses] = useState(0);
 
   useEffect(() => {
-    axios.get('http://localhost:8000/api/owners/10/horses/count')
+    api.get(`/owners/${user?.id}/horses/count`)
       .then((response) => {
         setTotalHorses(response.data.count);
       })
       .catch((err) => {
         console.error('Error fetching horse count:', err);
       });
-  }, []);
+  }, [user]);
 
   const handleSuccess = () => {
     navigate('/horse-owner/horses', {

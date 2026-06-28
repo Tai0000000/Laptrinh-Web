@@ -7,8 +7,7 @@
     "laravel/framework": "^11.0",
     "laravel/sanctum": "^4.0",
 
-    "firebase/php-jwt": "^6.10"
-
+    "firebase/php-jwt": "^6.10",
     "laravel/reverb": "^1.0"
   },
   "config": {
@@ -25,7 +24,6 @@
         "block": false
       }
     }
-
   },
   "require-dev": {
     "laravel/tinker": "^2.9"
@@ -42,15 +40,5 @@
       "@php artisan key:generate --ansi",
       "@php artisan storage:link"
     ]
-  },
-  "config": {
-    "allow-plugins": {
-      "php-http/discovery": true
-    },
-    "policy": {
-      "advisories": {
-        "block": false
-      }
-    }
   }
 }

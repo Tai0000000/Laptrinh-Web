@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 
 const ConfirmDeleteModal = ({ isOpen, horse, onClose, onSuccess }) => {
   const [deleting, setDeleting] = useState(false);
@@ -8,7 +8,7 @@ const ConfirmDeleteModal = ({ isOpen, horse, onClose, onSuccess }) => {
 
   const handleConfirmDelete = () => {
     setDeleting(true);
-    axios.delete(`http://localhost:8000/api/horses/${horse.id}`)
+    api.delete(`/horses/${horse.id}`)
       .then(() => {
         onSuccess();
         onClose();
