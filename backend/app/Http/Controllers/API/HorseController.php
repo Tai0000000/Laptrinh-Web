@@ -2,11 +2,17 @@
 
 namespace App\Http\Controllers\API;
 
-
 use App\Http\Controllers\Controller;
-use App\Models\HorseOwner;
 use App\Services\Contracts\IHorseService;
 use App\Services\Contracts\IHorseOwnerService;
+use App\Services\Contracts\IRaceService;
+use App\Http\Requests\HorseRequest\GetHorsesByOwnerRequest;
+use App\Http\Requests\HorseRequest\GetHorseByIdRequest;
+use App\Http\Requests\HorseRequest\AddHorseRequest;
+use App\Http\Requests\HorseRequest\UpdateHorseRequest;
+use App\Http\Requests\HorseRequest\RemoveHorseRequest;
+use App\Http\Resources\HorseResource\HorseResource;
+use App\DTOs\HorseDTO;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -14,30 +20,35 @@ class HorseController extends Controller
 {
     protected IHorseService $horseService;
     protected IHorseOwnerService $horseOwnerService;
+    protected IRaceService $raceService;
 
-    public function __construct(IHorseService $horseService, IHorseOwnerService $horseOwnerService)
-    {
+    public function __construct(
+        IHorseService $horseService,
+        IHorseOwnerService $horseOwnerService,
+        IRaceService $raceService
+    ) {
         $this->horseService = $horseService;
         $this->horseOwnerService = $horseOwnerService;
+        $this->raceService = $raceService;
     }
 
     public function index(Request $request): JsonResponse
     {
         $userId = $request->attributes->get('auth_user_id');
-        $owner = HorseOwner::where('user_id', $userId)->first();
-        if (!$owner) {
+        $ownerDto = $this->horseOwnerService->getOwnerByUserId($userId);
+        if (!$ownerDto) {
             return response()->json(['message' => 'Horse owner information not found.'], 404);
         }
 
-        $horses = $this->horseService->getHorsesByOwner($owner->id);
+        $horses = $this->horseService->getHorsesByOwner($ownerDto->id);
         return response()->json($horses);
     }
 
     public function store(Request $request): JsonResponse
     {
         $userId = $request->attributes->get('auth_user_id');
-        $owner = HorseOwner::where('user_id', $userId)->first();
-        if (!$owner) {
+        $ownerDto = $this->horseOwnerService->getOwnerByUserId($userId);
+        if (!$ownerDto) {
             return response()->json(['message' => 'Horse owner information not found.'], 404);
         }
 
@@ -47,7 +58,7 @@ class HorseController extends Controller
             'breed' => 'required|string|max:255',
         ]);
 
-        $validated['horse_owner_id'] = $owner->id;
+        $validated['horse_owner_id'] = $ownerDto->id;
         $validated['status'] = 'active';
 
         $horse = $this->horseService->createHorse($validated);
@@ -69,7 +80,7 @@ class HorseController extends Controller
             'name' => 'sometimes|required|string|max:255',
             'age' => 'sometimes|required|integer|min:1',
             'breed' => 'sometimes|required|string|max:255',
-            'status' => 'sometimes|required|string|in:active,inactive',
+            'status' => 'sometimes|required|string|in:active,injured,retired,resting',
         ]);
 
         $horse = $this->horseService->updateHorse($id, $validated);
@@ -90,25 +101,25 @@ class HorseController extends Controller
 
     public function schedule(int $id): JsonResponse
     {
-        $schedule = $this->horseOwnerService->viewRaceScheduleAndConfirmParticipation($id);
+        $schedule = $this->raceService->getRaceScheduleForHorse($id);
         return response()->json($schedule);
     }
 
     public function results(int $id): JsonResponse
     {
-        $results = $this->horseOwnerService->trackRaceResults($id);
+        $results = $this->horseService->trackRaceResults($id);
         return response()->json($results);
     }
 
     public function rankings(int $id): JsonResponse
     {
-        $rankings = $this->horseOwnerService->getHorseRankings($id);
+        $rankings = $this->horseService->getHorseRankings($id);
         return response()->json($rankings);
     }
 
     public function rewards(int $id): JsonResponse
     {
-        $rewards = $this->horseOwnerService->getHorseRewards($id);
+        $rewards = $this->horseService->getHorseRewards($id);
         return response()->json($rewards);
     }
 
@@ -132,23 +143,6 @@ class HorseController extends Controller
 
         $this->horseOwnerService->confirmJockeyForRace($id, $validated['race_id'], $validated['jockey_id']);
         return response()->json(['message' => 'Jockey confirmed for the race successfully.']);
-
-use App\Services\Contracts\IHorseService;
-use App\Http\Requests\HorseRequest\GetHorsesByOwnerRequest;
-use App\Http\Requests\HorseRequest\GetHorseByIdRequest;
-use App\Http\Requests\HorseRequest\AddHorseRequest;
-use App\Http\Requests\HorseRequest\UpdateHorseRequest;
-use App\Http\Requests\HorseRequest\RemoveHorseRequest;
-use App\Http\Resources\HorseResource\HorseResource;
-use App\DTOs\HorseDTO;
-
-class HorseController
-{
-    protected IHorseService $horseService;
-
-    public function __construct(IHorseService $horseService)
-    {
-        $this->horseService = $horseService;
     }
 
     /**
@@ -156,7 +150,11 @@ class HorseController
      */
     public function getHorsesByOwner(GetHorsesByOwnerRequest $request, int $ownerId)
     {
-        $ownerId = 10; // Hardcode for testing
+        $userId = $request->attributes->get('auth_user_id');
+        $owner = $this->horseOwnerService->getOwnerByUserId($userId);
+        if ($owner) {
+            $ownerId = $owner->id;
+        }
         $dtos = $this->horseService->getHorsesByOwner($ownerId);
         return HorseResource::collection($dtos);
     }
@@ -164,13 +162,16 @@ class HorseController
     /**
      * GET /api/owners/{ownerId}/horses/count
      */
-    public function countHorsesByOwner(int $ownerId)
+    public function countHorsesByOwner(Request $request, int $ownerId)
     {
-        $ownerId = 10; // Hardcode for testing
+        $userId = $request->attributes->get('auth_user_id');
+        $owner = $this->horseOwnerService->getOwnerByUserId($userId);
+        if ($owner) {
+            $ownerId = $owner->id;
+        }
         $count = $this->horseService->countHorsesByOwner($ownerId);
         return response()->json(['count' => $count]);
     }
-
 
     /**
      * GET /api/horses/{horseId}
@@ -189,8 +190,12 @@ class HorseController
      */
     public function createHorse(AddHorseRequest $request)
     {
+        $userId = $request->attributes->get('auth_user_id');
+        $owner = $this->horseOwnerService->getOwnerByUserId($userId);
+        $ownerId = $owner ? $owner->id : 10;
+
         $data = $request->validated();
-        $data['horse_owner_id'] = 10; // Hardcode for testing
+        $data['horse_owner_id'] = $ownerId;
         $dto = HorseDTO::fromArray($data);
         $resultDto = $this->horseService->addHorse($dto);
         return (new HorseResource($resultDto))->response()->setStatusCode(201);
@@ -219,6 +224,11 @@ class HorseController
             return response()->json(['message' => 'Ngựa không tồn tại hoặc xóa thất bại'], 404);
         }
         return response()->json(null, 204);
+    }
 
+    public function jockeysForHorse(int $horseId): JsonResponse
+    {
+        $jockeys = $this->horseOwnerService->getJockeysForHorse($horseId);
+        return response()->json($jockeys);
     }
 }

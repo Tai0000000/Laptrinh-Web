@@ -64,7 +64,9 @@ services:
         php server.php
       "
 
+networks:
+  mysql-demo_default:
+    external: true
+
 volumes:
   db_data:
-
-

@@ -2,8 +2,9 @@
 
 namespace App\Services;
 
-use App\Repositories\Contracts\IJockeyRepository;
 use App\Services\Contracts\IJockeyService;
+use App\Repositories\Contracts\IJockeyRepository;
+use App\DTOs\JockeyDTO;
 
 class JockeyService implements IJockeyService
 {
@@ -14,9 +15,40 @@ class JockeyService implements IJockeyService
         $this->jockeyRepository = $jockeyRepository;
     }
 
-    public function getJockeyById(int $id): mixed
+    public function getJockeyById(int $id): ?JockeyDTO
     {
-        return $this->jockeyRepository->findById($id);
+        $jockey = $this->jockeyRepository->findJockeyById($id);
+        return $jockey ? JockeyDTO::fromModel($jockey) : null;
+    }
+
+    public function createJockey(JockeyDTO $dto): JockeyDTO
+    {
+        $jockey = $this->jockeyRepository->createJockey($dto->toModelAttributes());
+        return JockeyDTO::fromModel($jockey);
+    }
+
+    public function updateJockey(int $id, JockeyDTO $dto): ?JockeyDTO
+    {
+        $jockey = $this->jockeyRepository->updateJockey($id, $dto->toModelAttributes());
+        return $jockey ? JockeyDTO::fromModel($jockey) : null;
+    }
+
+    public function deleteJockey(int $id): bool
+    {
+        return $this->jockeyRepository->deleteJockey($id);
+    }
+
+    /**
+     * @return JockeyDTO[]
+     */
+    public function getAllJockeys(): array
+    {
+        $jockeys = $this->jockeyRepository->getAllJockeys();
+        $dtos = [];
+        foreach ($jockeys as $jockey) {
+            $dtos[] = JockeyDTO::fromModel($jockey);
+        }
+        return $dtos;
     }
 
     public function getJockeyByUserId(int $userId): mixed
@@ -27,10 +59,5 @@ class JockeyService implements IJockeyService
     public function getJockeySchedule(int $jockeyUserId): mixed
     {
         return $this->jockeyRepository->getSchedule($jockeyUserId);
-    }
-
-    public function getAllJockeys(): mixed
-    {
-        return $this->jockeyRepository->getAll();
     }
 }

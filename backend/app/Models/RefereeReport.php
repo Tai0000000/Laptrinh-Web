@@ -6,24 +6,19 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class RaceResult extends Model
+class RefereeReport extends Model
 {
     use HasFactory;
 
-    protected $table = 'race_results';
-
     protected $fillable = [
         'race_id',
-        'registration_id',
-        'rank',
-        'finish_time',
-        'notes',
+        'referee_id',
+        'report_text',
+        'signed_at',
     ];
 
     protected $casts = [
-        'race_id' => 'integer',
-        'registration_id' => 'integer',
-        'rank' => 'integer',
+        'signed_at' => 'datetime',
     ];
 
     public function race(): BelongsTo
@@ -31,8 +26,8 @@ class RaceResult extends Model
         return $this->belongsTo(Race::class);
     }
 
-    public function registration(): BelongsTo
+    public function referee(): BelongsTo
     {
-        return $this->belongsTo(Registration::class);
+        return $this->belongsTo(RaceReferee::class, 'referee_id');
     }
 }

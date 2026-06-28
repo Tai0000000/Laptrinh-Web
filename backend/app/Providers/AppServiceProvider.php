@@ -7,10 +7,14 @@ use App\Repositories\Contracts\IHorseRepository;
 use App\Repositories\HorseRepository;
 use App\Repositories\Contracts\IHorseOwnerRepository;
 use App\Repositories\HorseOwnerRepository;
+use App\Repositories\Contracts\IJockeyRepository;
+use App\Repositories\JockeyRepository;
 use App\Services\Contracts\IHorseService;
 use App\Services\HorseService;
 use App\Services\Contracts\IHorseOwnerService;
 use App\Services\HorseOwnerService;
+use App\Services\Contracts\IJockeyService;
+use App\Services\JockeyService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,8 +25,10 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(IHorseRepository::class, HorseRepository::class);
         $this->app->bind(IHorseOwnerRepository::class, HorseOwnerRepository::class);
+        $this->app->bind(IJockeyRepository::class, JockeyRepository::class);
         $this->app->bind(IHorseService::class, HorseService::class);
         $this->app->bind(IHorseOwnerService::class, HorseOwnerService::class);
+        $this->app->bind(IJockeyService::class, JockeyService::class);
     }
 
     /**

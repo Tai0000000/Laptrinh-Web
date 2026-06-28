@@ -20,18 +20,12 @@ class JockeyController extends Controller
         $this->jockeyService = $jockeyService;
     }
 
-    public function index(): JsonResponse
-    {
-        $jockeys = $this->jockeyService->getAllJockeys();
-        return response()->json($jockeys);
-    }
-
     public function schedule(Request $request): JsonResponse
     {
         $userId = $request->attributes->get('auth_user_id');
         $schedule = $this->jockeyService->getJockeySchedule($userId);
         return response()->json($schedule);
-
+    }
     // GET /api/jockey/stats
     public function stats(Request $request)
     {
@@ -286,5 +280,93 @@ class JockeyController extends Controller
 
         return $result ? "Hạng {$result->rank}" : null;
 
+    }
+
+    // GET /api/jockeys
+    public function index()
+    {
+        try {
+            $jockeys = $this->jockeyService->getAllJockeys();
+            $data = array_map(fn($dto) => $dto->toArray(), $jockeys);
+            return response()->json(['success' => true, 'data' => $data]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // GET /api/jockeys/{id}
+    public function show($id)
+    {
+        try {
+            $dto = $this->jockeyService->getJockeyById((int)$id);
+            if (!$dto) {
+                return response()->json(['success' => false, 'message' => 'Nài ngựa không tồn tại.'], 404);
+            }
+            return response()->json(['success' => true, 'data' => $dto->toArray()]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // POST /api/jockeys
+    public function store(Request $request)
+    {
+        try {
+            $data = $request->validate([
+                'user_id' => 'required|integer|exists:users,id',
+                'name' => 'nullable|string|max:255',
+                'email' => 'nullable|email|max:255',
+            ]);
+            $dto = \App\DTOs\JockeyDTO::fromArray($data);
+            $createdDto = $this->jockeyService->createJockey($dto);
+            return response()->json(['success' => true, 'data' => $createdDto->toArray()], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // PUT /api/jockeys/{id}
+    public function update(Request $request, $id)
+    {
+        try {
+            $data = $request->validate([
+                'user_id' => 'nullable|integer|exists:users,id',
+                'name' => 'nullable|string|max:255',
+                'email' => 'nullable|email|max:255',
+            ]);
+            $dto = \App\DTOs\JockeyDTO::fromArray($data);
+            $updatedDto = $this->jockeyService->updateJockey((int)$id, $dto);
+            if (!$updatedDto) {
+                return response()->json(['success' => false, 'message' => 'Nài ngựa không tồn tại.'], 404);
+            }
+            return response()->json(['success' => true, 'data' => $updatedDto->toArray()]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // DELETE /api/jockeys/{id}
+    public function destroy($id)
+    {
+        try {
+            $deleted = $this->jockeyService->deleteJockey((int)$id);
+            if (!$deleted) {
+                return response()->json(['success' => false, 'message' => 'Nài ngựa không tồn tại hoặc không thể xóa.'], 404);
+            }
+            return response()->json(['success' => true, 'message' => 'Xóa nài ngựa thành công.']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function listJockeys(): JsonResponse
+    {
+        $jockeys = $this->jockeyService->getAllJockeys();
+        $data = array_map(fn($dto) => $dto->toArray(), $jockeys);
+        return response()->json($data);
     }
 }

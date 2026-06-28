@@ -2,29 +2,23 @@
 
 namespace App\Http\Controllers\API;
 
-
 use App\Http\Controllers\Controller;
-use App\Models\HorseOwner;
 use App\Services\Contracts\IHorseOwnerService;
-use App\Repositories\Contracts\IHorseOwnerRepository;
-use App\Repositories\Contracts\IJockeyRepository;
+use App\Http\Requests\HorseOwnerRequest\GetOwnerByIdRequest;
+use App\Http\Requests\HorseOwnerRequest\RegisterOwnerRequest;
+use App\Http\Requests\HorseOwnerRequest\UpdateOwnerInfoRequest;
+use App\Http\Requests\HorseOwnerRequest\DeleteOwnerAccountRequest;
+use App\Http\Resources\HorseOwnerResource\HorseOwnerResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class HorseOwnerController extends Controller
 {
     protected IHorseOwnerService $horseOwnerService;
-    protected IHorseOwnerRepository $horseOwnerRepository;
-    protected IJockeyRepository $jockeyRepository;
 
-    public function __construct(
-        IHorseOwnerService $horseOwnerService,
-        IHorseOwnerRepository $horseOwnerRepository,
-        IJockeyRepository $jockeyRepository
-    ) {
-        $this->horseOwnerService    = $horseOwnerService;
-        $this->horseOwnerRepository = $horseOwnerRepository;
-        $this->jockeyRepository     = $jockeyRepository;
+    public function __construct(IHorseOwnerService $horseOwnerService)
+    {
+        $this->horseOwnerService = $horseOwnerService;
     }
 
     /**
@@ -36,13 +30,13 @@ class HorseOwnerController extends Controller
     {
         $userId = $request->attributes->get('auth_user_id');
 
-        $owner = $this->horseOwnerRepository->findByUserId($userId);
+        $owner = $this->horseOwnerService->getOwnerByUserId($userId);
 
         if (!$owner) {
             return response()->json(['message' => 'Không tìm thấy thông tin chủ ngựa.'], 404);
         }
 
-        return response()->json($owner);
+        return response()->json($owner->toArray());
     }
 
     /**
@@ -54,13 +48,13 @@ class HorseOwnerController extends Controller
     {
         $userId = $request->attributes->get('auth_user_id');
 
-        $owner = $this->horseOwnerRepository->findByUserId($userId);
+        $owner = $this->horseOwnerService->getOwnerByUserId($userId);
 
         if (!$owner) {
             return response()->json(['message' => 'Không tìm thấy thông tin chủ ngựa.'], 404);
         }
 
-        $horses = $this->horseOwnerRepository->getHorses($owner->id);
+        $horses = $this->horseOwnerService->getHorses($owner->id);
 
         return response()->json($horses);
     }
@@ -74,102 +68,15 @@ class HorseOwnerController extends Controller
     {
         $userId = $request->attributes->get('auth_user_id');
 
-        $owner = $this->horseOwnerRepository->findByUserId($userId);
+        $owner = $this->horseOwnerService->getOwnerByUserId($userId);
 
         if (!$owner) {
             return response()->json(['message' => 'Không tìm thấy thông tin chủ ngựa.'], 404);
         }
 
-        $horses = $this->horseOwnerRepository->getHorsesForRace($owner->id, $raceId);
+        $horses = $this->horseOwnerService->getHorsesForRace($owner->id, $raceId);
 
         return response()->json($horses);
-    }
-
-    /**
-     * Lấy danh sách nài ngựa đã từng tham gia với một con ngựa cụ thể.
-     *
-     * GET /horse-owner/horses/{horseId}/jockeys
-     */
-    public function jockeysForHorse(int $horseId): JsonResponse
-    {
-        $jockeys = $this->horseOwnerRepository->getJockeysForHorse($horseId);
-
-        return response()->json($jockeys);
-    }
-
-    /**
-     * Lấy lịch đua của một con ngựa.
-     *
-     * GET /horse-owner/horses/{horseId}/schedule
-     */
-    public function raceSchedule(int $horseId): JsonResponse
-    {
-        $schedule = $this->horseOwnerService->viewRaceScheduleAndConfirmParticipation($horseId);
-
-        return response()->json($schedule);
-    }
-
-    /**
-     * Lấy kết quả đua của một con ngựa.
-     *
-     * GET /horse-owner/horses/{horseId}/results
-     */
-    public function raceResults(int $horseId): JsonResponse
-    {
-        $results = $this->horseOwnerService->trackRaceResults($horseId);
-
-        return response()->json($results);
-    }
-
-    /**
-     * Lấy bảng xếp hạng của một con ngựa.
-     *
-     * GET /horse-owner/horses/{horseId}/rankings
-     */
-    public function horseRankings(int $horseId): JsonResponse
-    {
-        $rankings = $this->horseOwnerService->getHorseRankings($horseId);
-
-        return response()->json($rankings);
-    }
-
-    /**
-     * Lấy phần thưởng đạt được của một con ngựa.
-     *
-     * GET /horse-owner/horses/{horseId}/rewards
-     */
-    public function horseRewards(int $horseId): JsonResponse
-    {
-        $rewards = $this->horseOwnerService->getHorseRewards($horseId);
-
-        return response()->json($rewards);
-    }
-
-    /**
-     * Lấy danh sách tất cả nài ngựa trong hệ thống (để chủ ngựa chọn thuê).
-     *
-     * GET /jockeys
-     */
-    public function listJockeys(): JsonResponse
-    {
-        $jockeys = $this->jockeyRepository->getAll();
-
-        return response()->json($jockeys);
-
-use App\Services\Contracts\IHorseOwnerService;
-use App\Http\Requests\HorseOwnerRequest\GetOwnerByIdRequest;
-use App\Http\Requests\HorseOwnerRequest\RegisterOwnerRequest;
-use App\Http\Requests\HorseOwnerRequest\UpdateOwnerInfoRequest;
-use App\Http\Requests\HorseOwnerRequest\DeleteOwnerAccountRequest;
-use App\Http\Resources\HorseOwnerResource\HorseOwnerResource;
-
-class HorseOwnerController
-{
-    protected IHorseOwnerService $horseOwnerService;
-
-    public function __construct(IHorseOwnerService $horseOwnerService)
-    {
-        $this->horseOwnerService = $horseOwnerService;
     }
 
     /**
@@ -177,7 +84,11 @@ class HorseOwnerController
      */
     public function getHorseOwnerById(GetOwnerByIdRequest $request, int $ownerId)
     {
-        $ownerId = 10;
+        $userId = $request->attributes->get('auth_user_id');
+        $owner = $this->horseOwnerService->getOwnerByUserId($userId);
+        if ($owner) {
+            $ownerId = $owner->id;
+        }
 
         $dto = $this->horseOwnerService->getOwnerById($ownerId);
         if (!$dto) {
@@ -219,6 +130,5 @@ class HorseOwnerController
             return response()->json(['message' => 'Chủ ngựa không tồn tại hoặc xóa thất bại'], 404);
         }
         return response()->json(null, 204);
-
     }
 }
