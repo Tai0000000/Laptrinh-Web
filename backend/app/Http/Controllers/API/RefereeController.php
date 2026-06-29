@@ -83,12 +83,12 @@ class RefereeController extends Controller
             ]);
 
             $violation = Violation::create([
-                'race_id' => $validated['race_id'],
-                'registration_id' => $validated['registration_id'],
-                'referee_id' => $request->user()->id,
+                'race_id'        => $validated['race_id'],
+                'registration_id'=> $validated['registration_id'],
+                'referee_id'     => $request->attributes->get('auth_user_id'),
                 'violation_type' => $validated['violation_type'],
-                'notes' => $validated['notes'] ?? null,
-                'status' => 'pending',
+                'notes'          => $validated['notes'] ?? null,
+                'status'         => 'pending',
             ]);
 
             $violation->load(['race', 'registration.horse', 'registration.jockey']);
