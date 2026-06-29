@@ -16,10 +16,13 @@ const Register = () => {
     setLoading(true);
     setError('');
 
-    const result = await register(
-      formData.name, formData.email,
-      formData.password, formData.password_confirmation, formData.role
-    );
+    const result = await register({
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      password_confirmation: formData.password_confirmation,
+      role: formData.role,
+    });
 
     if (result.success) {
       const role = result.user?.role;
