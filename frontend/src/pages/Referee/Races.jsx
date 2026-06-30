@@ -98,21 +98,9 @@ const Races = () => {
     }));
   };
 
-  const handleChecklistSubmit = async () => {
-    if (!selectedRace) return;
-    try {
-      // Update race status to active
-      const response = await api.put(`/referee/races/${selectedRace.id}/status`, { status: 'active' });
-      if (response.data.success) {
-        alert('Kiểm tra trước đua hoàn tất. Cuộc đua đang bắt đầu!');
-        setChecklistModal(false);
-        navigate(`/referee/races/${selectedRace.id}/monitor`);
-      } else {
-        alert('Không thể chuyển đổi trạng thái cuộc đua.');
-      }
-    } catch (err) {
-      alert(err.response?.data?.message || 'Có lỗi xảy ra khi bắt đầu cuộc đua.');
-    }
+  const handleChecklistSubmit = () => {
+    alert('Kiểm tra trước đua hoàn tất!');
+    setChecklistModal(false);
   };
 
   return (
@@ -248,23 +236,19 @@ const Races = () => {
                       onClick={() => navigate(`/referee/races/${race.id}/results`)}
                       className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 px-4 rounded-xl text-xs transition duration-200 border border-slate-700/50"
                     >
-                      Xem kết quả
+                      Xem báo cáo
                     </button>
                   ) : (race.status === 'active' || race.status === 'ongoing') ? (
                     <>
                       <button
-                        onClick={() => navigate(`/referee/races/${race.id}/monitor`)}
+                        onClick={() => navigate(`/referee/races/${race.id}/results`)}
                         className="flex-1 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-slate-950 font-bold py-2.5 px-4 rounded-xl text-xs transition-all duration-300"
                       >
-                        Giám sát cuộc đua
+                        Ghi kết quả
                       </button>
-                      <button
-                        onClick={() => navigate(`/referee/races/${race.id}/results`)}
-                        title="Ghi kết quả"
-                        className="bg-slate-800 hover:bg-slate-750 text-amber-400 font-bold p-2.5 rounded-xl border border-slate-700/50 transition flex items-center justify-center"
-                      >
+                      <button className="bg-slate-800 hover:bg-slate-700 text-white font-bold p-2.5 rounded-xl border border-slate-700/50 transition">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                         </svg>
                       </button>
                     </>

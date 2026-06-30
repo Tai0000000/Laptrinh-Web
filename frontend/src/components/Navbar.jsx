@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
+
+import { NavLink, Link } from 'react-router-dom';
+
 import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+
 
 const linkClass = ({ isActive }) =>
   [
@@ -12,6 +16,7 @@ const linkClass = ({ isActive }) =>
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   const { user, logout } = useAuth();
   const navigate  = useNavigate();
   const location  = useLocation();
@@ -31,6 +36,7 @@ const Navbar = () => {
     return null;
   }
 
+
   return (
     <header className="sticky top-0 z-50 border-b border-white/70 bg-white/70 backdrop-blur-xl shadow-sm">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
@@ -48,6 +54,26 @@ const Navbar = () => {
 
         {/* Desktop Menu */}
         <nav className="hidden md:flex items-center gap-2">
+
+          <NavLink to="/" className={linkClass} end>
+            Trang chủ
+          </NavLink>
+          <NavLink to="/tournaments" className={linkClass}>
+            Giải đấu
+          </NavLink>
+          <NavLink to="/predictions" className={linkClass}>
+            Dự đoán
+          </NavLink>
+          <NavLink to="/leaderboard" className={linkClass}>
+            Bảng xếp hạng
+          </NavLink>
+          <NavLink to="/dashboard" className={linkClass}>
+            Dashboard
+          </NavLink>
+        </nav>
+
+        {/* Search & Login */}
+
           <NavLink to="/" className={linkClass} end>Trang chủ</NavLink>
           <NavLink to="/tournaments" className={linkClass}>Giải đấu</NavLink>
           <NavLink to="/predictions" className={linkClass}>Dự đoán</NavLink>
@@ -71,6 +97,7 @@ const Navbar = () => {
         </nav>
 
         {/* Right: Search + User */}
+
         <div className="flex items-center space-x-4">
 
           {/* Search (Desktop) */}
@@ -83,6 +110,21 @@ const Navbar = () => {
             <input
               type="text"
               placeholder="Tìm kiếm..."
+
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-full leading-5 bg-gray-50/50 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 sm:text-sm transition-all"
+            />
+          </div>
+
+          {/* Login Button */}
+          <NavLink to="/login" className={linkClass}>
+            <div className="flex items-center gap-2">
+              <span className="hidden lg:inline">Đăng nhập</span>
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+              </svg>
+            </div>
+          </NavLink>
+
               className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-full leading-5 bg-gray-50/50 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-slate-900 sm:text-sm transition-all"
             />
           </div>
@@ -113,6 +155,7 @@ const Navbar = () => {
             </div>
           )}
 
+
           {/* Mobile menu toggle */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -132,6 +175,25 @@ const Navbar = () => {
       </div>
 
       {/* Mobile Menu */}
+
+      <div className={`${isMenuOpen ? 'block' : 'hidden'} md:hidden bg-white/95 backdrop-blur-md border-t border-gray-200`}>
+        <div className="px-4 pt-2 pb-3 space-y-1">
+          <NavLink to="/" className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:text-slate-900 hover:bg-gray-50" onClick={() => setIsMenuOpen(false)}>
+            Trang chủ
+          </NavLink>
+          <NavLink to="/tournaments" className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:text-slate-900 hover:bg-gray-50" onClick={() => setIsMenuOpen(false)}>
+            Giải đấu
+          </NavLink>
+          <NavLink to="/predictions" className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:text-slate-900 hover:bg-gray-50" onClick={() => setIsMenuOpen(false)}>
+            Dự đoán
+          </NavLink>
+          <NavLink to="/leaderboard" className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:text-slate-900 hover:bg-gray-50" onClick={() => setIsMenuOpen(false)}>
+            Bảng xếp hạng
+          </NavLink>
+          <NavLink to="/dashboard" className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:text-slate-900 hover:bg-gray-50" onClick={() => setIsMenuOpen(false)}>
+            Dashboard
+          </NavLink>
+
       {isMenuOpen && (
         <div className="md:hidden bg-white/95 backdrop-blur-md border-t border-gray-200">
           <div className="px-4 pt-2 pb-3 space-y-1">
@@ -166,6 +228,7 @@ const Navbar = () => {
               <NavLink to="/login" className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:text-slate-900 hover:bg-gray-50" onClick={() => setIsMenuOpen(false)}>Đăng nhập</NavLink>
             )}
           </div>
+
         </div>
       )}
     </header>

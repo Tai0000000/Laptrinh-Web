@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
-import PredictionHistory from '../components/PredictionHistory';
 
 const Predictions = () => {
   const [races, setRaces]               = useState([]);
@@ -11,10 +10,18 @@ const Predictions = () => {
   const [participantsLoading, setParticipantsLoading] = useState(false);
 
   const [selectedHorse, setSelectedHorse] = useState(null);
+
+  const [prediction, setPrediction] = useState({
+    amount: 10,
+    type: 'win' // win, place, show
+  });
+  const [message, setMessage] = useState({ text: '', type: '' });
+
   const [prediction, setPrediction]       = useState({ amount: 10, type: 'win' });
   const [message, setMessage]             = useState({ text: '', type: '' });
   const [predictions, setPredictions]     = useState([]);
   const [submitting, setSubmitting]       = useState(false);
+
 
   // ── Load danh sách race scheduled ─────────────────────────────────────
   useEffect(() => {
@@ -28,6 +35,7 @@ const Predictions = () => {
       .catch(() => setRaces([]))
       .finally(() => setRacesLoading(false));
   }, []);
+
 
   // ── Load participants khi chọn race ───────────────────────────────────
   useEffect(() => {
@@ -66,6 +74,7 @@ const Predictions = () => {
   useEffect(() => { fetchPredictions(); }, []);
 
   // ── Đặt cược ──────────────────────────────────────────────────────────
+
   const handleBetSubmit = async (e) => {
     e.preventDefault();
     if (!selectedRace || !selectedHorse) {
@@ -87,6 +96,9 @@ const Predictions = () => {
         prediction_type: prediction.type,
       });
       setMessage({ text: 'Đặt dự đoán thành công! Chúc bạn may mắn.', type: 'success' });
+
+    } catch (err) {
+
       fetchPredictions();
     } catch {
       setMessage({ text: 'Có lỗi xảy ra khi gửi dự đoán.', type: 'error' });
@@ -282,7 +294,9 @@ const Predictions = () => {
         </div>
       </div>
 
+
       <PredictionHistory predictions={predictions} />
+
     </div>
   );
 };
