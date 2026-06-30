@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Http\Controllers\Controller;
 use App\Services\Contracts\IHorseOwnerService;
 use App\Http\Requests\HorseOwnerRequest\GetOwnerByIdRequest;
 use App\Http\Requests\HorseOwnerRequest\RegisterOwnerRequest;
 use App\Http\Requests\HorseOwnerRequest\UpdateOwnerInfoRequest;
 use App\Http\Requests\HorseOwnerRequest\DeleteOwnerAccountRequest;
 use App\Http\Resources\HorseOwnerResource\HorseOwnerResource;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
-class HorseOwnerController
+class HorseOwnerController extends Controller
 {
     protected IHorseOwnerService $horseOwnerService;
 
@@ -19,11 +22,73 @@ class HorseOwnerController
     }
 
     /**
+     * Lấy thông tin profile của Horse Owner đang đăng nhập.
+     *
+     * GET /horse-owner/profile
+     */
+    public function profile(Request $request): JsonResponse
+    {
+        $userId = $request->attributes->get('auth_user_id');
+
+        $owner = $this->horseOwnerService->getOwnerByUserId($userId);
+
+        if (!$owner) {
+            return response()->json(['message' => 'Không tìm thấy thông tin chủ ngựa.'], 404);
+        }
+
+        return response()->json($owner->toArray());
+    }
+
+    /**
+     * Lấy danh sách tất cả ngựa thuộc chủ đang đăng nhập.
+     *
+     * GET /horse-owner/horses
+     */
+    public function myHorses(Request $request): JsonResponse
+    {
+        $userId = $request->attributes->get('auth_user_id');
+
+        $owner = $this->horseOwnerService->getOwnerByUserId($userId);
+
+        if (!$owner) {
+            return response()->json(['message' => 'Không tìm thấy thông tin chủ ngựa.'], 404);
+        }
+
+        $horses = $this->horseOwnerService->getHorses($owner->id);
+
+        return response()->json($horses);
+    }
+
+    /**
+     * Lấy danh sách ngựa của chủ đang tham gia một cuộc đua cụ thể.
+     *
+     * GET /horse-owner/horses-for-race/{raceId}
+     */
+    public function horsesForRace(Request $request, int $raceId): JsonResponse
+    {
+        $userId = $request->attributes->get('auth_user_id');
+
+        $owner = $this->horseOwnerService->getOwnerByUserId($userId);
+
+        if (!$owner) {
+            return response()->json(['message' => 'Không tìm thấy thông tin chủ ngựa.'], 404);
+        }
+
+        $horses = $this->horseOwnerService->getHorsesForRace($owner->id, $raceId);
+
+        return response()->json($horses);
+    }
+
+    /**
      * GET /api/owners/{ownerId}
      */
     public function getHorseOwnerById(GetOwnerByIdRequest $request, int $ownerId)
     {
-        $ownerId = 10;
+        $userId = $request->attributes->get('auth_user_id');
+        $owner = $this->horseOwnerService->getOwnerByUserId($userId);
+        if ($owner) {
+            $ownerId = $owner->id;
+        }
 
         $dto = $this->horseOwnerService->getOwnerById($ownerId);
         if (!$dto) {

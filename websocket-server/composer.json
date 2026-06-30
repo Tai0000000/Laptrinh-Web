@@ -1,0 +1,7 @@
+{
+  "require": {
+    "cboden/ratchet": "^0.4.4",
+    "ratchet/pawl": "^0.4.1",
+    "react/event-loop": "^1.5"
+  }
+}

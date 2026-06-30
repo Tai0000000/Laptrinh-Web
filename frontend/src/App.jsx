@@ -1,10 +1,15 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import Navbar from './components/Navbar';
+
+// Main Pages
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Tournaments from './pages/Tournaments';
 import TournamentDetail from './pages/TournamentDetail';
 import RaceDetail from './pages/RaceDetail';
+
 import Navbar from './components/Navbar';
 import { SocketProvider } from './context/SocketContext';
 import { AuthProvider } from './context/AuthContext';
@@ -12,6 +17,14 @@ import { AuthProvider } from './context/AuthContext';
 // Horse Owner Pages
 import Blank from './pages/Blank';
 import Dashboard from './pages/HorseOwner/Dashboard';
+
+import Predictions from './pages/Predictions';
+import AdminPanel from './pages/Dashboard';
+import Blank from './pages/Blank';
+
+// Horse Owner Pages
+import HorseOwnerDashboard from './pages/HorseOwner/Dashboard';
+
 import MyHorses from './pages/HorseOwner/MyHorses';
 import MyJockeys from './pages/HorseOwner/MyJockeys';
 import RaceRegistrations from './pages/HorseOwner/RaceRegistrations';
@@ -52,18 +65,50 @@ function App() {
         <Router>
           <Routes>
             
+
+    <Router>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <Navbar />
+        <main>
+          <Routes>
+            {/* Main Routes */}
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+
+            <Route path="/dashboard" element={<AdminPanel />} />
+            <Route path="/admin" element={<AdminPanel />} />
+            {/* Add role-specific routes here */}
+
+            <Route path="/register" element={<Register />} />
+            <Route path="/tournaments" element={<Tournaments />} />
+            <Route path="/tournaments/:id" element={<TournamentDetail />} />
+            <Route path="/races/:id" element={<RaceDetail />} />
+            <Route path="/predictions" element={<Predictions />} />
+            <Route path="/dashboard" element={<AdminPanel />} />
+            <Route path="/blank" element={<Blank />} />
+            
+            {/* Horse Owner Routes */}
+            <Route path="/horse-owner/dashboard" element={<HorseOwnerDashboard />} />
+            <Route path="/horse-owner/horses" element={<MyHorses />} />
+            <Route path="/horse-owner/jockeys" element={<MyJockeys />} />
+            <Route path="/horse-owner/race-registrations" element={<RaceRegistrations />} />
+            <Route path="/horse-owner/tournaments-races" element={<TournamentsRaces />} />
+            <Route path="/horse-owner/results-rewards" element={<ResultsRewards />} />
+            <Route path="/horse-owner/settings" element={<AccountSettings />} />
+
+            {/* Jockey Routes */}
+
             <Route path="/jockey/*" element={<JockeyPortal />} />
 
-            <Route path="*" element={
-              <div className="min-h-screen bg-transparent">
-                <Navbar />
-                <main>
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/tournaments" element={<Tournaments />} />
-                    <Route path="/tournaments/:id" element={<TournamentDetail />} />
-                    <Route path="/races/:id" element={<RaceDetail />} />
+            {/* Referee Routes */}
+            <Route path="/referee/dashboard" element={<RefereeDashboard />} />
+            <Route path="/referee/races" element={<RefereeRaces />} />
+            <Route path="/referee/violations" element={<RefereeViolations />} />
+            <Route path="/referee/schedule" element={<RefereeSchedule />} />
+            <Route path="/referee/races/:raceId/results" element={<RefereeResultEntry />} />
+            <Route path="/referee/races/:raceId/monitor" element={<RefereeMonitor />} />
+            <Route path="/referee/history" element={<RefereeHistory />} />
+
 
                     {/* Horse Owner */}
                     <Route path="/blank" element={<Blank />} />
@@ -88,6 +133,12 @@ function App() {
         </Router>
       </SocketProvider>
     </AuthProvider>
+
+          </Routes>
+        </main>
+      </div>
+    </Router>
+
   );
 }
 

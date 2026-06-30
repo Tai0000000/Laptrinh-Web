@@ -7,8 +7,15 @@ use App\Models\Tournament;
 use App\Models\Race;
 use App\Models\Horse;
 use App\Models\HorseOwner;
+use App\Models\Jockey;
 use App\Models\Registration;
 use App\Models\User;
+use App\Models\RaceReferee;
+use App\Models\Spectator;
+use App\Models\RaceResult;
+use App\Models\Violation;
+use App\Models\Bet;
+use App\Models\Prize;
 use Illuminate\Support\Facades\Hash;
 
 class HorseRacingSeeder extends Seeder
@@ -18,7 +25,6 @@ class HorseRacingSeeder extends Seeder
      */
     public function run(): void
     {
-        // Tạo 1 Admin
         $admin = User::create([
             'name' => 'Admin Hệ thống',
             'email' => 'admin@horseracing.com',
@@ -26,96 +32,126 @@ class HorseRacingSeeder extends Seeder
             'role' => 'admin'
         ]);
 
-        // Tạo HorseOwner
-        $ownerUser = User::create([
-            'name' => 'Nguyễn Văn Hoàng',
-            'email' => 'owner@horseracing.com',
-            'password' => Hash::make('password123'),
-            'role' => 'horse_owner'
-        ]);
-        
-        $owner = HorseOwner::create([
-            'user_id' => $ownerUser->id
-        ]);
+        $ownerUser = new User();
+        $ownerUser->id = 10;
+        $ownerUser->name = 'Nguyễn Văn Hoàng';
+        $ownerUser->email = 'owner@horseracing.com';
+        $ownerUser->password = Hash::make('password123');
+        $ownerUser->role = 'horse_owner';
+        $ownerUser->save();
 
-        // Tạo Jockeys
-        $jockey1 = User::create([
+        $owner = new HorseOwner();
+        $owner->id = 10;
+        $owner->user_id = 10;
+        $owner->save();
+
+        $jockeyUser1 = User::create([
             'name' => 'Trần Văn An',
             'email' => 'jockey1@horseracing.com',
             'password' => Hash::make('password123'),
             'role' => 'jockey'
         ]);
-        
-        $jockey2 = User::create([
+        $j1 = Jockey::create([
+            'user_id' => $jockeyUser1->id,
+            'experience_years' => 5,
+            'license_number' => 'JC001'
+        ]);
+
+        $jockeyUser2 = User::create([
             'name' => 'Lê Thị Mỹ Dung',
             'email' => 'jockey2@horseracing.com',
             'password' => Hash::make('password123'),
             'role' => 'jockey'
         ]);
-        
-        $jockey3 = User::create([
+        $j2 = Jockey::create([
+            'user_id' => $jockeyUser2->id,
+            'experience_years' => 3,
+            'license_number' => 'JC002'
+        ]);
+
+        $jockeyUser3 = User::create([
             'name' => 'Phạm Quốc Hùng',
             'email' => 'jockey3@horseracing.com',
             'password' => Hash::make('password123'),
             'role' => 'jockey'
         ]);
-        
-        $jockey4 = User::create([
+        $j3 = Jockey::create([
+            'user_id' => $jockeyUser3->id,
+            'experience_years' => 7,
+            'license_number' => 'JC003'
+        ]);
+
+        $jockeyUser4 = User::create([
             'name' => 'Hoàng Thị Mỹ Duyên',
             'email' => 'jockey4@horseracing.com',
             'password' => Hash::make('password123'),
             'role' => 'jockey'
         ]);
+        $j4 = Jockey::create([
+            'user_id' => $jockeyUser4->id,
+            'experience_years' => 4,
+            'license_number' => 'JC004'
+        ]);
 
-        // Tạo Spectator
-        $spectator = User::create([
+        $refereeUser = User::create([
+            'name' => 'Trọng Tài Minh',
+            'email' => 'referee@horseracing.com',
+            'password' => Hash::make('password123'),
+            'role' => 'referee'
+        ]);
+        $referee = RaceReferee::create([
+            'user_id' => $refereeUser->id
+        ]);
+
+        $spectatorUser = User::create([
             'name' => 'Nguyễn Khánh Ly',
             'email' => 'spectator@horseracing.com',
             'password' => Hash::make('password123'),
             'role' => 'spectator'
         ]);
+        $spectator = Spectator::create([
+            'user_id' => $spectatorUser->id
+        ]);
 
-        // Tạo Horses
         $horse1 = Horse::create([
             'name' => 'Thần Gió',
             'age' => 4,
             'breed' => 'Thoroughbred',
-            'horse_owner_id' => $owner->id,
+            'horse_owner_id' => 10,
             'status' => 'active'
         ]);
-        
+
         $horse2 = Horse::create([
             'name' => 'Xích Thố',
             'age' => 5,
             'breed' => 'Arabian',
-            'horse_owner_id' => $owner->id,
-            'status' => 'active'
+            'horse_owner_id' => 10,
+            'status' => 'resting'
         ]);
-        
+
         $horse3 = Horse::create([
             'name' => 'Bạch Mã',
             'age' => 3,
             'breed' => 'Quarter Horse',
-            'horse_owner_id' => $owner->id,
-            'status' => 'active'
+            'horse_owner_id' => 10,
+            'status' => 'injured'
         ]);
-        
+
         $horse4 = Horse::create([
             'name' => 'Hắc Long',
             'age' => 4,
             'breed' => 'Appaloosa',
-            'horse_owner_id' => $owner->id,
-            'status' => 'active'
+            'horse_owner_id' => 10,
+            'status' => 'retired'
         ]);
 
-        // Tạo 2 Giải đấu
         $tournament1 = Tournament::create([
             'name' => 'Giải Đua Ngựa Hoàng Gia Grand Prix 2026',
             'location' => 'Sân đua An Dương, TP. HCM',
             'start_date' => now()->addDays(3)->toDateString(),
             'end_date' => now()->addDays(7)->toDateString()
         ]);
-        
+
         $tournament2 = Tournament::create([
             'name' => 'Giải Đua Mùa Hè Sprint Cup',
             'location' => 'Sân đua Thủ Đức, TP. HCM',
@@ -123,60 +159,64 @@ class HorseRacingSeeder extends Seeder
             'end_date' => now()->addWeeks(4)->toDateString()
         ]);
 
-        // Tạo các cuộc đua cho Giải đấu 1
         $race1 = Race::create([
             'tournament_id' => $tournament1->id,
-            'name' => 'Vòng loại Bảng A - Chặng 1',
+            'round' => 'Vòng loại Bảng A',
+            'name' => 'Chặng 1 - Khởi Động',
             'race_time' => now()->addDays(3)->addHours(14)->format('Y-m-d H:i:s'),
             'distance' => 1000,
-            'status' => 'scheduled'
+            'max_horses' => 8,
+            'status' => 'completed'
         ]);
-        
+
         $race2 = Race::create([
             'tournament_id' => $tournament1->id,
-            'name' => 'Vòng loại Bảng A - Chặng 2',
+            'round' => 'Vòng loại Bảng A',
+            'name' => 'Chặng 2 - Bứt Tốc',
             'race_time' => now()->addDays(4)->addHours(16)->format('Y-m-d H:i:s'),
             'distance' => 1200,
-            'status' => 'scheduled'
-        ]);
-        
-        $race3 = Race::create([
-            'tournament_id' => $tournament2->id,
-            'name' => 'Chung kết Cup Mùa Hè',
-            'race_time' => now()->addWeeks(3)->addHours(15)->format('Y-m-d H:i:s'),
-            'distance' => 1500,
+            'max_horses' => 8,
             'status' => 'scheduled'
         ]);
 
-        // Đăng ký ngựa vào cuộc đua
-        Registration::create([
+        $race3 = Race::create([
+            'tournament_id' => $tournament2->id,
+            'round' => 'Chung Kết',
+            'name' => 'Cup Mùa Hè',
+            'race_time' => now()->addWeeks(3)->addHours(15)->format('Y-m-d H:i:s'),
+            'distance' => 1500,
+            'max_horses' => 8,
+            'status' => 'scheduled'
+        ]);
+
+        $reg1 = Registration::create([
             'race_id' => $race1->id,
             'horse_id' => $horse1->id,
-            'jockey_id' => $jockey1->id,
+            'jockey_id' => $j1->id,
             'lane' => 1,
             'status' => 'confirmed'
         ]);
-        
-        Registration::create([
+
+        $reg2 = Registration::create([
             'race_id' => $race1->id,
             'horse_id' => $horse2->id,
-            'jockey_id' => $jockey2->id,
+            'jockey_id' => $j2->id,
             'lane' => 2,
             'status' => 'confirmed'
         ]);
-        
-        Registration::create([
+
+        $reg3 = Registration::create([
             'race_id' => $race1->id,
             'horse_id' => $horse3->id,
-            'jockey_id' => $jockey3->id,
+            'jockey_id' => $j3->id,
             'lane' => 3,
             'status' => 'confirmed'
         ]);
-        
-        Registration::create([
+
+        $reg4 = Registration::create([
             'race_id' => $race1->id,
             'horse_id' => $horse4->id,
-            'jockey_id' => $jockey4->id,
+            'jockey_id' => $j4->id,
             'lane' => 4,
             'status' => 'confirmed'
         ]);
@@ -184,41 +224,72 @@ class HorseRacingSeeder extends Seeder
         Registration::create([
             'race_id' => $race2->id,
             'horse_id' => $horse1->id,
-            'jockey_id' => $jockey1->id,
+            'jockey_id' => $j1->id,
             'lane' => 1,
             'status' => 'confirmed'
         ]);
-        
+
         Registration::create([
             'race_id' => $race2->id,
             'horse_id' => $horse2->id,
-            'jockey_id' => $jockey2->id,
+            'jockey_id' => $j2->id,
             'lane' => 2,
             'status' => 'confirmed'
         ]);
-        
-        Registration::create([
-            'race_id' => $race3->id,
-            'horse_id' => $horse1->id,
-            'jockey_id' => $jockey1->id,
-            'lane' => 1,
+
+        $res1 = RaceResult::create([
+            'race_id' => $race1->id,
+            'registration_id' => $reg1->id,
+            'rank' => 1,
+            'finish_time' => '01:45.23',
+            'notes' => 'Thắng thuyết phục'
+        ]);
+
+        $res2 = RaceResult::create([
+            'race_id' => $race1->id,
+            'registration_id' => $reg2->id,
+            'rank' => 2,
+            'finish_time' => '01:47.88',
+            'notes' => 'Bám đuổi sát sao'
+        ]);
+
+        $res3 = RaceResult::create([
+            'race_id' => $race1->id,
+            'registration_id' => $reg3->id,
+            'rank' => 3,
+            'finish_time' => '01:50.12',
+            'notes' => 'Cán đích thứ ba'
+        ]);
+
+        Violation::create([
+            'race_id' => $race1->id,
+            'registration_id' => $reg4->id,
+            'referee_id' => $referee->id,
+            'violation_type' => 'Cản địa trái phép',
+            'notes' => 'Nài ngựa di chuyển sai làn đường cố ý chèn đối thủ',
             'status' => 'confirmed'
         ]);
-        
-        Registration::create([
-            'race_id' => $race3->id,
-            'horse_id' => $horse4->id,
-            'jockey_id' => $jockey4->id,
-            'lane' => 2,
-            'status' => 'confirmed'
+
+        $bet = Bet::create([
+            'user_id' => $spectatorUser->id,
+            'registration_id' => $reg1->id,
+            'amount' => 500000,
+            'prediction_type' => 'win',
+            'status' => 'won'
         ]);
-        
-        Registration::create([
-            'race_id' => $race3->id,
-            'horse_id' => $horse2->id,
-            'jockey_id' => $jockey2->id,
-            'lane' => 3,
-            'status' => 'confirmed'
+
+        Prize::create([
+            'race_result_id' => $res1->id,
+            'winner_user_id' => $ownerUser->id,
+            'amount' => 10000000.00,
+            'prize_type' => 'race_reward'
+        ]);
+
+        Prize::create([
+            'bet_id' => $bet->id,
+            'winner_user_id' => $spectatorUser->id,
+            'amount' => 1500000.00,
+            'prize_type' => 'prediction_reward'
         ]);
     }
 }

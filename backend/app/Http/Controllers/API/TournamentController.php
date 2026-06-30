@@ -3,43 +3,69 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Models\Tournament;
+use App\Services\Contracts\ITournamentService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class TournamentController extends Controller
 {
-    public function index()
+    protected ITournamentService $tournamentService;
+
+    public function __construct(ITournamentService $tournamentService)
     {
-        return response()->json(Tournament::with('races')->get());
+        $this->tournamentService = $tournamentService;
     }
 
-    public function store(Request $request)
+    public function index(): JsonResponse
+    {
+        $tournaments = $this->tournamentService->getAllTournaments();
+        return response()->json($tournaments);
+    }
+
+    public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name' => 'required|string',
+            'name' => 'required|string|max:255',
             'start_date' => 'required|date',
             'end_date' => 'required|date',
-            'location' => 'required|string',
+            'location' => 'required|string|max:255',
         ]);
 
-        $tournament = Tournament::create($validated);
+        $tournament = $this->tournamentService->createTournament($validated);
         return response()->json($tournament, 201);
     }
 
-    public function show(Tournament $tournament)
+    public function show(int $id): JsonResponse
     {
-        return response()->json($tournament->load('races'));
-    }
-
-    public function update(Request $request, Tournament $tournament)
-    {
-        $tournament->update($request->all());
+        $tournament = $this->tournamentService->getTournamentById($id);
+        if (!$tournament) {
+            return response()->json(['message' => 'Tournament does not exist.'], 404);
+        }
         return response()->json($tournament);
     }
 
-    public function destroy(Tournament $tournament)
+    public function update(Request $request, int $id): JsonResponse
     {
-        $tournament->delete();
-        return response()->json(null, 204);
+        $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'start_date' => 'sometimes|required|date',
+            'end_date' => 'sometimes|required|date',
+            'location' => 'sometimes|required|string|max:255',
+        ]);
+
+        $tournament = $this->tournamentService->updateTournament($id, $validated);
+        if (!$tournament) {
+            return response()->json(['message' => 'Tournament does not exist.'], 404);
+        }
+        return response()->json($tournament);
+    }
+
+    public function destroy(int $id): JsonResponse
+    {
+        $deleted = $this->tournamentService->deleteTournament($id);
+        if (!$deleted) {
+            return response()->json(['message' => 'Tournament does not exist.'], 404);
+        }
+        return response()->json(['message' => 'Tournament deleted successfully.'], 200);
     }
 }

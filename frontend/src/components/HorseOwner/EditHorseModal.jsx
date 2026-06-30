@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 
 const EditHorseModal = ({ isOpen, horse, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -60,11 +60,10 @@ const EditHorseModal = ({ isOpen, horse, onClose, onSuccess }) => {
     }
 
     setSubmitting(true);
-    axios.put(`http://localhost:8000/api/horses/${horse.id}`, {
+    api.put(`/horses/${horse.id}`, {
       name: formData.name,
       breed: formData.breed,
       age: parseInt(formData.age),
-      horse_owner_id: horse.horse_owner_id || 10,
       status: formData.status
     })
     .then((response) => {

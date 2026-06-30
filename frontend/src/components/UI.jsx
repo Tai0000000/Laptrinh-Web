@@ -18,17 +18,17 @@ export function Icon({ name, size = 24, fill = false, style = {}, className = ''
 }
 
 const BADGE_MAP = {
-  confirmed:   { label: 'Xác nhận',      bg: 'rgba(91,240,108,0.15)',   color: '#5bf06c',  border: 'rgba(91,240,108,0.3)',  dot: true  },
-  accepted:    { label: 'Đã chấp nhận',  bg: 'rgba(91,240,108,0.15)',   color: '#5bf06c',  border: 'rgba(91,240,108,0.3)',  dot: false },
-  approved:    { label: 'Đã duyệt',      bg: 'rgba(91,240,108,0.15)',   color: '#5bf06c',  border: 'rgba(91,240,108,0.3)',  dot: false },
-  scheduled:   { label: 'Đã lên lịch',   bg: 'rgba(198,198,199,0.1)',   color: '#c6c6c7',  border: 'rgba(198,198,199,0.3)', dot: false },
-  pending:     { label: 'Chờ xác nhận',  bg: 'rgba(198,198,199,0.1)',   color: '#c6c6c7',  border: 'rgba(198,198,199,0.3)', dot: false },
-  in_progress: { label: 'Đang diễn ra',  bg: 'rgba(91,240,108,0.15)',   color: '#5bf06c',  border: 'rgba(91,240,108,0.3)',  dot: true  },
-  finished:    { label: 'Kết thúc',      bg: 'rgba(134,149,130,0.15)',  color: '#869582',  border: 'rgba(134,149,130,0.3)', dot: false },
-  rejected:    { label: 'Từ chối',       bg: 'rgba(255,180,171,0.12)',  color: '#ffb4ab',  border: 'rgba(255,180,171,0.3)', dot: false },
-  cancelled:   { label: 'Đã hủy',        bg: 'rgba(255,180,171,0.12)',  color: '#ffb4ab',  border: 'rgba(255,180,171,0.3)', dot: false },
-  won:         { label: 'Thắng',         bg: 'rgba(91,240,108,0.15)',   color: '#5bf06c',  border: 'rgba(91,240,108,0.3)',  dot: false },
-  lost:        { label: 'Thua',          bg: 'rgba(134,149,130,0.15)',  color: '#869582',  border: 'rgba(134,149,130,0.3)', dot: false },
+  confirmed:   { label: 'Xác nhận',        bg: 'rgba(91,240,108,0.15)',   color: '#5bf06c',  border: 'rgba(91,240,108,0.3)',  dot: true  },
+  accepted:    { label: 'Đã chấp nhận',    bg: 'rgba(91,240,108,0.15)',   color: '#5bf06c',  border: 'rgba(91,240,108,0.3)',  dot: false },
+  approved:    { label: 'Đã duyệt',        bg: 'rgba(91,240,108,0.15)',   color: '#5bf06c',  border: 'rgba(91,240,108,0.3)',  dot: false },
+  scheduled:   { label: 'Đã lên lịch',     bg: 'rgba(198,198,199,0.1)',   color: '#c6c6c7',  border: 'rgba(198,198,199,0.3)', dot: false },
+  pending:     { label: 'Chờ xác nhận',    bg: 'rgba(198,198,199,0.1)',   color: '#c6c6c7',  border: 'rgba(198,198,199,0.3)', dot: false },
+  in_progress: { label: 'Đang diễn ra',    bg: 'rgba(91,240,108,0.15)',   color: '#5bf06c',  border: 'rgba(91,240,108,0.3)',  dot: true  },
+  finished:    { label: 'Kết thúc',        bg: 'rgba(134,149,130,0.15)',  color: '#869582',  border: 'rgba(134,149,130,0.3)', dot: false },
+  rejected:    { label: 'Từ chối',         bg: 'rgba(255,180,171,0.12)',  color: '#ffb4ab',  border: 'rgba(255,180,171,0.3)', dot: false },
+  cancelled:   { label: 'Đã hủy',          bg: 'rgba(255,180,171,0.12)',  color: '#ffb4ab',  border: 'rgba(255,180,171,0.3)', dot: false },
+  won:         { label: 'Thắng',           bg: 'rgba(91,240,108,0.15)',   color: '#5bf06c',  border: 'rgba(91,240,108,0.3)',  dot: false },
+  lost:        { label: 'Thua',            bg: 'rgba(134,149,130,0.15)',  color: '#869582',  border: 'rgba(134,149,130,0.3)', dot: false },
 }
 
 export function Badge({ status, label: customLabel }) {

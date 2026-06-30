@@ -2,9 +2,6 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
-
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,18 +13,19 @@ class Race extends Model
 
     protected $fillable = [
         'tournament_id',
+        'round',
         'name',
-        'distance',
         'race_time',
-        'status', // scheduled, ongoing, completed, cancelled
+        'distance',
+        'max_horses',
+        'status'
     ];
 
     protected $casts = [
         'tournament_id' => 'integer',
         'race_time' => 'datetime',
-        'distance' => 'integer',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'distance'  => 'integer',
+        'max_horses' => 'integer',
     ];
 
     public function tournament(): BelongsTo
