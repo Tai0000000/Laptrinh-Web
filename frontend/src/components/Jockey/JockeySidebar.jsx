@@ -9,18 +9,19 @@ export default function JockeySidebar({ active, setPage }) {
     { id: 'invitations', icon: 'rebase_edit',    label: 'Lời mời' },
     { id: 'performance', icon: 'equalizer',      label: 'Thành tích' },
   ]
+
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 flex flex-col z-50 overflow-y-auto" style={{ background: '#131315' }}>
-      <div className="px-6 py-8">
+    <aside className="sticky top-0 md:fixed md:left-0 md:top-0 h-auto md:h-full w-full md:w-64 flex md:flex-col z-50 overflow-x-auto md:overflow-y-auto" style={{ background: '#131315' }}>
+      <div className="hidden md:block px-6 py-8">
         <h1 className="font-headline-md text-headline-md" style={{ color: '#5bf06c', fontFamily: 'Montserrat' }}>RACE CONTROL</h1>
         <p className="text-xs mt-1 tracking-widest opacity-60" style={{ color: '#bccbb6' }}>ELITE DIVISION</p>
       </div>
-      <nav className="flex-grow">
+      <nav className="flex md:block flex-1 min-w-max md:min-w-0">
         {nav.map(item => {
           const isActive = active === item.id
           return (
             <button key={item.id} onClick={() => setPage(item.id)}
-              className="w-full flex items-center gap-3 px-4 py-3 text-left transition-all"
+              className="flex md:w-full items-center gap-3 px-4 py-3 text-left transition-all whitespace-nowrap"
               style={{
                 color: isActive ? '#5bf06c' : '#bccbb6',
                 borderLeft: isActive ? '4px solid #5bf06c' : '4px solid transparent',
@@ -33,11 +34,31 @@ export default function JockeySidebar({ active, setPage }) {
           )
         })}
       </nav>
-      <div className="p-4" style={{ borderTop: '1px solid #3d4a3b' }}>
-        <button style={{ width:'100%', padding:'12px', background:'#5bf06c', color:'#00390c', fontFamily:'Montserrat', fontWeight:800, fontSize:13, border:'none', borderRadius:4, cursor:'pointer', letterSpacing:'0.05em', marginBottom:12 }}>
+      <div className="hidden md:block p-4" style={{ borderTop: '1px solid #3d4a3b' }}>
+        {/* GO LIVE — navigates to the live page */}
+        <button
+          type="button"
+          onClick={() => setPage('live')}
+          style={{
+            width: '100%', padding: '12px',
+            background: active === 'live' ? '#4ad459' : '#5bf06c',
+            color: '#00390c',
+            fontFamily: 'Montserrat', fontWeight: 800, fontSize: 13,
+            border: 'none', borderRadius: 4, cursor: 'pointer',
+            letterSpacing: '0.05em', marginBottom: 12,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            boxShadow: active === 'live' ? '0 0 20px rgba(91,240,108,0.4)' : 'none',
+            transition: 'box-shadow 0.2s, background 0.2s',
+          }}
+        >
+          <Icon name="live_tv" size={16} />
           GO LIVE
         </button>
-        <button onClick={logout} style={{ width:'100%', display:'flex', alignItems:'center', gap:12, padding:'8px 16px', background:'none', border:'none', cursor:'pointer', color:'#bccbb6', fontFamily:'Inter', fontSize:14 }}>
+        <button
+          type="button"
+          onClick={logout}
+          style={{ width:'100%', display:'flex', alignItems:'center', gap:12, padding:'8px 16px', background:'none', border:'none', cursor:'pointer', color:'#bccbb6', fontFamily:'Inter', fontSize:14 }}
+        >
           <Icon name="logout" size={20} />
           Đăng xuất
         </button>

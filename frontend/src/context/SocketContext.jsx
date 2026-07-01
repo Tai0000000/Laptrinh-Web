@@ -1,68 +1,105 @@
 import React, { createContext, useEffect, useState, useCallback, useRef } from 'react';
-import { io } from 'socket.io-client';
 
 export const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
-  const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [raceData, setRaceData] = useState({}); // Lưu trữ dữ liệu live theo race_id
   
-  const socketRef = useRef();
+  const socketRef = useRef(null);
+  const subscriptionsRef = useRef(new Set());
 
   useEffect(() => {
-    // Khởi tạo connection WebSocket
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
-    socketRef.current = io(socketUrl, {
-      transports: ['websocket'],
-      autoConnect: true,
-    });
+    // Khởi tạo connection WebSocket (Ratchet)
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'ws://localhost:8080';
+    
+    let socket;
+    try {
+      socket = new WebSocket(socketUrl);
+      socketRef.current = socket;
+    } catch (e) {
+      console.warn('WebSocket init failed:', e);
+      return;
+    }
 
-    socketRef.current.on('connect', () => {
-      console.log('WebSocket connected:', socketRef.current.id);
+    socket.onopen = () => {
+      console.log('WebSocket connected');
       setIsConnected(true);
-    });
+      
+      // Re-subscribe to all previously subscribed races
+      subscriptionsRef.current.forEach(raceId => {
+        socketRef.current.send(JSON.stringify({
+          action: 'subscribe_race',
+          race_id: raceId
+        }));
+      });
+    };
 
-    socketRef.current.on('disconnect', () => {
+    socketRef.current.onclose = () => {
       console.log('WebSocket disconnected');
       setIsConnected(false);
-    });
+      
+      // Try to reconnect after 3 seconds
+      setTimeout(() => {
+        if (socketRef.current.readyState === WebSocket.CLOSED) {
+          console.log('Reconnecting to WebSocket...');
+          const newSocket = new WebSocket(socketUrl);
+          socketRef.current = newSocket;
+        }
+      }, 3000);
+    };
+
+    socketRef.current.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
 
     // Lắng nghe dữ liệu live chung
-    socketRef.current.on('race_update', (data) => {
-      setRaceData((prev) => ({
-        ...prev,
-        [data.race_id]: data,
-      }));
-    });
-
-    setSocket(socketRef.current);
+    socketRef.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.race_id) {
+        setRaceData((prev) => ({
+          ...prev,
+          [data.race_id]: data,
+        }));
+      }
+    };
 
     return () => {
       if (socketRef.current) {
-        socketRef.current.disconnect();
+        socketRef.current.close();
       }
     };
   }, []);
 
   // Hàm subscribe vào một cuộc đua cụ thể
   const subscribeToRace = useCallback((raceId) => {
-    if (socketRef.current && isConnected) {
-      console.log(`Subscribing to race: ${raceId}`);
-      socketRef.current.emit('subscribe_race', { race_id: raceId });
+    if (!subscriptionsRef.current.has(raceId)) {
+      subscriptionsRef.current.add(raceId);
     }
-  }, [isConnected]);
+    
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      console.log(`Subscribing to race: ${raceId}`);
+      socketRef.current.send(JSON.stringify({
+        action: 'subscribe_race',
+        race_id: raceId
+      }));
+    }
+  }, []);
 
   // Hàm unsubscribe khỏi một cuộc đua
   const unsubscribeFromRace = useCallback((raceId) => {
-    if (socketRef.current && isConnected) {
+    subscriptionsRef.current.delete(raceId);
+    
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       console.log(`Unsubscribing from race: ${raceId}`);
-      socketRef.current.emit('unsubscribe_race', { race_id: raceId });
+      socketRef.current.send(JSON.stringify({
+        action: 'unsubscribe_race',
+        race_id: raceId
+      }));
     }
-  }, [isConnected]);
+  }, []);
 
   const value = {
-    socket,
     isConnected,
     raceData,
     subscribeToRace,

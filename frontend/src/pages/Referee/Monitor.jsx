@@ -194,7 +194,7 @@ const Monitor = () => {
     }
 
     try {
-      const response = await api.put(`/referee/races/${raceId}/status`, { status: 'completed' });
+      const response = await api.put(`/referee/races/${raceId}/status`, { status: 'finished' });
       if (response.data.success) {
         showToast('Đã kết thúc cuộc đua thành công!', 'success');
         // Redirect to result entry screen

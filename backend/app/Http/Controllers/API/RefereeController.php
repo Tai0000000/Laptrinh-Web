@@ -141,7 +141,7 @@ class RefereeController extends Controller
     {
         try {
             $validated = $request->validate([
-                'status' => 'required|string|in:scheduled,active,completed,cancelled',
+                'status' => 'required|string|in:scheduled,ongoing,finished,cancelled',
             ]);
 
             $race = Race::find($id);

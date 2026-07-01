@@ -1,63 +1,175 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
+import api from '../../api/axios';
 import HorseOwnerLayout from '../../components/HorseOwner/HorseOwnerLayout';
 
+/* ── modal thuê nài ngựa ── */
+function HireModal({ jockey, horses, onClose, onSuccess }) {
+  const [horseId, setHorseId] = useState('');
+  const [raceId, setRaceId]   = useState('');
+  const [races, setRaces]     = useState([]);
+  const [saving, setSaving]   = useState(false);
+  const [error, setError]     = useState('');
+
+  useEffect(() => {
+    api.get('/races').then(r => setRaces(r.data?.data ?? [])).catch(() => {});
+  }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!horseId || !raceId) { setError('Vui lòng chọn ngựa và cuộc đua.'); return; }
+    setSaving(true); setError('');
+    try {
+      await api.post(`/horses/${horseId}/hire-jockey`, {
+        jockey_id: jockey.id,
+        race_id: raceId,
+      });
+      onSuccess();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Không thể gửi lời mời.');
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-7">
+        <h2 className="text-xl font-bold text-gray-800 mb-1">Thuê nài ngựa</h2>
+        <p className="text-gray-500 text-sm mb-6">Gửi lời mời tới <strong>{jockey.name}</strong></p>
+
+        {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Chọn ngựa</label>
+            <select value={horseId} onChange={e => setHorseId(e.target.value)} required
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">-- Chọn ngựa --</option>
+              {horses.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Cuộc đua</label>
+            <select value={raceId} onChange={e => setRaceId(e.target.value)} required
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">-- Chọn cuộc đua --</option>
+              {races.map(r => <option key={r.id} value={r.id}>{r.name ?? r.round ?? `Cuộc đua #${r.id}`}</option>)}
+            </select>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="submit" disabled={saving}
+              className="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50">
+              {saving ? 'Đang gửi...' : 'Gửi lời mời'}
+            </button>
+            <button type="button" onClick={onClose}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2.5 rounded-lg transition-colors">
+              Hủy
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 const MyJockeys = () => {
-  const jockeys = [
-    { id: 1, name: 'John Smith', experience: '10 years', wins: 45, status: 'Active' },
-    { id: 2, name: 'Sarah Johnson', experience: '8 years', wins: 38, status: 'Active' },
-    { id: 3, name: 'Mike Davis', experience: '5 years', wins: 22, status: 'Inactive' },
-  ];
+  const [jockeys, setJockeys]   = useState([]);
+  const [horses, setHorses]     = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState(null);
+  const [hiring, setHiring]     = useState(null); // jockey đang được hire
+  const [toast, setToast]       = useState('');
+
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
+
+  useEffect(() => {
+    Promise.all([
+      api.get('/jockeys'),
+      api.get('/horse-owner/horses'),
+    ]).then(([jRes, hRes]) => {
+      setJockeys(jRes.data?.data ?? []);
+      setHorses(hRes.data?.data ?? hRes.data ?? []);
+    }).catch(() => setError('Không thể tải danh sách nài ngựa.'))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <HorseOwnerLayout>
       <div className="max-w-7xl">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-gray-800">My Jockeys</h1>
-            <p className="text-gray-600 mt-2">Manage your jockey team</p>
+            <h1 className="text-3xl font-bold text-gray-800">Nài ngựa</h1>
+            <p className="text-gray-500 mt-1 text-sm">Danh sách nài ngựa có thể thuê</p>
           </div>
-          <button className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
-            + Hire Jockey
-          </button>
         </div>
 
-        {/* Jockeys Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-100 border-b">
-              <tr>
-                <th className="px-6 py-4 text-left text-gray-700 font-semibold">Name</th>
-                <th className="px-6 py-4 text-left text-gray-700 font-semibold">Experience</th>
-                <th className="px-6 py-4 text-left text-gray-700 font-semibold">Total Wins</th>
-                <th className="px-6 py-4 text-left text-gray-700 font-semibold">Status</th>
-                <th className="px-6 py-4 text-left text-gray-700 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {jockeys.map((jockey) => (
-                <tr key={jockey.id} className="border-b hover:bg-gray-50">
-                  <td className="px-6 py-4 font-semibold text-gray-800">{jockey.name}</td>
-                  <td className="px-6 py-4 text-gray-700">{jockey.experience}</td>
-                  <td className="px-6 py-4 text-gray-700">{jockey.wins}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                      jockey.status === 'Active' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {jockey.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <button className="text-blue-500 hover:text-blue-700 mr-4">Edit</button>
-                    <button className="text-red-500 hover:text-red-700">Remove</button>
-                  </td>
+        {/* Toast */}
+        {toast && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm font-medium">
+            ✅ {toast}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="space-y-3">
+            {[1,2,3].map(i => <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />)}
+          </div>
+        ) : error ? (
+          <div className="bg-red-50 border border-red-200 text-red-600 p-6 rounded-xl text-center">{error}</div>
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  {['Tên nài ngựa', 'Kinh nghiệm', 'Số trận thắng', 'Tổng trận', 'Giấy phép', 'Hành động'].map(h => (
+                    <th key={h} className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {jockeys.length === 0 ? (
+                  <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 text-sm">Chưa có nài ngựa nào trong hệ thống</td></tr>
+                ) : jockeys.map(j => (
+                  <tr key={j.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-sm flex-shrink-0">
+                          {j.name?.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-800 text-sm">{j.name}</p>
+                          <p className="text-gray-400 text-xs">{j.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-600 text-sm">{j.experience_years ? `${j.experience_years} năm` : '—'}</td>
+                    <td className="px-6 py-4">
+                      <span className="font-bold text-green-600 text-sm">{j.wins ?? 0}</span>
+                    </td>
+                    <td className="px-6 py-4 text-gray-600 text-sm">{j.total_races ?? 0}</td>
+                    <td className="px-6 py-4 text-gray-500 text-xs font-mono">{j.license_number ?? '—'}</td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => setHiring(j)}
+                        className="bg-purple-500 hover:bg-purple-600 text-white text-xs font-semibold py-1.5 px-4 rounded-lg transition-colors"
+                      >
+                        Thuê
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+
+      {hiring && (
+        <HireModal
+          jockey={hiring}
+          horses={horses}
+          onClose={() => setHiring(null)}
+          onSuccess={() => { setHiring(null); showToast(`Đã gửi lời mời tới ${hiring.name}!`); }}
+        />
+      )}
     </HorseOwnerLayout>
   );
 };

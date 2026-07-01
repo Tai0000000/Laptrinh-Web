@@ -37,6 +37,8 @@ services:
       DB_PASSWORD: horse_pass
       SANCTUM_STATEFUL_DOMAINS: localhost,127.0.0.1
       SESSION_DOMAIN: localhost
+      JWT_SECRET: ${JWT_SECRET:-horse_racing_super_secret_jwt_key_2026_do_not_share}
+      AUTH_TOKEN_TTL_MINUTES: ${AUTH_TOKEN_TTL_MINUTES:-10080}
     ports:
       - "8000:8000"
     volumes:
@@ -45,15 +47,54 @@ services:
       - /var/www/html/bootstrap/cache
       - /var/www/html/storage
     working_dir: /var/www/html
-    networks:
-      - laptrinh-web_default
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: horse_racing_frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    restart: unless-stopped
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: horse_racing_phpmyadmin
+    depends_on:
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: horse_user
+      PMA_PASSWORD: horse_pass
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+
+  websocket:
+    image: php:8.2-cli
+    container_name: horse_racing_websocket
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./websocket-server:/var/www/html
+    working_dir: /var/www/html
+    command: >
+      sh -c "
+        apt-get update &&
+        apt-get install -y git unzip &&
+        curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer &&
+        composer install &&
+        php server.php
+      "
 
 networks:
-  laptrinh-web_default:
+  mysql-demo_default:
     external: true
-
 
 volumes:
   db_data:
-
-
