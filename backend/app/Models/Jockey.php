@@ -2,19 +2,11 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * @property int $id
- * @property int $user_id
- * @property Carbon $created_at
- * @property Carbon $updated_at
- * @property-read User $user
- */
 class Jockey extends Model
 {
     use HasFactory;
@@ -22,28 +14,33 @@ class Jockey extends Model
     protected $fillable = [
         'user_id',
         'experience_years',
+        'license_number',
     ];
 
     protected $casts = [
         'user_id'          => 'integer',
         'experience_years' => 'integer',
-        'created_at'       => 'datetime',
-        'updated_at'       => 'datetime',
     ];
 
-    /**
-     * User account của jockey này
-     */
+    /** User account của jockey này */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
     /**
-     * Các đăng ký race mà jockey này tham gia
+     * Các đăng ký race — registrations.jockey_id = jockeys.id
      */
     public function registrations(): HasMany
     {
-        return $this->hasMany(Registration::class, 'jockey_id', 'user_id');
+        return $this->hasMany(Registration::class, 'jockey_id');
+    }
+
+    /**
+     * Các lời mời nhận được — horse_jockey.jockey_id = jockeys.id
+     */
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(HorseJockey::class, 'jockey_id');
     }
 }

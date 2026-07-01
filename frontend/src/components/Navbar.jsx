@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+
 const linkClass = ({ isActive }) =>
   [
     'rounded-full px-4 py-2 text-sm font-medium transition',
@@ -29,6 +33,26 @@ const Navbar = () => {
   if (user && hideOn.some(p => location.pathname.startsWith(p))) {
     return null;
   }
+
+  const { user, logout } = useAuth();
+  const navigate  = useNavigate();
+  const location  = useLocation();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+    setIsMenuOpen(false);
+  };
+
+  // Ẩn global navbar bên trong Admin Portal
+  const role = user?.role?.value ?? user?.role;
+  if (
+    role === 'admin' &&
+    (location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/admin'))
+  ) {
+    return null;
+  }
+
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/70 bg-white/70 backdrop-blur-xl shadow-sm">

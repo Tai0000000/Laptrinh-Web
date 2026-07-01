@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
+import { useAuth } from '../../context/AuthContext';
 import HorseOwnerLayout from '../../components/HorseOwner/HorseOwnerLayout';
 import SuccessModal from '../../components/SuccessModal';
 
 const AccountSettings = () => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -15,7 +17,7 @@ const AccountSettings = () => {
   const [successMessage, setSuccessMessage] = useState({ show: false, title: '', msg: '' });
 
   useEffect(() => {
-    axios.get('http://localhost:8000/api/owners/10')
+    api.get(`/owners/${user?.id}`)
       .then((response) => {
         const data = response.data.data || response.data;
         setFormData({
@@ -30,7 +32,7 @@ const AccountSettings = () => {
         console.error('Error fetching owner profile:', err);
         setLoading(false);
       });
-  }, []);
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -42,7 +44,7 @@ const AccountSettings = () => {
 
   const handleSave = () => {
     setSaving(true);
-    axios.put('http://localhost:8000/api/owners/10', {
+    api.put(`/owners/${user?.id}`, {
       name: formData.name,
       email: formData.email
     })

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../api/axios';
+import { useAuth } from '../../context/AuthContext';
 import HorseOwnerLayout from '../../components/HorseOwner/HorseOwnerLayout';
 import AddNewHorseModal from '../../components/HorseOwner/AddNewHorseModal';
 import HorseDetailModal from '../../components/HorseOwner/HorseDetailModal';
@@ -9,6 +10,7 @@ import EditHorseModal from '../../components/HorseOwner/EditHorseModal';
 import SuccessModal from '../../components/SuccessModal';
 
 const MyHorses = () => {
+  const { user } = useAuth();
   const location = useLocation();
   const [horses, setHorses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +23,7 @@ const MyHorses = () => {
 
   const fetchHorses = () => {
     setLoading(true);
-    axios.get('http://localhost:8000/api/owners/10/horses')
+    api.get(`/owners/${user?.id}/horses`)
       .then((response) => {
         setHorses(response.data.data || response.data);
         setLoading(false);

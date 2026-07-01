@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 
 const AddNewHorseModal = ({ isOpen, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -47,11 +47,10 @@ const AddNewHorseModal = ({ isOpen, onClose, onSuccess }) => {
     }
 
     setSubmitting(true);
-    axios.post('http://localhost:8000/api/horses', {
+    api.post('/horses', {
       name: formData.name,
       breed: formData.breed,
       age: parseInt(formData.age),
-      horse_owner_id: 10, // Hardcoded for testing
       status: formData.status
     })
     .then((response) => {

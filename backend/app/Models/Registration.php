@@ -2,24 +2,11 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
-/**
- * @property int $id
- * @property int $race_id
- * @property int $horse_id
- * @property int $jockey_id
- * @property int $lane
- * @property string $status
- * @property Carbon $created_at
- * @property Carbon $updated_at
- * @property-read Race $race
- * @property-read Horse $horse
- * @property-read User $jockey
- */
 class Registration extends Model
 {
     use HasFactory;
@@ -45,6 +32,7 @@ class Registration extends Model
     {
         return $this->belongsTo(Race::class);
     }
+
     public function horse(): BelongsTo
     {
         return $this->belongsTo(Horse::class);
@@ -52,6 +40,11 @@ class Registration extends Model
 
     public function jockey(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'jockey_id');
+        return $this->belongsTo(Jockey::class, 'jockey_id');
+    }
+
+    public function result(): HasOne
+    {
+        return $this->hasOne(RaceResult::class);
     }
 }
