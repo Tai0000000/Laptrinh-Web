@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
+import PredictionHistory from '../components/PredictionHistory';
 
 const Predictions = () => {
   const [races, setRaces]               = useState([]);
@@ -11,31 +12,21 @@ const Predictions = () => {
 
   const [selectedHorse, setSelectedHorse] = useState(null);
 
-  const [prediction, setPrediction] = useState({
-    amount: 10,
-    type: 'win' // win, place, show
-  });
-  const [message, setMessage] = useState({ text: '', type: '' });
-
   const [prediction, setPrediction]       = useState({ amount: 10, type: 'win' });
   const [message, setMessage]             = useState({ text: '', type: '' });
   const [predictions, setPredictions]     = useState([]);
   const [submitting, setSubmitting]       = useState(false);
 
-
   // ── Load danh sách race scheduled ─────────────────────────────────────
   useEffect(() => {
     api.get('/races')
       .then(res => {
-        // Backend trả { success, data } hoặc array thẳng
         const data = res.data?.data ?? res.data ?? [];
-        // Chỉ hiện race scheduled
         setRaces(data.filter(r => r.status === 'scheduled'));
       })
       .catch(() => setRaces([]))
       .finally(() => setRacesLoading(false));
   }, []);
-
 
   // ── Load participants khi chọn race ───────────────────────────────────
   useEffect(() => {
@@ -54,7 +45,7 @@ const Predictions = () => {
           horse_name:  reg.horse?.name  ?? '—',
           jockey_name: reg.jockey?.name ?? '—',
           lane:        reg.lane_number  ?? '—',
-          odds:        2.5,             // TODO: odds chưa có trong DB
+          odds:        2.5,
         })));
       })
       .catch(() => setParticipants([]))
@@ -74,7 +65,6 @@ const Predictions = () => {
   useEffect(() => { fetchPredictions(); }, []);
 
   // ── Đặt cược ──────────────────────────────────────────────────────────
-
   const handleBetSubmit = async (e) => {
     e.preventDefault();
     if (!selectedRace || !selectedHorse) {
@@ -96,23 +86,14 @@ const Predictions = () => {
         prediction_type: prediction.type,
       });
       setMessage({ text: 'Đặt dự đoán thành công! Chúc bạn may mắn.', type: 'success' });
-
-    } catch (err) {
-
       fetchPredictions();
-    } catch {
-      setMessage({ text: 'Có lỗi xảy ra khi gửi dự đoán.', type: 'error' });
+    } catch (err) {
+      setMessage({ text: err.response?.data?.message || 'Có lỗi xảy ra khi gửi dự đoán.', type: 'error' });
     } finally {
       setSubmitting(false);
     }
   };
 
-  const raceLabel = (race) =>
-    race.tournament?.name
-      ? `${race.tournament.name} — ${race.round ?? ''}`
-      : `Race #${race.id}`;
-
-  // ── UI ─────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="mb-10 text-center">
@@ -294,9 +275,7 @@ const Predictions = () => {
         </div>
       </div>
 
-
       <PredictionHistory predictions={predictions} />
-
     </div>
   );
 };

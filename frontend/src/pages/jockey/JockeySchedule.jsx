@@ -1,13 +1,3 @@
-
-import { useState, useEffect } from 'react'
-import { useApi } from '../../context/AuthContext.jsx'
-import { Badge } from '../../components/UI.jsx'
-
-export default function JockeySchedule({ initialFilter = 'all' }) {
-  const api = useApi()
-  const [races, setRaces]   = useState([])
-  const [filter, setFilter] = useState(initialFilter)
-
 import { useState, useEffect } from 'react';
 import { Badge } from '../../components/UI';
 import api from '../../api/axios';
@@ -17,21 +7,15 @@ export default function JockeySchedule({ initialFilter = 'all' }) {
   const [filter, setFilter]   = useState(initialFilter);
   const [loading, setLoading] = useState(true);
 
-
   useEffect(() => { setFilter(initialFilter); }, [initialFilter]);
 
   useEffect(() => {
-
-    api.get('/jockey/races').then(d => { if (d?.success) setRaces(d.data) })
-  }, [])
-
     setLoading(true);
     api.get('/jockey/races')
       .then(r => { if (r.data?.success) setRaces(r.data.data ?? []); })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
-
 
   const filtered = filter === 'all' ? races : races.filter(r => r.status === filter);
 

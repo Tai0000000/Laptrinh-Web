@@ -43,4 +43,12 @@ class Jockey extends Model
     {
         return $this->hasMany(HorseJockey::class, 'jockey_id');
     }
+
+    /**
+     * Các hợp đồng của jockey này — jockey_contracts.jockey_id = jockeys.id
+     */
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(JockeyContract::class, 'jockey_id');
+    }
 }

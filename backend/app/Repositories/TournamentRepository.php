@@ -9,12 +9,12 @@ class TournamentRepository implements ITournamentRepository
 {
     public function getAll(): mixed
     {
-        return Tournament::all();
+        return Tournament::with('races')->get();
     }
 
     public function findById(int $id): mixed
     {
-        return Tournament::find($id);
+        return Tournament::with('races')->find($id);
     }
 
     public function create(array $data): mixed

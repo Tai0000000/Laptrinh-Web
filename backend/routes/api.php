@@ -45,6 +45,7 @@ Route::middleware('jwt.auth')->group(function () {
     // -- Auth profile --
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me',      [AuthController::class, 'me']);
+    Route::delete('/contracts/{contract}', [JockeyController::class, 'terminateContract']);
 
     // --------------------------------------------------------
     // Admin-only routes
@@ -136,6 +137,8 @@ Route::middleware('jwt.auth')->group(function () {
         Route::post('/horses/{id}/confirm-jockey',  [HorseController::class, 'confirmJockey']);
 
         Route::post('/registrations', [RegistrationController::class, 'store']);
+        Route::get('/registrations/owner', [RegistrationController::class, 'ownerRegistrations']);
+        Route::delete('/registrations/{id}', [RegistrationController::class, 'ownerDestroy']);
 
         Route::get('/horse-owner/profile',                            [HorseOwnerController::class, 'profile']);
         Route::get('/horse-owner/horses',                             [HorseOwnerController::class, 'myHorses']);
@@ -147,6 +150,8 @@ Route::middleware('jwt.auth')->group(function () {
         Route::get('/horse-owner/horses/{horseId}/rewards',           [HorseController::class, 'rewards']);
 
         Route::get('/jockeys', [JockeyController::class, 'listJockeys']);
+        Route::post('/contracts', [JockeyController::class, 'proposeContract']);
+        Route::get('/contracts/owner', [JockeyController::class, 'ownerContracts']);
 
         // RESTful API endpoints for specific Owner ID (used by frontend)
         Route::get('/owners/{ownerId}',         [HorseOwnerController::class, 'getHorseOwnerById']);
@@ -167,6 +172,8 @@ Route::middleware('jwt.auth')->group(function () {
 
         Route::prefix('jockey')->group(function () {
             Route::get('/stats',                   [JockeyController::class, 'stats']);
+            Route::get('/contracts/pending',       [JockeyController::class, 'pendingContracts']);
+            Route::put('/contracts/{contract}/respond', [JockeyController::class, 'respondContract']);
             Route::get('/races/upcoming',          [JockeyController::class, 'upcomingRaces']);
             Route::get('/races',                   [JockeyController::class, 'races']);
             Route::get('/invitations/pending',     [JockeyController::class, 'invitationsPending']);

@@ -1,19 +1,3 @@
-import { useState, useEffect } from 'react'
-import { useApi } from '../../context/AuthContext.jsx'
-import { Icon, Badge, fmtDate } from '../../components/UI.jsx'
-
-export default function JockeyInvitations() {
-  const api = useApi()
-  const [pending, setPending]       = useState([])
-  const [history, setHistory]       = useState([])
-  const [responding, setResponding] = useState(null)
-  const [error, setError]           = useState(null)
-
-  const loadInvitations = () => {
-    api.get('/jockey/invitations/pending').then(d => { if (d?.success) setPending(d.data) })
-    api.get('/jockey/invitations/history').then(d => { if (d?.success) setHistory(d.data) })
-  }
-
 import { useState, useEffect } from 'react';
 import { Icon, Badge, fmtDate } from '../../components/UI';
 import api from '../../api/axios';
@@ -31,22 +15,9 @@ export default function JockeyInvitations() {
       .then(r => { if (r.data?.success) setHistory(r.data.data ?? []) });
   };
 
-
   useEffect(() => { loadInvitations(); }, []);
 
   const respond = async (id, status) => {
-
-    setResponding(id)
-    setError(null)
-    const res = await api.put(`/jockey/invitations/${id}/respond`, { status })
-    setResponding(null)
-    if (!res?.success) {
-      setError(res?.message || 'Không thể phản hồi lời mời. Vui lòng thử lại.')
-      return
-    }
-    loadInvitations()
-  }
-
     setResponding(id);
     setError(null);
     try {
@@ -62,7 +33,6 @@ export default function JockeyInvitations() {
       setResponding(null);
     }
   };
-
 
   return (
     <div className="flex-1 ml-64 pt-16" style={{ background: '#131315', minHeight: '100vh' }}>
@@ -80,7 +50,7 @@ export default function JockeyInvitations() {
 
         {/* Pending */}
         <section>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifycontent: 'space-between', marginBottom: 24 }}>
             <h2 style={{ fontFamily: 'Montserrat', fontWeight: 700, fontSize: 22, color: '#e4e2e4', display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ width: 4, height: 32, background: '#5bf06c', display: 'inline-block' }} />
               Lời mời đang chờ

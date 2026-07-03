@@ -58,4 +58,14 @@ class HorseOwner extends User
     {
         return $this->horses()->where('status', 'active');
     }
+
+    /**
+     * Hợp đồng với các nài ngựa — jockey_contracts.horse_owner_id = horse_owners.id
+     *
+     * @return HasMany
+     */
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(JockeyContract::class, 'horse_owner_id');
+    }
 }

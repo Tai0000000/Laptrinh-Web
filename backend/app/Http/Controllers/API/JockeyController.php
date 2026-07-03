@@ -323,4 +323,205 @@ class JockeyController extends Controller
 
         return $result ? "Hạng {$result->rank}" : null;
     }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // GET /api/jockeys
+    // ──────────────────────────────────────────────────────────────────────
+    public function listJockeys(Request $request)
+    {
+        try {
+            $jockeys = Jockey::with('user')->get()->map(fn($j) => [
+                'id' => $j->id,
+                'name' => $j->user->name ?? '—',
+                'email' => $j->user->email ?? '—',
+                'experience_years' => $j->experience_years,
+                'license_number' => $j->license_number ?? '—',
+            ]);
+            return response()->json(['success' => true, 'data' => $jockeys]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    private function getHorseOwner(Request $request): ?\App\Models\HorseOwner
+    {
+        $userId = $request->attributes->get('auth_user_id');
+        if (!$userId) return null;
+        return \App\Models\HorseOwner::where('user_id', $userId)->first();
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // POST /api/contracts
+    // ──────────────────────────────────────────────────────────────────────
+    public function proposeContract(Request $request)
+    {
+        try {
+            $owner = $this->getHorseOwner($request);
+            if (!$owner) {
+                return response()->json(['success' => false, 'message' => 'Horse Owner profile not found.'], 404);
+            }
+
+            $validated = $request->validate([
+                'jockey_id' => 'required|integer|exists:jockeys,id',
+            ]);
+
+            // Check if there is an active/pending contract already
+            $existing = \App\Models\JockeyContract::where('jockey_id', $validated['jockey_id'])
+                ->where('horse_owner_id', $owner->id)
+                ->whereIn('status', ['pending', 'active'])
+                ->first();
+
+            if ($existing) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hợp đồng với nài ngựa này đã tồn tại hoặc đang chờ phản hồi.'
+                ], 422);
+            }
+
+            $contract = \App\Models\JockeyContract::create([
+                'jockey_id' => $validated['jockey_id'],
+                'horse_owner_id' => $owner->id,
+                'status' => 'pending',
+                'start_date' => now(),
+                'end_date' => now()->addYear(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Gửi đề xuất hợp đồng thành công.',
+                'data' => $contract
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // GET /api/contracts/owner
+    // ──────────────────────────────────────────────────────────────────────
+    public function ownerContracts(Request $request)
+    {
+        try {
+            $owner = $this->getHorseOwner($request);
+            if (!$owner) {
+                return response()->json(['success' => false, 'message' => 'Horse Owner profile not found.'], 404);
+            }
+
+            $contracts = \App\Models\JockeyContract::with('jockey.user')
+                ->where('horse_owner_id', $owner->id)
+                ->get()
+                ->map(fn($c) => [
+                    'id' => $c->id,
+                    'jockey_id' => $c->jockey_id,
+                    'name' => $c->jockey->user->name ?? '—',
+                    'experience' => "{$c->jockey->experience_years} năm",
+                    'license' => $c->jockey->license_number ?? '—',
+                    'wins' => RaceResult::whereHas(
+                        'registration', fn($q) => $q->where('jockey_id', $c->jockey_id)
+                    )->where('rank', 1)->count(),
+                    'rating' => '4.8★', // Mock rating
+                    'contractStatus' => $c->status,
+                    'start_date' => $c->start_date ? $c->start_date->format('Y-m-d') : null,
+                    'end_date' => $c->end_date ? $c->end_date->format('Y-m-d') : null,
+                ]);
+
+            return response()->json(['success' => true, 'data' => $contracts]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // GET /api/jockey/contracts/pending
+    // ──────────────────────────────────────────────────────────────────────
+    public function pendingContracts(Request $request)
+    {
+        try {
+            $jockey = $this->getJockey($request);
+            if (!$jockey) return $this->notFound();
+
+            $contracts = \App\Models\JockeyContract::with('horseOwner.user')
+                ->where('jockey_id', $jockey->id)
+                ->where('status', 'pending')
+                ->get()
+                ->map(fn($c) => [
+                    'id' => $c->id,
+                    'owner_name' => $c->horseOwner->user->name ?? '—',
+                    'start_date' => $c->start_date ? $c->start_date->format('Y-m-d') : null,
+                    'end_date' => $c->end_date ? $c->end_date->format('Y-m-d') : null,
+                ]);
+
+            return response()->json(['success' => true, 'data' => $contracts]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // PUT /api/jockey/contracts/{contract}/respond
+    // ──────────────────────────────────────────────────────────────────────
+    public function respondContract(Request $request, $contractId)
+    {
+        try {
+            $jockey = $this->getJockey($request);
+            if (!$jockey) return $this->notFound();
+
+            $contract = \App\Models\JockeyContract::find($contractId);
+            if (!$contract || $contract->jockey_id !== $jockey->id) {
+                return response()->json(['success' => false, 'message' => 'Hợp đồng không tồn tại hoặc không thuộc quyền quản lý.'], 404);
+            }
+
+            $validated = $request->validate([
+                'status' => 'required|in:active,rejected',
+            ]);
+
+            $contract->update([
+                'status' => $validated['status'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => $validated['status'] === 'active' ? 'Đã ký hợp đồng thành công.' : 'Đã từ chối đề xuất hợp đồng.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // DELETE /api/contracts/{contract}
+    // ──────────────────────────────────────────────────────────────────────
+    public function terminateContract(Request $request, $contractId)
+    {
+        try {
+            $jockey = $this->getJockey($request);
+            $owner = $this->getHorseOwner($request);
+
+            $contract = \App\Models\JockeyContract::find($contractId);
+            if (!$contract) {
+                return response()->json(['success' => false, 'message' => 'Hợp đồng không tồn tại.'], 404);
+            }
+
+            // Check authorization
+            $isAuthorized = false;
+            if ($jockey && $contract->jockey_id === $jockey->id) {
+                $isAuthorized = true;
+            } elseif ($owner && $contract->horse_owner_id === $owner->id) {
+                $isAuthorized = true;
+            }
+
+            if (!$isAuthorized) {
+                return response()->json(['success' => false, 'message' => 'Không có quyền kết thúc hợp đồng này.'], 403);
+            }
+
+            $contract->update(['status' => 'terminated']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã chấm dứt hợp đồng thành công.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
 }
