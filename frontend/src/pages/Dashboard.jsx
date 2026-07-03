@@ -6,12 +6,108 @@ import api from '../api/axios';
 // Admin tab components
 import AdminUsers         from './Admin/AdminUsers';
 import AdminRegistrations from './Admin/AdminRegistrations';
+
+
+const _DAYS   = Array.from({length: 31}, (_, i) => String(i + 1).padStart(2, '0'));
+const _MONTHS = [
+    ['01','Tháng 1'],['02','Tháng 2'],['03','Tháng 3'],['04','Tháng 4'],
+    ['05','Tháng 5'],['06','Tháng 6'],['07','Tháng 7'],['08','Tháng 8'],
+    ['09','Tháng 9'],['10','Tháng 10'],['11','Tháng 11'],['12','Tháng 12'],
+];
+const _curYear = new Date().getFullYear();
+const _YEARS   = Array.from({length: 5}, (_, i) => String(_curYear + i));
+const _HOURS   = Array.from({length: 24}, (_, i) => String(i).padStart(2, '0'));
+const _MINS    = ['00', '15', '30', '45'];
+const _selCls  = 'rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2.5 text-sm text-slate-200 outline-none focus:border-emerald-400 transition-colors cursor-pointer w-full';
+
+function DatePicker({ label, value, onChange, required }) {
+    const [iy = '', im = '', id_ = ''] = value ? value.split('-') : [];
+    const [selY, setSelY] = useState(iy);
+    const [selM, setSelM] = useState(im);
+    const [selD, setSelD] = useState(id_);
+
+    const emit = (y, m, d) => { if (y && m && d) onChange(y + '-' + m + '-' + d); };
+    return (
+        <div>
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                {label}{required && <span className="text-rose-400 ml-0.5">*</span>}
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+                <select className={_selCls} value={selD}
+                    onChange={e => { setSelD(e.target.value); emit(selY, selM, e.target.value); }}>
+                    <option value="">Ngày</option>
+                    {_DAYS.map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
+                <select className={_selCls} value={selM}
+                    onChange={e => { setSelM(e.target.value); emit(selY, e.target.value, selD); }}>
+                    <option value="">Tháng</option>
+                    {_MONTHS.map(([v, lbl]) => <option key={v} value={v}>{lbl}</option>)}
+                </select>
+                <select className={_selCls} value={selY}
+                    onChange={e => { setSelY(e.target.value); emit(e.target.value, selM, selD); }}>
+                    <option value="">Năm</option>
+                    {_YEARS.map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
+            </div>
+        </div>
+    );
+}
+
+function DateTimePicker({ label, value, onChange, required }) {
+    const [datePart = '', timePart = ''] = value ? value.split('T') : [];
+    const [iy = '', im = '', id_ = ''] = datePart ? datePart.split('-') : [];
+    const [ihh = '', imm = ''] = timePart ? timePart.split(':') : [];
+
+    const [selY,   setSelY]   = useState(iy);
+    const [selM,   setSelM]   = useState(im);
+    const [selD,   setSelD]   = useState(id_);
+    const [selH,   setSelH]   = useState(ihh);
+    const [selMin, setSelMin] = useState(imm);
+
+    const emit = (y, m, d, h, min) => {
+        if (y && m && d && h && min) onChange(y + '-' + m + '-' + d + 'T' + h + ':' + min);
+    };
+    return (
+        <div>
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                {label}{required && <span className="text-rose-400 ml-0.5">*</span>}
+            </label>
+            <div className="grid grid-cols-3 gap-2 mb-2">
+                <select className={_selCls} value={selD}
+                    onChange={e => { setSelD(e.target.value); emit(selY, selM, e.target.value, selH, selMin); }}>
+                    <option value="">Ngày</option>
+                    {_DAYS.map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
+                <select className={_selCls} value={selM}
+                    onChange={e => { setSelM(e.target.value); emit(selY, e.target.value, selD, selH, selMin); }}>
+                    <option value="">Tháng</option>
+                    {_MONTHS.map(([v, lbl]) => <option key={v} value={v}>{lbl}</option>)}
+                </select>
+                <select className={_selCls} value={selY}
+                    onChange={e => { setSelY(e.target.value); emit(e.target.value, selM, selD, selH, selMin); }}>
+                    <option value="">Năm</option>
+                    {_YEARS.map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+                <select className={_selCls} value={selH}
+                    onChange={e => { setSelH(e.target.value); emit(selY, selM, selD, e.target.value, selMin); }}>
+                    <option value="">Giờ</option>
+                    {_HOURS.map(v => <option key={v} value={v}>{v}:00</option>)}
+                </select>
+                <select className={_selCls} value={selMin}
+                    onChange={e => { setSelMin(e.target.value); emit(selY, selM, selD, selH, e.target.value); }}>
+                    <option value="">Phút</option>
+                    {_MINS.map(v => <option key={v} value={v}>:{v}</option>)}
+                </select>
+            </div>
+        </div>
+    );
+}
 import AdminResultEntry   from './Admin/AdminResultEntry';
 import AdminLeaderboard   from './Admin/AdminLeaderboard';
 
-/* ═══════════════════════════════════════════════════════════
-   MOCK DATA — dùng khi API chưa sẵn sàng
-═══════════════════════════════════════════════════════════ */
+
 const MOCK_STATS = {
     total_tournaments:     6,
     total_horses:          24,
@@ -68,9 +164,7 @@ const KpiCard = ({ icon, label, value, sub, color = 'emerald', loading }) => {
     );
 };
 
-/* ═══════════════════════════════════════════════════════════
-   ACTIVITY BADGE
-═══════════════════════════════════════════════════════════ */
+
 const BADGE_COLORS = {
     amber:   'bg-amber-500/15   text-amber-300   border-amber-500/30',
     blue:    'bg-sky-500/15     text-sky-300     border-sky-500/30',
@@ -278,57 +372,310 @@ const AdminOverview = ({ onNavigate }) => {
 };
 
 /* ═══════════════════════════════════════════════════════════
-   ADMIN TOURNAMENTS TAB (placeholder — feature đã có từ trước)
+   ADMIN TOURNAMENTS TAB — Tạo / Sửa giải đấu + Thêm cuộc đua
 ═══════════════════════════════════════════════════════════ */
-const AdminTournaments = () => {
-    const [tournaments, setTournaments] = useState([]);
-    const [loading, setLoading]         = useState(true);
-    const [error, setError]             = useState('');
+const EMPTY_TOURNAMENT = { name: '', start_date: '', end_date: '', location: '' };
+const EMPTY_RACE       = { name: '', round: '', race_time: '', distance: '', max_horses: 8 };
 
-    useEffect(() => {
+const AdminTournaments = () => {
+    const [tournaments, setTournaments]     = useState([]);
+    const [loading, setLoading]             = useState(true);
+    const [error, setError]                 = useState('');
+
+    // Tournament form modal
+    const [tModal, setTModal]   = useState(false);   // open/close
+    const [tEdit, setTEdit]     = useState(null);    // null = create, object = edit
+    const [tForm, setTForm]     = useState(EMPTY_TOURNAMENT);
+    const [tSaving, setTSaving] = useState(false);
+    const [tErr, setTErr]       = useState('');
+
+    // Race form modal
+    const [rModal, setRModal]     = useState(false);
+    const [rParent, setRParent]   = useState(null);  // tournament for new race
+    const [rForm, setRForm]       = useState(EMPTY_RACE);
+    const [rSaving, setRSaving]   = useState(false);
+    const [rErr, setRErr]         = useState('');
+
+    // Detail expand
+    const [expanded, setExpanded] = useState(null);
+
+    // ── loaders ───────────────────────────────────────────────────────────
+    const load = () => {
+        setLoading(true);
         api.get('/tournaments')
-            .then(r => setTournaments(r.data || []))
+            .then(r => setTournaments(r.data ?? []))
             .catch(() => setError('Không thể tải danh sách giải đấu.'))
             .finally(() => setLoading(false));
-    }, []);
+    };
+    useEffect(() => { load(); }, []);
 
-    const getStatus = (start, end) => {
+    // ── helpers ───────────────────────────────────────────────────────────
+    const statusBadge = (start, end) => {
         const today = new Date(); today.setHours(0,0,0,0);
-        const s = new Date(start); s.setHours(0,0,0,0);
-        const e = new Date(end);   e.setHours(0,0,0,0);
+        const s = new Date(start); const e = new Date(end);
         if (today < s) return { label: 'Sắp diễn ra', cls: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' };
         if (today > e) return { label: 'Hoàn thành',  cls: 'bg-slate-800 text-slate-400 border-slate-700' };
-        return { label: 'Đang diễn ra', cls: 'bg-sky-500/20 text-sky-400 border-sky-500/30' };
+        return          { label: 'Đang diễn ra', cls: 'bg-sky-500/20 text-sky-400 border-sky-500/30' };
     };
 
+    const raceStatusBadge = (s) => {
+        const m = { scheduled: ['Sắp đua','bg-emerald-500/15 text-emerald-400'], ongoing: ['Đang đua','bg-amber-500/15 text-amber-400'], completed: ['Xong','bg-slate-700 text-slate-400'], cancelled: ['Hủy','bg-rose-500/15 text-rose-400'] };
+        const [label, cls] = m[s] ?? ['—','text-slate-500'];
+        return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cls}`}>{label}</span>;
+    };
+
+    // ── Tournament CRUD ───────────────────────────────────────────────────
+    const openCreateTournament = () => {
+        setTEdit(null); setTForm(EMPTY_TOURNAMENT); setTErr(''); setTModal(true);
+    };
+    const openEditTournament = (t) => {
+        setTEdit(t);
+        setTForm({ name: t.name, start_date: t.start_date, end_date: t.end_date, location: t.location ?? '' });
+        setTErr(''); setTModal(true);
+    };
+    const saveTournament = async (e) => {
+        e.preventDefault(); setTSaving(true); setTErr('');
+        try {
+            if (tEdit) {
+                await api.put(`/tournaments/${tEdit.id}`, tForm);
+            } else {
+                await api.post('/tournaments', tForm);
+            }
+            setTModal(false); load();
+        } catch (err) {
+            setTErr(err.response?.data?.message || Object.values(err.response?.data?.errors ?? {})[0]?.[0] || 'Lưu thất bại.');
+        } finally { setTSaving(false); }
+    };
+    const deleteTournament = async (id) => {
+        if (!window.confirm('Xóa giải đấu này? Tất cả cuộc đua sẽ bị xóa theo.')) return;
+        try { await api.delete(`/tournaments/${id}`); load(); }
+        catch (err) { alert(err.response?.data?.message || 'Không thể xóa.'); }
+    };
+
+    // ── Race CRUD ─────────────────────────────────────────────────────────
+    const openAddRace = (tournament) => {
+        setRParent(tournament); setRForm(EMPTY_RACE); setRErr(''); setRModal(true);
+    };
+    const saveRace = async (e) => {
+        e.preventDefault(); setRSaving(true); setRErr('');
+        try {
+            await api.post('/races', {
+                tournament_id: rParent.id,
+                name:          rForm.name,
+                round:         rForm.round,
+                race_time:     rForm.race_time,
+                distance:      Number(rForm.distance),
+                max_horses:    Number(rForm.max_horses),
+            });
+            setRModal(false); load();
+        } catch (err) {
+            setRErr(err.response?.data?.message || Object.values(err.response?.data?.errors ?? {})[0]?.[0] || 'Lưu thất bại.');
+        } finally { setRSaving(false); }
+    };
+    const deleteRace = async (raceId) => {
+        if (!window.confirm('Xóa cuộc đua này?')) return;
+        try { await api.delete(`/races/${raceId}`); load(); }
+        catch (err) { alert(err.response?.data?.message || 'Không thể xóa.'); }
+    };
+
+    // ── field helper ──────────────────────────────────────────────────────
+    const Field = ({ label, type = 'text', name, value, onChange, required, placeholder }) => (
+        <div>
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">{label}</label>
+            <input
+                type={type} name={name} value={value} onChange={onChange}
+                required={required} placeholder={placeholder}
+                className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-sm text-slate-200 outline-none focus:border-emerald-400 placeholder:text-slate-600 transition-colors"
+            />
+        </div>
+    );
+
+    // ── render ────────────────────────────────────────────────────────────
     if (loading) return <div className="py-20 text-center text-slate-500">Đang tải...</div>;
-    if (error)   return <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-300">{error}</div>;
 
     return (
         <div className="space-y-6">
-            <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400 mb-1">Quản trị</p>
-                <h2 className="text-3xl font-black tracking-tight text-white">Giải đấu</h2>
+            {/* Header */}
+            <div className="flex items-start justify-between">
+                <div>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400 mb-1">Quản trị</p>
+                    <h2 className="text-3xl font-black tracking-tight text-white">Giải đấu</h2>
+                </div>
+                <button onClick={openCreateTournament}
+                    className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-lg hover:from-emerald-600 hover:to-teal-600 transition-all active:scale-95">
+                    <span className="text-lg leading-none">＋</span> Tạo giải đấu mới
+                </button>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {tournaments.length === 0 ? (
-                    <div className="col-span-3 py-16 text-center text-slate-500">Chưa có giải đấu nào.</div>
-                ) : tournaments.map(t => {
-                    const st = getStatus(t.start_date, t.end_date);
-                    return (
-                        <div key={t.id} className="rounded-2xl border border-white/10 bg-slate-950/50 p-5 hover:border-emerald-500/30 transition-colors">
-                            <div className="flex items-start justify-between mb-3">
-                                <p className="font-bold text-white">{t.name}</p>
-                                <span className={`text-[11px] font-semibold rounded-full border px-2.5 py-0.5 ${st.cls}`}>{st.label}</span>
+
+            {error && <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-300">{error}</div>}
+
+            {/* Tournament list */}
+            {tournaments.length === 0 ? (
+                <div className="py-20 text-center text-slate-500 rounded-2xl border border-white/5 bg-slate-950/30">
+                    <p className="text-4xl mb-3">🏆</p>
+                    <p>Chưa có giải đấu nào. Nhấn "Tạo giải đấu mới" để bắt đầu.</p>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {tournaments.map(t => {
+                        const st   = statusBadge(t.start_date, t.end_date);
+                        const open = expanded === t.id;
+                        const races = t.races ?? [];
+                        return (
+                            <div key={t.id} className="rounded-2xl border border-white/10 bg-slate-950/50 overflow-hidden">
+                                {/* Tournament row */}
+                                <div className="flex items-center gap-4 p-5">
+                                    <button onClick={() => setExpanded(open ? null : t.id)}
+                                        className="text-slate-500 hover:text-slate-300 transition-colors text-lg w-6 shrink-0">
+                                        {open ? '▼' : '▶'}
+                                    </button>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-3 flex-wrap">
+                                            <p className="font-bold text-white">{t.name}</p>
+                                            <span className={`text-[11px] font-semibold rounded-full border px-2.5 py-0.5 ${st.cls}`}>{st.label}</span>
+                                        </div>
+                                        <p className="text-xs text-slate-500 mt-0.5">
+                                            📍 {t.location || '—'} &nbsp;·&nbsp;
+                                            📅 {new Date(t.start_date).toLocaleDateString('vi-VN')} → {new Date(t.end_date).toLocaleDateString('vi-VN')} &nbsp;·&nbsp;
+                                            🏇 {races.length} cuộc đua
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <button onClick={() => openAddRace(t)}
+                                            className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-500/20 transition">
+                                            + Thêm cuộc đua
+                                        </button>
+                                        <button onClick={() => openEditTournament(t)}
+                                            className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-bold text-sky-400 hover:bg-sky-500/20 transition">
+                                            Sửa
+                                        </button>
+                                        <button onClick={() => deleteTournament(t.id)}
+                                            className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-bold text-rose-400 hover:bg-rose-500/20 transition">
+                                            Xóa
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Races list — expand */}
+                                {open && (
+                                    <div className="border-t border-white/5 bg-slate-950/70">
+                                        {races.length === 0 ? (
+                                            <p className="px-8 py-6 text-sm text-slate-600">Chưa có cuộc đua nào. Nhấn "+ Thêm cuộc đua" để tạo.</p>
+                                        ) : (
+                                            <table className="w-full text-sm">
+                                                <thead>
+                                                    <tr className="border-b border-white/5">
+                                                        {['Tên / Vòng', 'Thời gian', 'Cự ly', 'Max ngựa', 'Trạng thái', ''].map(h => (
+                                                            <th key={h} className="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-600">{h}</th>
+                                                        ))}
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {races.map(r => (
+                                                        <tr key={r.id} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
+                                                            <td className="px-5 py-3">
+                                                                <p className="font-semibold text-slate-200">{r.name || `Vòng ${r.round}`}</p>
+                                                                {r.round && r.name && <p className="text-xs text-slate-500">Vòng {r.round}</p>}
+                                                            </td>
+                                                            <td className="px-5 py-3 text-slate-400 text-xs">
+                                                                {r.race_time ? new Date(r.race_time).toLocaleString('vi-VN') : '—'}
+                                                            </td>
+                                                            <td className="px-5 py-3 text-emerald-400 font-bold">{r.distance}m</td>
+                                                            <td className="px-5 py-3 text-slate-400">{r.max_horses}</td>
+                                                            <td className="px-5 py-3">{raceStatusBadge(r.status)}</td>
+                                                            <td className="px-5 py-3">
+                                                                <button onClick={() => deleteRace(r.id)}
+                                                                    className="text-[11px] font-bold text-rose-500 hover:text-rose-400 transition">Xóa</button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        )}
+                                    </div>
+                                )}
                             </div>
-                            <div className="space-y-1 text-xs text-slate-400">
-                                <p>📍 {t.location || '—'}</p>
-                                <p>📅 {new Date(t.start_date).toLocaleDateString('vi-VN')} → {new Date(t.end_date).toLocaleDateString('vi-VN')}</p>
-                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* ── Tournament Modal ── */}
+            {tModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+                    <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 shadow-2xl">
+                        <div className="border-b border-white/5 px-6 py-5 flex items-center justify-between">
+                            <h3 className="font-bold text-white">{tEdit ? 'Sửa giải đấu' : 'Tạo giải đấu mới'}</h3>
+                            <button onClick={() => setTModal(false)} className="text-slate-500 hover:text-slate-300 text-xl">✕</button>
                         </div>
-                    );
-                })}
-            </div>
+                        <form onSubmit={saveTournament} className="p-6 space-y-4">
+                            <Field label="Tên giải đấu" name="name" value={tForm.name} required
+                                onChange={e => setTForm(f => ({...f, name: e.target.value}))}
+                                placeholder="Grand Heritage Cup 2026" />
+                            <div className="grid grid-cols-2 gap-3">
+                                <DatePicker label="Ngày bắt đầu" value={tForm.start_date} required
+                                    onChange={v => setTForm(f => ({...f, start_date: v}))} />
+                                <DatePicker label="Ngày kết thúc" value={tForm.end_date} required
+                                    onChange={v => setTForm(f => ({...f, end_date: v}))} />
+                            </div>
+                            <Field label="Địa điểm" name="location" value={tForm.location}
+                                onChange={e => setTForm(f => ({...f, location: e.target.value}))}
+                                placeholder="Trường đua Phú Thọ" />
+                            {tErr && <p className="text-xs text-rose-400">{tErr}</p>}
+                            <div className="flex gap-3 pt-2">
+                                <button type="button" onClick={() => setTModal(false)}
+                                    className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-bold text-slate-300 hover:bg-white/5 transition">Hủy</button>
+                                <button type="submit" disabled={tSaving}
+                                    className="flex-1 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 py-2.5 text-sm font-bold text-slate-950 disabled:opacity-50 transition">
+                                    {tSaving ? 'Đang lưu...' : (tEdit ? 'Cập nhật' : 'Tạo mới')}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Race Modal ── */}
+            {rModal && rParent && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+                    <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 shadow-2xl">
+                        <div className="border-b border-white/5 px-6 py-5 flex items-center justify-between">
+                            <div>
+                                <h3 className="font-bold text-white">Thêm cuộc đua</h3>
+                                <p className="text-xs text-slate-500 mt-0.5">{rParent.name}</p>
+                            </div>
+                            <button onClick={() => setRModal(false)} className="text-slate-500 hover:text-slate-300 text-xl">✕</button>
+                        </div>
+                        <form onSubmit={saveRace} className="p-6 space-y-4">
+                            <Field label="Tên cuộc đua" name="name" value={rForm.name}
+                                onChange={e => setRForm(f => ({...f, name: e.target.value}))}
+                                placeholder="Chung kết mùa xuân" />
+                            <Field label="Vòng (round)" name="round" value={rForm.round} required
+                                onChange={e => setRForm(f => ({...f, round: e.target.value}))}
+                                placeholder="Vòng 1" />
+                            <DateTimePicker label="Thời gian đua" value={rForm.race_time} required
+                                onChange={v => setRForm(f => ({...f, race_time: v}))} />
+                            <div className="grid grid-cols-2 gap-3">
+                                <Field label="Cự ly (mét)" type="number" name="distance" value={rForm.distance} required
+                                    onChange={e => setRForm(f => ({...f, distance: e.target.value}))}
+                                    placeholder="1600" />
+                                <Field label="Số ngựa tối đa" type="number" name="max_horses" value={rForm.max_horses}
+                                    onChange={e => setRForm(f => ({...f, max_horses: e.target.value}))}
+                                    placeholder="8" />
+                            </div>
+                            {rErr && <p className="text-xs text-rose-400">{rErr}</p>}
+                            <div className="flex gap-3 pt-2">
+                                <button type="button" onClick={() => setRModal(false)}
+                                    className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-bold text-slate-300 hover:bg-white/5 transition">Hủy</button>
+                                <button type="submit" disabled={rSaving}
+                                    className="flex-1 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 py-2.5 text-sm font-bold text-slate-950 disabled:opacity-50 transition">
+                                    {rSaving ? 'Đang lưu...' : 'Thêm cuộc đua'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
