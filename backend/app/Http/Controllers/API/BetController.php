@@ -3,192 +3,124 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Services\Contracts\IBetService;
+use App\Models\Bet;
+use App\Models\Race;
+use App\Models\Registration;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class BetController extends Controller
 {
-    protected IBetService $betService;
-
-    public function __construct(IBetService $betService)
-    {
-        $this->betService = $betService;
-    }
-
+    /**
+     * GET /api/bets
+     * Danh sách cược của spectator hiện tại.
+     */
     public function index(Request $request): JsonResponse
     {
         $userId = $request->attributes->get('auth_user_id');
-        $bets = $this->betService->getBetsByUser($userId);
-        return response()->json($bets);
+
+        $bets = Bet::with([
+            'registration.horse',
+            'registration.jockey',
+            'registration.race.tournament',
+        ])
+            ->where('user_id', $userId)
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn ($bet) => [
+                'id'              => $bet->id,
+                'race_name'       => $bet->registration->race->name
+                                    ?? $bet->registration->race->tournament->name
+                                    ?? 'N/A',
+                'tournament_name' => $bet->registration->race->tournament->name ?? 'N/A',
+                'horse_name'      => $bet->registration->horse->name ?? 'N/A',
+                'lane'            => $bet->registration->lane ?? 'N/A',
+                'prediction_type' => $bet->prediction_type,
+                'amount'          => $bet->amount,
+                'status'          => $bet->status,
+                'payout'          => $bet->reward_amount
+                                    ?? ($bet->status === 'won' ? $bet->amount * 2.5 : 0),
+                'created_at'      => $bet->created_at,
+            ]);
+
+        return response()->json(['message' => 'Lấy danh sách cược thành công!', 'data' => $bets]);
     }
 
+    /**
+     * POST /api/bets
+     * Đặt cược mới — chỉ spectator.
+     */
     public function store(Request $request): JsonResponse
     {
         $userId = $request->attributes->get('auth_user_id');
 
         $validated = $request->validate([
-            'registration_id' => 'required|integer',
-            'amount' => 'required|numeric|min:10000',
+            'registration_id' => 'required|integer|exists:registrations,id',
+            'race_id'         => 'required|integer|exists:races,id',
+            'amount'          => 'required|numeric|min:10000',
             'prediction_type' => 'required|string|in:win,place,show',
         ]);
 
-        $validated['user_id'] = $userId;
-
-        $bet = $this->betService->placeBet($validated);
-        return response()->json($bet, 201);
-    }
-
-    public function show(int $id): JsonResponse
-    {
-        $bet = $this->betService->getBetById($id);
-        if (!$bet) {
-            return response()->json(['message' => 'Bet does not exist.'], 404);
-        }
-        return response()->json($bet);
-    }
-}
-
-<?php
-
-namespace App\Http\Controllers\API;
-
-use App\Http\Controllers\Controller;
-use App\Models\Bet;
-use App\Models\Race;
-use App\Models\Registration;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-
-class BetController extends Controller
-{
-    /**
-     * Hiển thị danh sách các cược của người dùng hiện tại.
-     */
-    public function index()
-    {
-        $user = Auth::user();
-        $bets = Bet::with([
-            'registration.horse', 
-            'registration.jockey',
-            'registration.race.tournament'
-        ])
-            ->where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // Return formatted data for frontend
-        $formattedBets = $bets->map(function ($bet) {
-            return [
-                'id' => $bet->id,
-                'race_name' => $bet->registration->race->name ?? 'N/A',
-                'tournament_name' => $bet->registration->race->tournament->name ?? 'N/A',
-                'horse_name' => $bet->registration->horse->name ?? 'N/A',
-                'lane' => $bet->registration->lane ?? 'N/A',
-                'prediction_type' => $bet->prediction_type,
-                'status' => $bet->status,
-                'payout' => $bet->reward_amount ?? ($bet->status === 'won' ? $bet->amount * 2.5 : 0),
-                'created_at' => $bet->created_at,
-            ];
-        });
-
-        return response()->json([
-            'message' => 'Lấy danh sách cược thành công!',
-            'data' => $formattedBets
-        ]);
-    }
-
-    /**
-     * Đặt một cược mới.
-     */
-    public function placeBet(Request $request, $raceId)
-    {
-        $user = Auth::user();
-
-        // Validate request data
-        $validated = $request->validate([
-            'registration_id' => 'required|exists:registrations,id',
-            'amount' => 'required|numeric|min:1',
-            'prediction_type' => 'required|string|in:win,place,show',
-        ]);
-
-        // 1. Get race to check time
-        $race = Race::findOrFail($raceId);
-
-        // 2. Validate: Only allow betting before race starts
+        $race = Race::findOrFail($validated['race_id']);
         if (now()->greaterThanOrEqualTo($race->race_time)) {
-            return response()->json([
-                'message' => 'Cuộc đua đã bắt đầu hoặc kết thúc. Không thể đặt cược!'
-            ], 422);
+            return response()->json(['message' => 'Cuộc đua đã bắt đầu hoặc kết thúc. Không thể đặt cược!'], 422);
         }
 
-        // 3. Check registration is for this specific race
         $registration = Registration::where('id', $validated['registration_id'])
-            ->where('race_id', $raceId)
+            ->where('race_id', $validated['race_id'])
             ->where('status', 'confirmed')
-            ->firstOrFail();
+            ->first();
 
-        // 4. Create bet
+        if (!$registration) {
+            return response()->json(['message' => 'Đăng ký này không hợp lệ hoặc chưa được xác nhận.'], 422);
+        }
+
         $bet = Bet::create([
-            'user_id' => $user->id,
+            'user_id'         => $userId,
             'registration_id' => $validated['registration_id'],
-            'amount' => $validated['amount'],
+            'amount'          => $validated['amount'],
             'prediction_type' => $validated['prediction_type'],
-            'status' => 'pending',
+            'status'          => 'pending',
         ]);
 
         return response()->json([
             'message' => 'Đặt dự đoán thành công!',
-            'bet' => $bet->load([
-                'registration.horse', 
-                'registration.jockey',
-                'registration.race'
-            ])
+            'data'    => $bet->load(['registration.horse', 'registration.jockey', 'registration.race']),
         ], 201);
     }
 
     /**
-     * Xem chi tiết một khoản cược.
+     * GET /api/bets/{id}
      */
-    public function show(Bet $bet)
+    public function show(Request $request, int $id): JsonResponse
     {
-        // Check if user owns the bet
-        if ($bet->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Bạn không có quyền xem cược này.'], 403);
-        }
+        $userId = $request->attributes->get('auth_user_id');
+        $bet    = Bet::with(['registration.horse', 'registration.race.tournament'])->find($id);
 
-        $bet->load([
-            'registration.horse',
-            'registration.jockey',
-            'registration.race.tournament'
-        ]);
+        if (!$bet)                        return response()->json(['message' => 'Cược không tồn tại.'], 404);
+        if ($bet->user_id !== $userId)    return response()->json(['message' => 'Không có quyền xem cược này.'], 403);
 
-        return response()->json([
-            'message' => 'Lấy chi tiết cược thành công!',
-            'data' => $bet
-        ]);
+        return response()->json(['message' => 'Lấy chi tiết cược thành công!', 'data' => $bet]);
     }
 
     /**
-     * Hủy cược.
+     * DELETE /api/bets/{id}
+     * Hủy cược — chỉ khi pending và race chưa bắt đầu.
      */
-    public function destroy(Bet $bet)
+    public function destroy(Request $request, int $id): JsonResponse
     {
-        // Check if user owns the bet
-        if ($bet->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Bạn không có quyền hủy cược này.'], 403);
-        }
+        $userId = $request->attributes->get('auth_user_id');
+        $bet    = Bet::find($id);
 
-        // Check if bet is still pending and race hasn't started
+        if (!$bet)                        return response()->json(['message' => 'Cược không tồn tại.'], 404);
+        if ($bet->user_id !== $userId)    return response()->json(['message' => 'Không có quyền hủy cược này.'], 403);
+
         $race = $bet->registration->race;
         if ($bet->status !== 'pending' || now()->greaterThanOrEqualTo($race->race_time)) {
             return response()->json(['message' => 'Không thể hủy cược này!'], 422);
         }
 
         $bet->delete();
-
-        return response()->json([
-            'message' => 'Đã hủy cược thành công!'
-        ], 200);
+        return response()->json(['message' => 'Đã hủy cược thành công!']);
     }
 }
