@@ -43,8 +43,8 @@ const Predictions = () => {
         setParticipants(regs.map(reg => ({
           id:          reg.id,
           horse_name:  reg.horse?.name  ?? '—',
-          jockey_name: reg.jockey?.name ?? '—',
-          lane:        reg.lane_number  ?? '—',
+          jockey_name: reg.jockey?.user?.name ?? reg.jockey?.name ?? '—',
+          lane:        reg.lane ?? reg.lane_number ?? '—',
           odds:        2.5,
         })));
       })
@@ -80,8 +80,9 @@ const Predictions = () => {
 
     setSubmitting(true);
     try {
-      await api.post(`/races/${selectedRace.id}/bet`, {
+      await api.post('/bets', {
         registration_id: selectedHorse.id,
+        race_id:         selectedRace.id,
         amount:          prediction.amount,
         prediction_type: prediction.type,
       });
