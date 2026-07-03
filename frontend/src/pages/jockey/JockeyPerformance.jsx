@@ -1,18 +1,3 @@
-
-import { useState, useEffect } from 'react'
-import { useApi } from '../../context/AuthContext.jsx'
-import { Icon, fmtDate } from '../../components/UI.jsx'
-
-export default function JockeyPerformance() {
-  const api = useApi()
-  const [results, setResults]   = useState([])
-  const [bestTimes, setBestTimes] = useState([])
-
-  useEffect(() => {
-    api.get('/jockey/performance/results').then(d => { if (d?.success) setResults(d.data) })
-    api.get('/jockey/performance/best-times').then(d => { if (d?.success) setBestTimes(d.data) })
-  }, [])
-
 import { useState, useEffect } from 'react';
 import { Icon, fmtDate } from '../../components/UI';
 import api from '../../api/axios';
@@ -32,7 +17,6 @@ export default function JockeyPerformance() {
     }).catch(console.error)
       .finally(() => setLoading(false));
   }, []);
-
 
   const wins       = results.filter(r => +r.finish_position === 1).length;
   const top3       = results.filter(r => +r.finish_position <= 3).length;

@@ -16,6 +16,7 @@ use App\Models\RaceResult;
 use App\Models\Violation;
 use App\Models\Bet;
 use App\Models\Prize;
+use App\Models\JockeyContract;
 use Illuminate\Support\Facades\Hash;
 
 class HorseRacingSeeder extends Seeder
@@ -91,6 +92,39 @@ class HorseRacingSeeder extends Seeder
             'user_id' => $jockeyUser4->id,
             'experience_years' => 4,
             'license_number' => 'JC004'
+        ]);
+
+        // Seed Jockey Contracts
+        JockeyContract::create([
+            'jockey_id' => $j1->id,
+            'horse_owner_id' => $owner->id,
+            'status' => 'active',
+            'start_date' => now()->subMonths(2),
+            'end_date' => now()->addMonths(10),
+        ]);
+
+        JockeyContract::create([
+            'jockey_id' => $j2->id,
+            'horse_owner_id' => $owner->id,
+            'status' => 'active',
+            'start_date' => now()->subMonths(1),
+            'end_date' => now()->addMonths(11),
+        ]);
+
+        JockeyContract::create([
+            'jockey_id' => $j3->id,
+            'horse_owner_id' => $owner->id,
+            'status' => 'pending',
+            'start_date' => now(),
+            'end_date' => now()->addYear(),
+        ]);
+
+        JockeyContract::create([
+            'jockey_id' => $j4->id,
+            'horse_owner_id' => $owner->id,
+            'status' => 'rejected',
+            'start_date' => now(),
+            'end_date' => now()->addYear(),
         ]);
 
         $refereeUser = User::create([

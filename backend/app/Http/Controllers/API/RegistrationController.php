@@ -24,6 +24,26 @@ class RegistrationController extends Controller
             'jockey_id' => 'required|integer',
         ]);
 
+        // Prevent duplicate horse registration in the same race
+        $existingHorse = \App\Models\Registration::where('race_id', $validated['race_id'])
+            ->where('horse_id', $validated['horse_id'])
+            ->first();
+        if ($existingHorse) {
+            return response()->json([
+                'message' => 'Ngựa này đã được đăng ký tham gia cuộc đua này rồi.'
+            ], 422);
+        }
+
+        // Prevent duplicate jockey registration in the same race
+        $existingJockey = \App\Models\Registration::where('race_id', $validated['race_id'])
+            ->where('jockey_id', $validated['jockey_id'])
+            ->first();
+        if ($existingJockey) {
+            return response()->json([
+                'message' => 'Jockey này đã được phân công lái cho ngựa khác trong cuộc đua này.'
+            ], 422);
+        }
+
         $validated['status'] = 'pending';
 
         $registration = $this->registrationService->createRegistration($validated);
@@ -80,5 +100,66 @@ class RegistrationController extends Controller
             return response()->json(['message' => 'Registration does not exist.'], 404);
         }
         return response()->json(['message' => 'Registration deleted successfully.'], 200);
+    }
+
+    public function ownerRegistrations(Request $request): JsonResponse
+    {
+        try {
+            $userId = $request->attributes->get('auth_user_id');
+            $owner = \App\Models\HorseOwner::where('user_id', $userId)->first();
+            if (!$owner) {
+                return response()->json(['success' => false, 'message' => 'Không tìm thấy thông tin chủ ngựa.'], 404);
+            }
+
+            $registrations = \App\Models\Registration::with(['race.tournament', 'horse', 'jockey.user'])
+                ->whereHas('horse', function ($q) use ($owner) {
+                    $q->where('horse_owner_id', $owner->id);
+                })
+                ->orderByDesc('created_at')
+                ->get()
+                ->map(fn($r) => [
+                    'id' => $r->id,
+                    'race_id' => $r->race_id,
+                    'horse_id' => $r->horse_id,
+                    'jockey_id' => $r->jockey_id,
+                    'horse_name' => $r->horse->name ?? '—',
+                    'jockey_name' => $r->jockey->user->name ?? '—',
+                    'race_name' => $r->race->name ?? '—',
+                    'tournament_name' => $r->race->tournament->name ?? '—',
+                    'race_date' => $r->race->race_time,
+                    'status' => $r->status,
+                    'lane' => $r->lane,
+                ]);
+
+            return response()->json(['success' => true, 'data' => $registrations]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function ownerDestroy(Request $request, int $id): JsonResponse
+    {
+        try {
+            $userId = $request->attributes->get('auth_user_id');
+            $owner = \App\Models\HorseOwner::where('user_id', $userId)->first();
+            if (!$owner) {
+                return response()->json(['success' => false, 'message' => 'Không có quyền truy cập.'], 403);
+            }
+
+            $registration = \App\Models\Registration::find($id);
+            if (!$registration) {
+                return response()->json(['success' => false, 'message' => 'Đăng ký không tồn tại.'], 404);
+            }
+
+            // Verify ownership
+            if ($registration->horse->horse_owner_id !== $owner->id) {
+                return response()->json(['success' => false, 'message' => 'Không có quyền hủy đăng ký này.'], 403);
+            }
+
+            $registration->delete();
+            return response()->json(['success' => true, 'message' => 'Đã hủy đăng ký thành công.']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 }

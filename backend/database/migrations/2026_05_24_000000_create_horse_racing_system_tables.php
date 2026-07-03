@@ -35,6 +35,17 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        // 3b. Bảng Hợp đồng giữa Nài ngựa & Chủ ngựa
+        Schema::create('jockey_contracts', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('jockey_id')->constrained('jockeys')->onDelete('cascade');
+            $table->foreignId('horse_owner_id')->constrained('horse_owners')->onDelete('cascade');
+            $table->enum('status', ['pending', 'active', 'terminated', 'rejected'])->default('pending');
+            $table->date('start_date')->nullable();
+            $table->date('end_date')->nullable();
+            $table->timestamps();
+        });
+
         // 4. Bảng Race Referees (Trọng tài)
         Schema::create('race_referees', function (Blueprint $table) {
             $table->id();
@@ -183,6 +194,7 @@ return new class extends Migration
         Schema::dropIfExists('admins');
         Schema::dropIfExists('spectators');
         Schema::dropIfExists('race_referees');
+        Schema::dropIfExists('jockey_contracts');
         Schema::dropIfExists('jockeys');
         Schema::dropIfExists('horse_owners');
         Schema::dropIfExists('users');
