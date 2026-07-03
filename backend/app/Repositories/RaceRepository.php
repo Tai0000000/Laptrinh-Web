@@ -14,7 +14,11 @@ class RaceRepository implements IRaceRepository
 
     public function findById(int $id): mixed
     {
-        return Race::with(['tournament', 'registrations.horse', 'registrations.jockey'])->withCount('registrations')->find($id);
+        return Race::with([
+            'tournament',
+            'registrations.horse',
+            'registrations.jockey.user',  // jockey → jockeys.user → users
+        ])->withCount('registrations')->find($id);
     }
 
     public function findByTournament(int $tournamentId): mixed
