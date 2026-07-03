@@ -37,6 +37,10 @@ Route::get('/public/tournaments',           [TournamentController::class, 'index
 Route::get('/public/races/live',            [RaceController::class, 'live']);
 Route::get('/public/race-results/{raceId}', [RaceResultController::class, 'leaderboard']);
 
+// Races — public (Predictions.jsx cần lấy danh sách race và chi tiết không cần login)
+Route::get('/races',        [RaceController::class, 'index']);
+Route::get('/races/{id}',   [RaceController::class, 'show']);
+
 // ============================================================
 // Authenticated Routes (JWT required)
 // ============================================================
@@ -93,8 +97,6 @@ Route::middleware('jwt.auth')->group(function () {
     // --------------------------------------------------------
     Route::middleware('jwt.auth:admin,race_referee')->group(function () {
         Route::post('/races',              [RaceController::class, 'store']);
-        Route::get('/races',               [RaceController::class, 'index']);
-        Route::get('/races/{id}',          [RaceController::class, 'show']);
         Route::put('/races/{id}',          [RaceController::class, 'update']);
         Route::put('/races/{id}/status',   [RaceController::class, 'updateStatus']);
         Route::delete('/races/{id}',       [RaceController::class, 'destroy']);
@@ -188,8 +190,9 @@ Route::middleware('jwt.auth')->group(function () {
     // Spectator
     // --------------------------------------------------------
     Route::middleware('jwt.auth:spectator')->group(function () {
-        Route::post('/bets',       [BetController::class, 'store']);
-        Route::get('/bets',        [BetController::class, 'index']);
-        Route::get('/bets/{id}',   [BetController::class, 'show']);
+        Route::post('/bets',          [BetController::class, 'store']);
+        Route::get('/bets',           [BetController::class, 'index']);
+        Route::get('/bets/{id}',      [BetController::class, 'show']);
+        Route::delete('/bets/{id}',   [BetController::class, 'destroy']);
     });
 });
