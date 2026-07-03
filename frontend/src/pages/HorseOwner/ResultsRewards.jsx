@@ -38,17 +38,27 @@ const ResultsRewards = () => {
             const res = await api.get(`/horses/${horse.id}/results`);
             // Map the results to match table structure
             const horseResults = res.data ?? [];
-            return horseResults.map(item => ({
-              id: item.id,
-              horseName: horse.name,
-              race: item.race?.name ?? `Race #${item.race_id}`,
-              tournament: item.race?.tournament?.name ?? '—',
-              date: item.race?.race_time ? new Date(item.race.race_time).toLocaleDateString('vi-VN') : '—',
-              position: item.rank ? `${item.rank}` : '—',
-              rawRank: item.rank,
-              prize: item.rank === 1 ? '10,000,000đ' : item.rank === 2 ? '5,000,000đ' : item.rank === 3 ? '2,000,000đ' : '—',
-              rawPrize: item.rank === 1 ? 10000000 : item.rank === 2 ? 5000000 : item.rank === 3 ? 2000000 : 0
-            }));
+            return horseResults.map(item => {
+              const calcPrize = (rank) => {
+                if (rank === 1) return { label: '50,000,000đ', value: 50000000 };
+                if (rank === 2) return { label: '25,000,000đ', value: 25000000 };
+                if (rank === 3) return { label: '10,000,000đ', value: 10000000 };
+                if (rank === 4) return { label: '5,000,000đ',  value: 5000000  };
+                return { label: '—', value: 0 };
+              };
+              const prize = calcPrize(item.rank);
+              return {
+                id: item.id,
+                horseName: horse.name,
+                race: item.race?.name ?? `Race #${item.race_id}`,
+                tournament: item.race?.tournament?.name ?? '—',
+                date: item.race?.race_time ? new Date(item.race.race_time).toLocaleDateString('vi-VN') : '—',
+                position: item.rank ? `${item.rank}` : '—',
+                rawRank: item.rank,
+                prize: prize.label,
+                rawPrize: prize.value,
+              };
+            });
           } catch (e) {
             console.error(`Error fetching results for horse ${horse.id}:`, e);
             return [];
