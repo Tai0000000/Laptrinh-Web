@@ -300,12 +300,81 @@ class JockeyController extends Controller
         }
     }
 
+    // ──────────────────────────────────────────────────────────────────────
+    // GET /api/jockeys  (dùng bởi horse_owner để browse & thuê nài ngựa)
+    // ──────────────────────────────────────────────────────────────────────
+    public function listJockeys(Request $request)
+    {
+        try {
+            $jockeys = Jockey::with('user')
+                ->get()
+                ->map(fn ($j) => [
+                    'id'               => $j->id,
+                    'name'             => $j->user->name ?? '—',
+                    'email'            => $j->user->email ?? '—',
+                    'experience_years' => $j->experience_years ?? 0,
+                    'license_number'   => $j->license_number ?? '—',
+                    'wins'             => $this->countJockeyWins($j->id),
+                    'total_races'      => \App\Models\Registration::where('jockey_id', $j->id)->count(),
+                ]);
+
+            return response()->json(['success' => true, 'data' => $jockeys]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // GET /api/jockey/schedule  (lịch đua sắp tới của nài ngựa)
+    // ──────────────────────────────────────────────────────────────────────
+    public function schedule(Request $request)
+    {
+        try {
+            $jockey = $this->getJockey($request);
+            if (! $jockey) return $this->notFound();
+
+            $rows = \App\Models\Registration::with(['race.tournament', 'horse.owner.user'])
+                ->where('jockey_id', $jockey->id)
+                ->whereHas('race', fn ($q) => $q->where('race_time', '>', now()))
+                ->orderBy(
+                    \App\Models\Race::select('race_time')
+                        ->whereColumn('id', 'registrations.race_id')
+                        ->limit(1)
+                )
+                ->get()
+                ->map(fn ($r) => [
+                    'id'          => $r->id,
+                    'race_date'   => $r->race->race_time,
+                    'race_name'   => $r->race->name ?? $r->race->tournament->name ?? 'Cuộc đua',
+                    'tournament'  => $r->race->tournament->name ?? '—',
+                    'distance'    => $r->race->distance,
+                    'horse_name'  => $r->horse->name ?? '—',
+                    'owner_name'  => $r->horse->owner->user->name ?? '—',
+                    'lane_number' => $r->lane ?? null,
+                    'reg_status'  => $r->status,
+                    'status'      => $r->race->status,
+                ])
+                ->values();
+
+            return response()->json(['success' => true, 'data' => $rows]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
     // ── Helpers ────────────────────────────────────────────────────────────
 
     private function countHorseWins(int $horseId): int
     {
         return RaceResult::whereHas(
-            'registration', fn($q) => $q->where('horse_id', $horseId)
+            'registration', fn ($q) => $q->where('horse_id', $horseId)
+        )->where('rank', 1)->count();
+    }
+
+    private function countJockeyWins(int $jockeyId): int
+    {
+        return RaceResult::whereHas(
+            'registration', fn ($q) => $q->where('jockey_id', $jockeyId)
         )->where('rank', 1)->count();
     }
 
@@ -313,7 +382,6 @@ class JockeyController extends Controller
     {
         if ($inv->status !== 'accepted') return null;
 
-        // Tìm registration tương ứng rồi lấy rank
         $result = RaceResult::whereHas(
             'registration',
             fn($q) => $q->where('race_id', $inv->race_id)
@@ -322,25 +390,6 @@ class JockeyController extends Controller
         )->first();
 
         return $result ? "Hạng {$result->rank}" : null;
-    }
-
-    // ──────────────────────────────────────────────────────────────────────
-    // GET /api/jockeys
-    // ──────────────────────────────────────────────────────────────────────
-    public function listJockeys(Request $request)
-    {
-        try {
-            $jockeys = Jockey::with('user')->get()->map(fn($j) => [
-                'id' => $j->id,
-                'name' => $j->user->name ?? '—',
-                'email' => $j->user->email ?? '—',
-                'experience_years' => $j->experience_years,
-                'license_number' => $j->license_number ?? '—',
-            ]);
-            return response()->json(['success' => true, 'data' => $jockeys]);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
     }
 
     private function getHorseOwner(Request $request): ?\App\Models\HorseOwner
