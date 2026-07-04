@@ -64,7 +64,7 @@ class RaceController extends Controller
         if (!$race) {
             return response()->json(['message' => 'Race does not exist.'], 404);
         }
-        return response()->json($race);
+        return response()->json(['success' => true, 'data' => $race]);
     }
 
     public function update(Request $request, int $id): JsonResponse

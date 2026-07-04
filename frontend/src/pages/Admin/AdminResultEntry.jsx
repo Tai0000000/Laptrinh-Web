@@ -248,8 +248,8 @@ export default function AdminResultEntry() {
                 api.get('/admin/races'),
                 api.get('/tournaments'),
             ]);
-            setRaces(rRes.data || []);
-            setTournaments(tRes.data || []);
+            setRaces(rRes.data?.data ?? rRes.data ?? []);
+            setTournaments(tRes.data?.data ?? tRes.data ?? []);
         } catch (e) {
             setError(e.response?.data?.message || 'Không thể tải dữ liệu.');
         } finally {

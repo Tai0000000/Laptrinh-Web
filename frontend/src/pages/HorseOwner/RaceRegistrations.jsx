@@ -21,8 +21,8 @@ function RegisterModal({ horses, onClose, onSuccess }) {
   const [error, setError]     = useState('');
 
   useEffect(() => {
-    // Dùng public endpoint — không cần auth, hiển thị tất cả races
-    api.get('/public/races/live')
+    // Lấy tất cả races, modal sẽ filter ra scheduled
+    api.get('/public/races')
       .then(r => setRaces(r.data?.data ?? r.data ?? []))
       .catch(() => {});
   }, []);

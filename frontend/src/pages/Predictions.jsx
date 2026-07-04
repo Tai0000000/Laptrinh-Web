@@ -17,10 +17,11 @@ const Predictions = () => {
 
   // ── Load danh sách race scheduled ─────────────────────────────────────
   useEffect(() => {
-    api.get('/races')
+    api.get('/public/races')
       .then(res => {
         const data = res.data?.data ?? res.data ?? [];
-        setRaces(data.filter(r => r.status === 'scheduled'));
+        const now = new Date();
+        setRaces(data.filter(r => r.status === 'scheduled' && new Date(r.race_time) > now));
       })
       .catch(() => setRaces([]))
       .finally(() => setRacesLoading(false));
@@ -34,7 +35,7 @@ const Predictions = () => {
     setMessage({ text: '', type: '' });
     setParticipantsLoading(true);
 
-    api.get(`/races/${selectedRace.id}`)
+    api.get(`/public/races/${selectedRace.id}`)
       .then(res => {
         const race = res.data?.data ?? res.data ?? {};
         const regs = race.registrations ?? [];
@@ -43,7 +44,7 @@ const Predictions = () => {
           horse_name:  reg.horse?.name  ?? '—',
           jockey_name: reg.jockey?.name ?? reg.jockey?.user?.name ?? '—',
           lane:        reg.lane ?? '—',
-          odds:        2.5,
+          odds:        reg.odds ?? 2.5,
         })));
       })
       .catch(() => setParticipants([]))

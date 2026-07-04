@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Icon, Badge } from '../../components/UI';
 import api from '../../api/axios';
 
-const WS_URL = 'ws://localhost:8080';
+const WS_URL = import.meta.env.VITE_WS_URL ?? 'ws://localhost:8080';
 
 /* ── helpers ── */
 const posColor = (p) =>
@@ -468,3 +468,4 @@ export default function JockeyLive() {
   );
 }
 
+ 

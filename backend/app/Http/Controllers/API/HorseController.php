@@ -53,9 +53,10 @@ class HorseController extends Controller
         }
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'age' => 'required|integer|min:1',
-            'breed' => 'required|string|max:255',
+            'name'   => 'required|string|max:255',
+            'age'    => 'required|integer|min:1',
+            'breed'  => 'required|string|max:255',
+            'weight' => 'sometimes|nullable|numeric|min:1',
         ]);
 
         $validated['horse_owner_id'] = $ownerDto->id;
@@ -192,10 +193,12 @@ class HorseController extends Controller
     {
         $userId = $request->attributes->get('auth_user_id');
         $owner = $this->horseOwnerService->getOwnerByUserId($userId);
-        $ownerId = $owner ? $owner->id : 10;
+        if (!$owner) {
+            return response()->json(['message' => 'Horse owner information not found.'], 404);
+        }
 
         $data = $request->validated();
-        $data['horse_owner_id'] = $ownerId;
+        $data['horse_owner_id'] = $owner->id;
         $dto = HorseDTO::fromArray($data);
         $resultDto = $this->horseService->addHorse($dto);
         return (new HorseResource($resultDto))->response()->setStatusCode(201);

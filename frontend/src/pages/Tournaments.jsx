@@ -9,7 +9,7 @@ const Tournaments = () => {
 
   useEffect(() => {
     api.get('/public/tournaments')
-      .then(res => setTournaments(res.data || []))
+      .then(res => setTournaments(res.data?.data ?? res.data ?? []))
       .catch(() => setError('Không thể tải danh sách giải đấu.'))
       .finally(() => setLoading(false));
   }, []);

@@ -149,10 +149,10 @@ class JockeyController extends Controller
                     'horse_name' => $inv->horse->name ?? '—',
                     'breed'      => $inv->horse->breed ?? '—',
                     'age'        => $inv->horse->age ?? '—',
-                    'weight'     => '—',
+                    'weight'     => $inv->horse->weight ?? '—',
                     'wins'       => $this->countHorseWins($inv->horse_id),
                     'owner_name' => $inv->horse->owner->user->name ?? '—',
-                    'race_name'  => $inv->race->name ?? $inv->race->tournament->name ?? '—',
+                    'race_name'  => $inv->race->name ?? $inv->race->round ?? $inv->race->tournament->name ?? '—',
                     'tournament' => $inv->race->tournament->name ?? '—',
                     'race_date'  => $inv->race->race_time,
                     'distance'   => $inv->race->distance,
@@ -259,7 +259,7 @@ class JockeyController extends Controller
                     'race_date'       => $r->registration->race->race_time,
                     'finish_position' => $r->rank,
                     'finish_time'     => $r->finish_time,
-                    'prize_amount'    => 0, // bảng prizes riêng, chưa join
+                    'prize_amount'    => $r->registration->prize->amount ?? 0,
                 ])
                 ->values();
 

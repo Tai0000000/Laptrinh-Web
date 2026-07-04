@@ -11,7 +11,7 @@ const RaceDetail = () => {
 
   useEffect(() => {
     Promise.all([
-      api.get(`/races/${id}`),
+      api.get(`/public/races/${id}`),
       api.get(`/public/race-results/${id}`).catch(() => ({ data: { data: [] } })),
     ]).then(([raceRes, resultRes]) => {
       const raceData = raceRes.data?.data ?? raceRes.data;

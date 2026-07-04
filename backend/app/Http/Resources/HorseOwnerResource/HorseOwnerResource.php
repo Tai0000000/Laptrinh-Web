@@ -17,18 +17,22 @@ class HorseOwnerResource extends JsonResource
     {
         if ($this->resource instanceof HorseOwnerDTO) {
             return [
-                'id' => $this->resource->id,
-                'user_id' => $this->resource->userId,
-                'name' => $this->resource->name,
-                'email' => $this->resource->email,
+                'id'       => $this->resource->id,
+                'user_id'  => $this->resource->userId,
+                'name'     => $this->resource->name,
+                'email'    => $this->resource->email,
+                'phone'    => $this->resource->phone,
+                'location' => $this->resource->location,
             ];
         }
 
         return [
-            'id' => $this->id,
-            'user_id' => $this->user_id,
-            'name' => $this->user?->name,
-            'email' => $this->user?->email,
+            'id'       => $this->id,
+            'user_id'  => $this->user_id,
+            'name'     => $this->user?->name,
+            'email'    => $this->user?->email,
+            'phone'    => $this->user?->phone,
+            'location' => $this->user?->location,
         ];
     }
 }

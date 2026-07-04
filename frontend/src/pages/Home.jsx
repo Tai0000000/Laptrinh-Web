@@ -302,7 +302,7 @@ export default function Home() {
   useEffect(() => {
     Promise.all([
       api.get('/public/tournaments'),
-      api.get('/public/races/live'),
+      api.get('/public/races'),
     ]).then(([tRes, rRes]) => {
       const ts = tRes.data?.data ?? tRes.data ?? [];
       const rs = rRes.data?.data ?? rRes.data ?? [];

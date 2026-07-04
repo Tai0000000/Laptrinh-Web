@@ -69,8 +69,10 @@ class HorseOwnerRepository implements IHorseOwnerRepository
             // Update associated user if user details are provided
             if ($owner->user) {
                 $userData = [];
-                if (isset($data['name'])) $userData['name'] = $data['name'];
-                if (isset($data['email'])) $userData['email'] = $data['email'];
+                if (isset($data['name']))     $userData['name']     = $data['name'];
+                if (isset($data['email']))    $userData['email']    = $data['email'];
+                if (array_key_exists('phone', $data))    $userData['phone']    = $data['phone'];
+                if (array_key_exists('location', $data)) $userData['location'] = $data['location'];
                 if (!empty($userData)) {
                     $owner->user->update($userData);
                 }

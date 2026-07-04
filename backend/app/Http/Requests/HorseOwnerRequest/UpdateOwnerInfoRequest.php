@@ -15,9 +15,11 @@ class UpdateOwnerInfoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|max:255',
-            'user_id' => 'sometimes|integer|exists:users,id',
+            'name'     => 'sometimes|string|max:255',
+            'email'    => 'sometimes|email|max:255',
+            'phone'    => 'sometimes|nullable|string|max:20',
+            'location' => 'sometimes|nullable|string|max:255',
+            'user_id'  => 'sometimes|integer|exists:users,id',
         ];
     }
 

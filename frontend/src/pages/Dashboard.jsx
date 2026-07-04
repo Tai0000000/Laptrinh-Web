@@ -8,6 +8,7 @@ import AdminUsers         from './Admin/AdminUsers';
 import AdminRegistrations from './Admin/AdminRegistrations';
 import AdminResultEntry   from './Admin/AdminResultEntry';
 import AdminLeaderboard   from './Admin/AdminLeaderboard';
+import AdminRaces         from './Admin/AdminRaces';
 
 /* ═══════════════════════════════════════════════════════════
    MOCK DATA — dùng khi API chưa sẵn sàng
@@ -217,6 +218,12 @@ const AdminOverview = ({ onNavigate }) => {
                                 className="group flex w-full items-center gap-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-3.5 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:-translate-y-0.5"
                             >
                                 <span className="text-base">🏗️</span> Tạo giải đấu mới
+                            </button>
+                            <button
+                                onClick={() => onNavigate('races')}
+                                className="group flex w-full items-center gap-3 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-500 px-5 py-3.5 text-sm font-bold text-slate-950 shadow-lg shadow-sky-500/20 transition-all duration-200 hover:-translate-y-0.5"
+                            >
+                                <span className="text-base">🏁</span> Tạo cuộc đua mới
                             </button>
                             <button
                                 onClick={() => onNavigate('results')}
@@ -532,6 +539,7 @@ const AdminPanel = () => {
         switch (activeTab) {
             case 'overview':      return <AdminOverview onNavigate={setActiveTab} />;
             case 'tournaments':   return <AdminTournaments />;
+            case 'races':         return <AdminRaces />;
             case 'registrations': return <AdminRegistrations />;
             case 'users':         return <AdminUsers />;
             case 'results':       return <AdminResultEntry />;

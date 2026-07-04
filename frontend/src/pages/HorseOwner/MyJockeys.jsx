@@ -11,7 +11,7 @@ function HireModal({ jockey, horses, onClose, onSuccess }) {
   const [error, setError]     = useState('');
 
   useEffect(() => {
-    api.get('/races').then(r => setRaces(r.data?.data ?? [])).catch(() => {});
+    api.get('/public/races').then(r => setRaces(r.data?.data ?? [])).catch(() => {});
   }, []);
 
   const handleSubmit = async (e) => {

@@ -39,8 +39,8 @@ export default function AdminRegistrations() {
             api.get('/tournaments'),
             api.get('/admin/races'),
         ]).then(([tRes, rRes]) => {
-            setTournaments(tRes.data || []);
-            setRaces(rRes.data || []);
+            setTournaments(tRes.data?.data ?? tRes.data ?? []);
+            setRaces(rRes.data?.data ?? rRes.data ?? []);
         }).catch(() => {});
     }, []);
 
