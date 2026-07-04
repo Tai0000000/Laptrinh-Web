@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import HorseOwnerLayout from '../../components/HorseOwner/HorseOwnerLayout';
-import api from '../../api/axios';
 import SuccessModal from '../../components/SuccessModal';
 import ConfirmModal from '../../components/ConfirmModal';
 

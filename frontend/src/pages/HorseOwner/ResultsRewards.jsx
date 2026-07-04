@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import HorseOwnerLayout from '../../components/HorseOwner/HorseOwnerLayout';
-import api from '../../api/axios';
 
 // Helper: a label + value row inside the detail panel
 const DetailRow = ({ label, value, highlight }) => (
