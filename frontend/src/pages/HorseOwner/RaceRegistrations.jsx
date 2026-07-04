@@ -8,6 +8,8 @@ const STATUS_MAP = {
   pending:   { label: 'Chờ duyệt',   cls: 'bg-yellow-100 text-yellow-700' },
   rejected:  { label: 'Từ chối',     cls: 'bg-red-100 text-red-700' },
   cancelled: { label: 'Đã hủy',      cls: 'bg-gray-100 text-gray-600' },
+  withdrawn: { label: 'Đã rút',      cls: 'bg-gray-100 text-gray-600' },
+  scheduled: { label: 'Đã đăng ký',  cls: 'bg-blue-100 text-blue-700' },
 };
 
 /* ── Modal đăng ký cuộc đua ── */
@@ -19,7 +21,10 @@ function RegisterModal({ horses, onClose, onSuccess }) {
   const [error, setError]     = useState('');
 
   useEffect(() => {
-    api.get('/races').then(r => setRaces(r.data?.data ?? [])).catch(() => {});
+    // Dùng public endpoint — không cần auth, hiển thị tất cả races
+    api.get('/public/races/live')
+      .then(r => setRaces(r.data?.data ?? r.data ?? []))
+      .catch(() => {});
   }, []);
 
   const handleSubmit = async (e) => {
@@ -30,7 +35,10 @@ function RegisterModal({ horses, onClose, onSuccess }) {
       await api.post('/registrations', { horse_id: +horseId, race_id: +raceId });
       onSuccess();
     } catch (err) {
-      setError(err.response?.data?.message || 'Không thể đăng ký. Vui lòng thử lại.');
+      const msg = err.response?.data?.message
+        || Object.values(err.response?.data?.errors || {})[0]?.[0]
+        || 'Không thể đăng ký. Vui lòng thử lại.';
+      setError(msg);
     } finally { setSaving(false); }
   };
 
@@ -93,23 +101,52 @@ const RaceRegistrations = () => {
 
   const fetchData = () => {
     setLoading(true);
-    Promise.all([
-      api.get('/horse-owner/horses'),
-      api.get('/registrations').catch(() => ({ data: { data: [] } })),
-    ]).then(([hRes, rRes]) => {
-      setHorses(hRes.data?.data ?? hRes.data ?? []);
-      setRegistrations(rRes.data?.data ?? rRes.data ?? []);
-    }).catch(console.error)
+    // Lấy danh sách ngựa trước
+    api.get('/horse-owner/horses')
+      .then(async hRes => {
+        const horseList = hRes.data?.data ?? hRes.data ?? [];
+        setHorses(horseList);
+
+        // Lấy registrations từ từng ngựa qua schedule endpoint
+        const scheduleArrays = await Promise.all(
+          horseList.map(h =>
+            api.get(`/horse-owner/horses/${h.id}/schedule`)
+              .then(r => {
+                const races = r.data?.data ?? r.data ?? [];
+                return races.map(race => ({
+                  ...race,
+                  horse_name:  h.name,
+                  horse_id:    h.id,
+                  race_name:   race.name ?? `Cuộc đua #${race.id}`,
+                  race_date:   race.race_time,
+                  // registration_status có sẵn từ API đã fix
+                  status:      race.registration_status ?? race.status ?? 'pending',
+                  reg_id:      race.registration_id,
+                  lane:        race.lane,
+                  tournament:  race.tournament?.name ?? '—',
+                }));
+              })
+              .catch(() => [])
+          )
+        );
+
+        // Flatten và loại trùng theo reg_id
+        const all = scheduleArrays.flat();
+        setRegistrations(all);
+      })
+      .catch(console.error)
       .finally(() => setLoading(false));
   };
 
   useEffect(() => { fetchData(); }, [user]);
 
   const handleCancel = async (reg) => {
+    const regId = reg.reg_id ?? reg.id;
+    if (!regId) { alert('Không tìm thấy ID đăng ký.'); return; }
     if (!window.confirm(`Hủy đăng ký ngựa "${reg.horse_name}" khỏi cuộc đua này?`)) return;
-    setCancelling(reg.id);
+    setCancelling(regId);
     try {
-      await api.put(`/registrations/${reg.id}/status`, { status: 'cancelled' });
+      await api.put(`/registrations/${regId}/status`, { status: 'withdrawn' });
       showToast('Đã hủy đăng ký thành công.');
       fetchData();
     } catch (err) {
@@ -159,30 +196,29 @@ const RaceRegistrations = () => {
                       <p className="text-gray-500 text-sm">Chưa có đăng ký nào. Hãy đăng ký cuộc đua cho ngựa của bạn!</p>
                     </td>
                   </tr>
-                ) : registrations.map(reg => {
+                ) : registrations.map((reg, idx) => {
                   const s = STATUS_MAP[reg.status] ?? { label: reg.status, cls: 'bg-gray-100 text-gray-600' };
+                  const regId = reg.reg_id ?? reg.id;
                   return (
-                    <tr key={reg.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-5 py-4 font-semibold text-gray-800 text-sm">{reg.horse_name ?? reg.horse?.name ?? '—'}</td>
-                      <td className="px-5 py-4 text-gray-700 text-sm">{reg.race_name ?? reg.race?.name ?? `Cuộc đua #${reg.race_id}`}</td>
-                      <td className="px-5 py-4 text-gray-500 text-sm">{reg.tournament ?? reg.race?.tournament?.name ?? '—'}</td>
+                    <tr key={`${reg.horse_id}-${reg.id}-${idx}`} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-5 py-4 font-semibold text-gray-800 text-sm">{reg.horse_name ?? '—'}</td>
+                      <td className="px-5 py-4 text-gray-700 text-sm">{reg.race_name ?? '—'}</td>
+                      <td className="px-5 py-4 text-gray-500 text-sm">{reg.tournament ?? '—'}</td>
                       <td className="px-5 py-4 text-gray-500 text-sm">
-                        {reg.race_date ?? reg.race?.race_time
-                          ? new Date(reg.race_date ?? reg.race?.race_time).toLocaleDateString('vi-VN')
-                          : '—'}
+                        {reg.race_date ? new Date(reg.race_date).toLocaleDateString('vi-VN') : '—'}
                       </td>
                       <td className="px-5 py-4 text-gray-500 text-sm">{reg.lane ?? '—'}</td>
                       <td className="px-5 py-4">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${s.cls}`}>{s.label}</span>
                       </td>
                       <td className="px-5 py-4">
-                        {reg.status === 'pending' && (
+                        {(reg.status === 'pending' || reg.status === 'scheduled') && regId && (
                           <button
                             onClick={() => handleCancel(reg)}
-                            disabled={cancelling === reg.id}
+                            disabled={cancelling === regId}
                             className="text-red-500 hover:text-red-700 text-xs font-medium disabled:opacity-40"
                           >
-                            {cancelling === reg.id ? 'Đang hủy...' : 'Hủy'}
+                            {cancelling === regId ? 'Đang hủy...' : 'Hủy'}
                           </button>
                         )}
                       </td>

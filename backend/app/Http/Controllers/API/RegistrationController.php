@@ -19,15 +19,20 @@ class RegistrationController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'race_id' => 'required|integer',
-            'horse_id' => 'required|integer',
-            'jockey_id' => 'required|integer',
+            'race_id'   => 'required|integer|exists:races,id',
+            'horse_id'  => 'required|integer|exists:horses,id',
+            'jockey_id' => 'nullable|integer|exists:jockeys,id',
         ]);
 
-        $validated['status'] = 'pending';
+        $validated['status']    = 'pending';
+        $validated['jockey_id'] = $validated['jockey_id'] ?? null;
 
         $registration = $this->registrationService->createRegistration($validated);
-        return response()->json($registration, 201);
+        return response()->json([
+            'success' => true,
+            'message' => 'Đăng ký tham gia cuộc đua thành công.',
+            'data'    => $registration,
+        ], 201);
     }
 
     public function updateStatus(Request $request, int $id): JsonResponse
