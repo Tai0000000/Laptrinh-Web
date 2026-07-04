@@ -278,57 +278,222 @@ const AdminOverview = ({ onNavigate }) => {
 };
 
 /* ═══════════════════════════════════════════════════════════
-   ADMIN TOURNAMENTS TAB (placeholder — feature đã có từ trước)
+   ADMIN TOURNAMENTS TAB — CRUD đầy đủ
 ═══════════════════════════════════════════════════════════ */
+const EMPTY_FORM = { name: '', location: '', start_date: '', end_date: '', description: '', prize_pool: '' };
+
+const TournamentModal = ({ tournament, onClose, onSaved }) => {
+    const isEdit = !!tournament?.id;
+    const [form, setForm]     = useState(isEdit ? {
+        name:        tournament.name        ?? '',
+        location:    tournament.location    ?? '',
+        start_date:  tournament.start_date  ? tournament.start_date.slice(0,10) : '',
+        end_date:    tournament.end_date    ? tournament.end_date.slice(0,10)   : '',
+        description: tournament.description ?? '',
+        prize_pool:  tournament.prize_pool  ?? '',
+    } : { ...EMPTY_FORM });
+    const [saving, setSaving] = useState(false);
+    const [error, setError]   = useState('');
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (new Date(form.start_date) > new Date(form.end_date)) {
+            setError('Ngày kết thúc phải sau ngày bắt đầu.'); return;
+        }
+        setSaving(true); setError('');
+        try {
+            if (isEdit) {
+                await api.put(`/tournaments/${tournament.id}`, form);
+            } else {
+                await api.post('/tournaments', form);
+            }
+            onSaved();
+        } catch (err) {
+            const msg = err.response?.data?.message
+                || Object.values(err.response?.data?.errors || {})[0]?.[0]
+                || 'Lỗi không xác định.';
+            setError(msg);
+        } finally { setSaving(false); }
+    };
+
+    const field = (label, name, type = 'text', required = true) => (
+        <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">{label}{required && ' *'}</label>
+            <input
+                type={type} value={form[name]} required={required}
+                onChange={e => setForm(f => ({ ...f, [name]: e.target.value }))}
+                className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-sm text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition-colors placeholder:text-slate-600"
+            />
+        </div>
+    );
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={onClose}>
+            <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-slate-950 shadow-2xl" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between border-b border-white/5 px-7 py-5">
+                    <div>
+                        <h2 className="text-lg font-black text-white">{isEdit ? '✏️ Chỉnh sửa giải đấu' : '🏗️ Tạo giải đấu mới'}</h2>
+                        <p className="text-xs text-slate-500 mt-0.5">{isEdit ? `ID: ${tournament.id}` : 'Điền đầy đủ thông tin bên dưới'}</p>
+                    </div>
+                    <button onClick={onClose} className="text-slate-500 hover:text-white text-xl transition-colors">✕</button>
+                </div>
+                <form onSubmit={handleSubmit} className="p-7 space-y-4">
+                    {error && (
+                        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-300">{error}</div>
+                    )}
+                    {field('Tên giải đấu', 'name')}
+                    {field('Địa điểm', 'location')}
+                    <div className="grid grid-cols-2 gap-4">
+                        {field('Ngày bắt đầu', 'start_date', 'date')}
+                        {field('Ngày kết thúc', 'end_date', 'date')}
+                    </div>
+                    {field('Tổng giải thưởng (VNĐ)', 'prize_pool', 'number', false)}
+                    <div>
+                        <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Mô tả</label>
+                        <textarea
+                            value={form.description} rows={3}
+                            onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                            className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-sm text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition-colors placeholder:text-slate-600 resize-none"
+                            placeholder="Mô tả ngắn về giải đấu (tuỳ chọn)"
+                        />
+                    </div>
+                    <div className="flex gap-3 pt-2">
+                        <button type="submit" disabled={saving}
+                            className="flex-1 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 py-3 text-sm font-bold text-slate-950 shadow-lg transition-all hover:-translate-y-0.5 disabled:opacity-50">
+                            {saving ? 'Đang lưu...' : (isEdit ? 'Lưu thay đổi' : 'Tạo giải đấu')}
+                        </button>
+                        <button type="button" onClick={onClose}
+                            className="flex-1 rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-semibold text-slate-300 transition-all hover:bg-white/10">
+                            Hủy
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
 const AdminTournaments = () => {
     const [tournaments, setTournaments] = useState([]);
     const [loading, setLoading]         = useState(true);
     const [error, setError]             = useState('');
+    const [modal, setModal]             = useState(null); // null | 'create' | tournament obj
+    const [deleting, setDeleting]       = useState(null);
+    const [toast, setToast]             = useState('');
 
-    useEffect(() => {
+    const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3500); };
+
+    const load = () => {
+        setLoading(true);
         api.get('/tournaments')
-            .then(r => setTournaments(r.data || []))
+            .then(r => setTournaments(r.data?.data ?? r.data ?? []))
             .catch(() => setError('Không thể tải danh sách giải đấu.'))
             .finally(() => setLoading(false));
-    }, []);
+    };
+
+    useEffect(() => { load(); }, []);
+
+    const handleDelete = async (t) => {
+        if (!window.confirm(`Xóa giải đấu "${t.name}"? Hành động này không thể hoàn tác.`)) return;
+        setDeleting(t.id);
+        try {
+            await api.delete(`/tournaments/${t.id}`);
+            showToast(`Đã xóa giải đấu "${t.name}"`);
+            load();
+        } catch (err) {
+            alert(err.response?.data?.message || 'Không thể xóa giải đấu.');
+        } finally { setDeleting(null); }
+    };
 
     const getStatus = (start, end) => {
-        const today = new Date(); today.setHours(0,0,0,0);
-        const s = new Date(start); s.setHours(0,0,0,0);
-        const e = new Date(end);   e.setHours(0,0,0,0);
-        if (today < s) return { label: 'Sắp diễn ra', cls: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' };
-        if (today > e) return { label: 'Hoàn thành',  cls: 'bg-slate-800 text-slate-400 border-slate-700' };
+        const now = Date.now();
+        const s = new Date(start), e = new Date(end);
+        if (now < s) return { label: 'Sắp diễn ra', cls: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' };
+        if (now > e) return { label: 'Hoàn thành',  cls: 'bg-slate-800 text-slate-400 border-slate-700' };
         return { label: 'Đang diễn ra', cls: 'bg-sky-500/20 text-sky-400 border-sky-500/30' };
     };
 
-    if (loading) return <div className="py-20 text-center text-slate-500">Đang tải...</div>;
-    if (error)   return <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-300">{error}</div>;
-
     return (
         <div className="space-y-6">
-            <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400 mb-1">Quản trị</p>
-                <h2 className="text-3xl font-black tracking-tight text-white">Giải đấu</h2>
+            <div className="flex items-end justify-between">
+                <div>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400 mb-1">Quản trị</p>
+                    <h2 className="text-3xl font-black tracking-tight text-white">Giải đấu</h2>
+                    <p className="text-sm text-slate-400 mt-1">{tournaments.length} giải đấu trong hệ thống</p>
+                </div>
+                <button
+                    onClick={() => setModal('create')}
+                    className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-3 text-sm font-bold text-slate-950 shadow-lg transition-all hover:-translate-y-0.5"
+                >
+                    ＋ Tạo giải đấu mới
+                </button>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {tournaments.length === 0 ? (
-                    <div className="col-span-3 py-16 text-center text-slate-500">Chưa có giải đấu nào.</div>
-                ) : tournaments.map(t => {
-                    const st = getStatus(t.start_date, t.end_date);
-                    return (
-                        <div key={t.id} className="rounded-2xl border border-white/10 bg-slate-950/50 p-5 hover:border-emerald-500/30 transition-colors">
-                            <div className="flex items-start justify-between mb-3">
-                                <p className="font-bold text-white">{t.name}</p>
-                                <span className={`text-[11px] font-semibold rounded-full border px-2.5 py-0.5 ${st.cls}`}>{st.label}</span>
+
+            {toast && (
+                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-300">
+                    ✅ {toast}
+                </div>
+            )}
+
+            {loading ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {[1,2,3].map(i => <div key={i} className="h-44 animate-pulse rounded-2xl bg-white/5" />)}
+                </div>
+            ) : error ? (
+                <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-300">{error}</div>
+            ) : tournaments.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-white/10 py-20 text-center text-slate-500">
+                    <p className="text-4xl mb-3">🏆</p>
+                    <p className="text-sm">Chưa có giải đấu nào. Tạo giải đấu đầu tiên!</p>
+                </div>
+            ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {tournaments.map(t => {
+                        const st = getStatus(t.start_date, t.end_date);
+                        return (
+                            <div key={t.id} className="group rounded-2xl border border-white/10 bg-slate-950/60 p-5 hover:border-emerald-500/30 transition-all">
+                                <div className="flex items-start justify-between mb-3 gap-2">
+                                    <p className="font-bold text-white text-sm leading-snug">{t.name}</p>
+                                    <span className={`shrink-0 text-[11px] font-semibold rounded-full border px-2.5 py-0.5 ${st.cls}`}>{st.label}</span>
+                                </div>
+                                <div className="space-y-1 text-xs text-slate-400 mb-4">
+                                    <p>📍 {t.location || '—'}</p>
+                                    <p>📅 {new Date(t.start_date).toLocaleDateString('vi-VN')} → {new Date(t.end_date).toLocaleDateString('vi-VN')}</p>
+                                    {t.prize_pool && (
+                                        <p className="text-emerald-400 font-semibold">🏅 {Number(t.prize_pool).toLocaleString('vi-VN')} ₫</p>
+                                    )}
+                                    {t.description && (
+                                        <p className="text-slate-500 line-clamp-2 mt-1">{t.description}</p>
+                                    )}
+                                </div>
+                                <div className="flex gap-2 pt-3 border-t border-white/5">
+                                    <button
+                                        onClick={() => setModal(t)}
+                                        className="flex-1 rounded-xl bg-white/5 hover:bg-white/10 py-2 text-xs font-semibold text-slate-300 transition-colors"
+                                    >
+                                        ✏️ Sửa
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(t)}
+                                        disabled={deleting === t.id}
+                                        className="flex-1 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 py-2 text-xs font-semibold text-rose-400 transition-colors disabled:opacity-40"
+                                    >
+                                        {deleting === t.id ? '...' : '🗑️ Xóa'}
+                                    </button>
+                                </div>
                             </div>
-                            <div className="space-y-1 text-xs text-slate-400">
-                                <p>📍 {t.location || '—'}</p>
-                                <p>📅 {new Date(t.start_date).toLocaleDateString('vi-VN')} → {new Date(t.end_date).toLocaleDateString('vi-VN')}</p>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {modal && (
+                <TournamentModal
+                    tournament={modal === 'create' ? null : modal}
+                    onClose={() => setModal(null)}
+                    onSaved={() => { setModal(null); showToast(modal === 'create' ? 'Đã tạo giải đấu thành công!' : 'Đã cập nhật giải đấu!'); load(); }}
+                />
+            )}
         </div>
     );
 };
