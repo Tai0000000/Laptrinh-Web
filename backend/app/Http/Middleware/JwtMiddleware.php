@@ -59,7 +59,10 @@ class JwtMiddleware
         if (! empty($roles)) {
             $userRole = $decoded->role ?? null;
 
-            if (! in_array($userRole, $roles, true)) {
+            // Normalise: treat legacy 'referee' role as 'race_referee'
+            $normalised = $userRole === 'referee' ? 'race_referee' : $userRole;
+
+            if (! in_array($normalised, $roles, true) && ! in_array($userRole, $roles, true)) {
                 return response()->json([
                     'message' => 'You do not have permission to access this resource.',
                     'required_roles' => $roles,

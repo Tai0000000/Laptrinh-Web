@@ -45,7 +45,7 @@ export default function AdminLeaderboard() {
     /* Tải tournaments */
     useEffect(() => {
         api.get('/tournaments')
-            .then(r => setTournaments(r.data || []))
+            .then(r => setTournaments(r.data?.data ?? r.data ?? []))
             .catch(() => {});
     }, []);
 

@@ -67,23 +67,15 @@ class HorseOwnerService implements IHorseOwnerService
 
     public function hireJockeyForRace(int $horseId, int $jockeyId, int $raceId): void
     {
-        $registration = Registration::where('horse_id', $horseId)
-            ->where('race_id', $raceId)
-            ->first();
-
-        if ($registration) {
-            $registration->update([
-                'jockey_id' => $jockeyId,
-                'status'    => 'pending'
-            ]);
-        } else {
-            $this->registrationRepository->create([
-                'race_id'   => $raceId,
+        // Tạo lời mời trong bảng horse_jockey (jockey sẽ thấy ở trang Invitations)
+        \App\Models\HorseJockey::updateOrCreate(
+            [
                 'horse_id'  => $horseId,
                 'jockey_id' => $jockeyId,
-                'status'    => 'pending'
-            ]);
-        }
+                'race_id'   => $raceId,
+            ],
+            ['status' => 'pending']
+        );
     }
 
     public function confirmJockeyForRace(int $horseId, int $raceId, int $jockeyId): void

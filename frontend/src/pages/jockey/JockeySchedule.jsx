@@ -28,10 +28,11 @@ export default function JockeySchedule({ initialFilter = 'all' }) {
 
       <main className="p-10 fade-in">
         <div className="flex gap-3 mb-6 flex-wrap">
-          {[['all', 'Tất cả'], ['scheduled', 'Lịch đã lên'], ['ongoing', 'Đang chạy'], ['completed', 'Kết thúc']].map(([v, l]) => (
+          {[['all', 'Tất cả'], ['scheduled', 'Lịch đã lên'], ['ongoing', 'Đang chạy'], ['finished', 'Kết thúc']].map(([v, l]) => (
             <button key={v} onClick={() => setFilter(v)}
               style={{ padding: '6px 16px', borderRadius: 2, fontFamily: 'Inter', fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
-                background: filter === v ? '#5bf06c' : 'transparent', color: filter === v ? '#00390c' : '#bccbb6',
+                background: filter === v ? '#5bf06c' : 'transparent',
+                color: filter === v ? '#00390c' : '#bccbb6',
                 border: filter === v ? 'none' : '1px solid #3d4a3b' }}>
               {l}
             </button>

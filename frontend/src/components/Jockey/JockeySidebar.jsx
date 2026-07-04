@@ -35,10 +35,30 @@ export default function JockeySidebar({ active, setPage }) {
         })}
       </nav>
       <div className="hidden md:block p-4" style={{ borderTop: '1px solid #3d4a3b' }}>
-        <button type="button" style={{ width:'100%', padding:'12px', background:'#5bf06c', color:'#00390c', fontFamily:'Montserrat', fontWeight:800, fontSize:13, border:'none', borderRadius:4, cursor:'pointer', letterSpacing:'0.05em', marginBottom:12 }}>
+        {/* GO LIVE — navigates to the live page */}
+        <button
+          type="button"
+          onClick={() => setPage('live')}
+          style={{
+            width: '100%', padding: '12px',
+            background: active === 'live' ? '#4ad459' : '#5bf06c',
+            color: '#00390c',
+            fontFamily: 'Montserrat', fontWeight: 800, fontSize: 13,
+            border: 'none', borderRadius: 4, cursor: 'pointer',
+            letterSpacing: '0.05em', marginBottom: 12,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            boxShadow: active === 'live' ? '0 0 20px rgba(91,240,108,0.4)' : 'none',
+            transition: 'box-shadow 0.2s, background 0.2s',
+          }}
+        >
+          <Icon name="live_tv" size={16} />
           GO LIVE
         </button>
-        <button type="button" onClick={logout} style={{ width:'100%', display:'flex', alignItems:'center', gap:12, padding:'8px 16px', background:'none', border:'none', cursor:'pointer', color:'#bccbb6', fontFamily:'Inter', fontSize:14 }}>
+        <button
+          type="button"
+          onClick={logout}
+          style={{ width:'100%', display:'flex', alignItems:'center', gap:12, padding:'8px 16px', background:'none', border:'none', cursor:'pointer', color:'#bccbb6', fontFamily:'Inter', fontSize:14 }}
+        >
           <Icon name="logout" size={20} />
           Đăng xuất
         </button>

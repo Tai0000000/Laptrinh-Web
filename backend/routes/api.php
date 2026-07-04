@@ -34,7 +34,10 @@ Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login',    [AuthController::class, 'login']);
 
 Route::get('/public/tournaments',           [TournamentController::class, 'index']);
+Route::get('/public/tournaments/{id}',      [TournamentController::class, 'show']);
+Route::get('/public/races',                 [RaceController::class, 'index']);
 Route::get('/public/races/live',            [RaceController::class, 'live']);
+Route::get('/public/races/{id}',            [RaceController::class, 'show']);
 Route::get('/public/race-results/{raceId}', [RaceResultController::class, 'leaderboard']);
 
 // Races — public (Predictions.jsx cần lấy danh sách race và chi tiết không cần login)

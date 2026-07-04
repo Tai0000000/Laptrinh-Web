@@ -26,6 +26,7 @@ class Horse extends Model
         'name',
         'age',
         'breed',
+        'weight',
         'horse_owner_id',
         'status',
     ];

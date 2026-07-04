@@ -21,14 +21,19 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Redirect về login khi token hết hạn
+// Redirect về login khi token hết hạn (chỉ khi không phải trang auth)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      const authPaths = ['/login', '/register'];
+      const isAuthPage = authPaths.some(p => window.location.pathname.startsWith(p));
+      // Chỉ redirect nếu không phải đang ở trang auth và có token (session hết hạn)
+      if (!isAuthPage && localStorage.getItem('token')) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

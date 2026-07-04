@@ -107,11 +107,12 @@ class AuthController extends Controller
     private function createRoleProfile(User $user): void
     {
         match ($user->role) {
-            Role::HorseOwner  => HorseOwner::create(['user_id' => $user->id]),
-            Role::Jockey      => Jockey::create(['user_id' => $user->id]),
-            Role::RaceReferee => RaceReferee::create(['user_id' => $user->id]),
-            Role::Spectator   => Spectator::create(['user_id' => $user->id]),
-            Role::Admin       => Admin::create(['user_id' => $user->id]),
+            Role::HorseOwner              => HorseOwner::create(['user_id' => $user->id]),
+            Role::Jockey                  => Jockey::create(['user_id' => $user->id]),
+            Role::RaceReferee,
+            Role::Referee                 => RaceReferee::create(['user_id' => $user->id]),
+            Role::Spectator               => Spectator::create(['user_id' => $user->id]),
+            Role::Admin                   => Admin::create(['user_id' => $user->id]),
         };
     }
 

@@ -69,8 +69,10 @@ class HorseOwnerRepository implements IHorseOwnerRepository
             // Update associated user if user details are provided
             if ($owner->user) {
                 $userData = [];
-                if (isset($data['name'])) $userData['name'] = $data['name'];
-                if (isset($data['email'])) $userData['email'] = $data['email'];
+                if (isset($data['name']))     $userData['name']     = $data['name'];
+                if (isset($data['email']))    $userData['email']    = $data['email'];
+                if (array_key_exists('phone', $data))    $userData['phone']    = $data['phone'];
+                if (array_key_exists('location', $data)) $userData['location'] = $data['location'];
                 if (!empty($userData)) {
                     $owner->user->update($userData);
                 }
@@ -151,16 +153,27 @@ class HorseOwnerRepository implements IHorseOwnerRepository
     }
 
     /**
-     * Get race schedule for a specific horse
-     *
-     * @param int $horseId
-     * @return mixed
+     * Get race schedule for a specific horse — includes registration info
      */
     public function getRaceScheduleForHorse(int $horseId): mixed
     {
-        return Race::whereHas('registrations', function ($query) use ($horseId) {
-            $query->where('horse_id', $horseId);
-        })->with('tournament')->get();
+        // Lấy trực tiếp từ registrations để có đủ thông tin
+        return Registration::where('horse_id', $horseId)
+            ->with(['race.tournament'])
+            ->get()
+            ->map(fn($reg) => [
+                'registration_id'     => $reg->id,
+                'id'                  => $reg->race_id,
+                'name'                => $reg->race->name ?? $reg->race->round ?? "Cuộc đua #{$reg->race_id}",
+                'race_time'           => $reg->race->race_time,
+                'distance'            => $reg->race->distance,
+                'status'              => $reg->race->status,
+                'registration_status' => $reg->status,
+                'lane'                => $reg->lane,
+                'jockey_id'           => $reg->jockey_id,
+                'tournament_id'       => $reg->race->tournament_id,
+                'tournament'          => $reg->race->tournament,
+            ]);
     }
 
     /**

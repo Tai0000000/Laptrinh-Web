@@ -10,9 +10,9 @@ export default function JockeyInvitations() {
 
   const loadInvitations = () => {
     api.get('/jockey/invitations/pending')
-      .then(r => { if (r.data?.success) setPending(r.data.data ?? []) });
+      .then(r => { if (r.data?.success) setPending(r.data.data ?? []); });
     api.get('/jockey/invitations/history')
-      .then(r => { if (r.data?.success) setHistory(r.data.data ?? []) });
+      .then(r => { if (r.data?.success) setHistory(r.data.data ?? []); });
   };
 
   useEffect(() => { loadInvitations(); }, []);
@@ -48,7 +48,7 @@ export default function JockeyInvitations() {
           </div>
         )}
 
-        {/* Pending */}
+        {/* Pending invitations */}
         <section>
           <div style={{ display: 'flex', alignItems: 'center', justifycontent: 'space-between', marginBottom: 24 }}>
             <h2 style={{ fontFamily: 'Montserrat', fontWeight: 700, fontSize: 22, color: '#e4e2e4', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -71,6 +71,7 @@ export default function JockeyInvitations() {
             <div key={inv.id} style={{ background: '#1f1f21', border: '1px solid #3d4a3b', borderRadius: 4, overflow: 'hidden', position: 'relative', marginBottom: 16 }}>
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: '#5bf06c' }} />
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr' }}>
+                {/* Horse info */}
                 <div style={{ background: 'linear-gradient(135deg,#1a2a1a 0%,#131315 100%)', padding: 32, borderRight: '1px solid #3d4a3b' }}>
                   <h3 style={{ fontFamily: 'Montserrat', fontWeight: 800, fontSize: 28, color: '#fff' }}>{inv.horse_name}</h3>
                   <p style={{ color: '#5bf06c', fontWeight: 700, fontSize: 14, marginTop: 4 }}>{inv.breed} • {inv.age} Tuổi</p>
@@ -83,6 +84,7 @@ export default function JockeyInvitations() {
                     ))}
                   </div>
                 </div>
+                {/* Race info + actions */}
                 <div style={{ padding: 32, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
                     <div>

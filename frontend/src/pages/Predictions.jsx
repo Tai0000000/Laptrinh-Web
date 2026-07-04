@@ -6,23 +6,23 @@ const Predictions = () => {
   const [races, setRaces]               = useState([]);
   const [racesLoading, setRacesLoading] = useState(true);
 
-  const [selectedRace, setSelectedRace]       = useState(null);
-  const [participants, setParticipants]         = useState([]);
+  const [selectedRace, setSelectedRace]               = useState(null);
+  const [participants, setParticipants]               = useState([]);
   const [participantsLoading, setParticipantsLoading] = useState(false);
 
   const [selectedHorse, setSelectedHorse] = useState(null);
-
-  const [prediction, setPrediction]       = useState({ amount: 10, type: 'win' });
+  const [prediction, setPrediction]       = useState({ amount: 10000, type: 'win' });
   const [message, setMessage]             = useState({ text: '', type: '' });
   const [predictions, setPredictions]     = useState([]);
   const [submitting, setSubmitting]       = useState(false);
 
   // ── Load danh sách race scheduled ─────────────────────────────────────
   useEffect(() => {
-    api.get('/races')
+    api.get('/public/races')
       .then(res => {
         const data = res.data?.data ?? res.data ?? [];
-        setRaces(data.filter(r => r.status === 'scheduled'));
+        const now = new Date();
+        setRaces(data.filter(r => r.status === 'scheduled' && new Date(r.race_time) > now));
       })
       .catch(() => setRaces([]))
       .finally(() => setRacesLoading(false));
@@ -36,16 +36,16 @@ const Predictions = () => {
     setMessage({ text: '', type: '' });
     setParticipantsLoading(true);
 
-    api.get(`/races/${selectedRace.id}`)
+    api.get(`/public/races/${selectedRace.id}`)
       .then(res => {
         const race = res.data?.data ?? res.data ?? {};
         const regs = race.registrations ?? [];
         setParticipants(regs.map(reg => ({
           id:          reg.id,
           horse_name:  reg.horse?.name  ?? '—',
-          jockey_name: reg.jockey?.user?.name ?? reg.jockey?.name ?? '—',
-          lane:        reg.lane ?? reg.lane_number ?? '—',
-          odds:        2.5,
+          jockey_name: reg.jockey?.name ?? reg.jockey?.user?.name ?? '—',
+          lane:        reg.lane ?? '—',
+          odds:        reg.odds ?? 2.5,
         })));
       })
       .catch(() => setParticipants([]))
@@ -55,10 +55,7 @@ const Predictions = () => {
   // ── Load lịch sử cược ─────────────────────────────────────────────────
   const fetchPredictions = () => {
     api.get('/bets')
-      .then(res => {
-        const data = res.data?.data ?? res.data ?? [];
-        setPredictions(data);
-      })
+      .then(res => setPredictions(res.data?.data ?? res.data ?? []))
       .catch(() => setPredictions([]));
   };
 
@@ -71,10 +68,8 @@ const Predictions = () => {
       setMessage({ text: 'Vui lòng chọn cuộc đua và ngựa!', type: 'error' });
       return;
     }
-
-    const raceTime = new Date(selectedRace.race_time).getTime();
-    if (Date.now() >= raceTime) {
-      setMessage({ text: 'Cuộc đua đã bắt đầu. Không thể đặt cược!', type: 'error' });
+    if (Number(prediction.amount) < 10000) {
+      setMessage({ text: 'Số tiền cược tối thiểu là 10,000 VNĐ.', type: 'error' });
       return;
     }
 
@@ -83,7 +78,7 @@ const Predictions = () => {
       await api.post('/bets', {
         registration_id: selectedHorse.id,
         race_id:         selectedRace.id,
-        amount:          prediction.amount,
+        amount:          Number(prediction.amount),
         prediction_type: prediction.type,
       });
       setMessage({ text: 'Đặt dự đoán thành công! Chúc bạn may mắn.', type: 'success' });
@@ -95,6 +90,7 @@ const Predictions = () => {
     }
   };
 
+  // ── UI ─────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="mb-10 text-center">
@@ -131,9 +127,6 @@ const Predictions = () => {
                   </p>
                   <h3 className="font-bold text-slate-900">{race.round ?? `Race #${race.id}`}</h3>
                   <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
                     {new Date(race.race_time).toLocaleString('vi-VN')}
                   </p>
                 </button>
@@ -201,7 +194,7 @@ const Predictions = () => {
                       <div>
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Loại dự đoán</label>
                         <div className="grid grid-cols-3 gap-3">
-                          {[['win','Thắng'],['place','Top 2'],['show','Top 3']].map(([val, label]) => (
+                          {[['win', 'Thắng'], ['place', 'Top 2'], ['show', 'Top 3']].map(([val, label]) => (
                             <button
                               key={val}
                               type="button"
@@ -218,13 +211,14 @@ const Predictions = () => {
                         </div>
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Số tiền cược ($)</label>
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Số tiền (VNĐ)</label>
                         <input
                           type="number"
                           value={prediction.amount}
                           onChange={e => setPrediction(p => ({ ...p, amount: e.target.value }))}
                           className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 outline-none focus:ring-2 focus:ring-indigo-500 font-bold"
-                          min="1"
+                          min="10000"
+                          step="1000"
                         />
                       </div>
                     </div>
@@ -239,7 +233,7 @@ const Predictions = () => {
                         <div>
                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Tiền thưởng dự kiến</p>
                           <p className="text-lg font-black text-green-400">
-                            ${(prediction.amount * selectedHorse.odds).toFixed(2)}
+                            {(prediction.amount * selectedHorse.odds).toLocaleString('vi-VN')} ₫
                           </p>
                         </div>
                       </div>
@@ -267,16 +261,51 @@ const Predictions = () => {
             </>
           ) : (
             <div className="h-full flex flex-col items-center justify-center p-12 bg-white rounded-3xl border border-dashed border-gray-200 text-slate-400">
-              <svg className="w-16 h-16 mb-4 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
               <p className="font-medium text-lg text-center">Vui lòng chọn một cuộc đua từ danh sách bên trái để bắt đầu.</p>
             </div>
           )}
         </div>
       </div>
 
-      <PredictionHistory predictions={predictions} />
+      {/* Lịch sử cược */}
+      {predictions.length > 0 && (
+        <div className="mt-12">
+          <h2 className="text-2xl font-black text-slate-900 mb-6">Lịch sử dự đoán của bạn</h2>
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
+                <tr>
+                  {['Cuộc đua', 'Ngựa', 'Loại', 'Tiền cược', 'Trạng thái', 'Phần thưởng'].map(h => (
+                    <th key={h} className="px-6 py-4 text-left">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {predictions.map(bet => (
+                  <tr key={bet.id} className="hover:bg-slate-50">
+                    <td className="px-6 py-4 font-medium">{bet.race_name}</td>
+                    <td className="px-6 py-4">{bet.horse_name}</td>
+                    <td className="px-6 py-4 uppercase font-bold text-indigo-600">{bet.prediction_type}</td>
+                    <td className="px-6 py-4">{Number(bet.amount).toLocaleString('vi-VN')} ₫</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                        bet.status === 'won'  ? 'bg-green-100 text-green-700' :
+                        bet.status === 'lost' ? 'bg-red-100 text-red-700' :
+                                                'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {bet.status === 'won' ? 'Thắng' : bet.status === 'lost' ? 'Thua' : 'Chờ kết quả'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 font-bold text-green-600">
+                      {bet.payout > 0 ? `${Number(bet.payout).toLocaleString('vi-VN')} ₫` : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

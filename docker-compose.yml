@@ -47,6 +47,33 @@ services:
       - /var/www/html/storage
     working_dir: /var/www/html
 
+  frontend:
+    build:
+      context: ./frontend
+    container_name: horse_racing_frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    restart: unless-stopped
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: horse_racing_phpmyadmin
+    depends_on:
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: horse_user
+      PMA_PASSWORD: horse_pass
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+
   websocket:
     image: php:8.2-cli
     container_name: horse_racing_websocket

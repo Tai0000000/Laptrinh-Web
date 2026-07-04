@@ -25,7 +25,7 @@ const History = () => {
       const response = await api.get('/referee/races');
       if (response.data.success) {
         // Filter only completed races for history
-        const completed = response.data.data.filter(r => r.status === 'completed');
+        const completed = response.data.data.filter(r => r.status === 'finished');
         setRaces(completed);
       } else {
         setError('Không thể tải lịch sử cuộc đua.');

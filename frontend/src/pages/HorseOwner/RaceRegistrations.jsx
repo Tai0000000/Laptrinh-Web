@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import api from '../../api/axios';
+import { useAuth } from '../../context/AuthContext';
 import HorseOwnerLayout from '../../components/HorseOwner/HorseOwnerLayout';
 import api from '../../api/axios';
 import SuccessModal from '../../components/SuccessModal';
@@ -14,68 +15,155 @@ const DetailRow = ({ label, value, highlight }) => (
   </div>
 );
 
+const STATUS_MAP = {
+  confirmed: { label: 'Đã xác nhận', cls: 'bg-green-100 text-green-700' },
+  pending:   { label: 'Chờ duyệt',   cls: 'bg-yellow-100 text-yellow-700' },
+  rejected:  { label: 'Từ chối',     cls: 'bg-red-100 text-red-700' },
+  cancelled: { label: 'Đã hủy',      cls: 'bg-gray-100 text-gray-600' },
+  withdrawn: { label: 'Đã rút',      cls: 'bg-gray-100 text-gray-600' },
+  scheduled: { label: 'Đã đăng ký',  cls: 'bg-blue-100 text-blue-700' },
+};
+
+/* ── Modal đăng ký cuộc đua ── */
+function RegisterModal({ horses, onClose, onSuccess }) {
+  const [races, setRaces]     = useState([]);
+  const [horseId, setHorseId] = useState('');
+  const [raceId, setRaceId]   = useState('');
+  const [saving, setSaving]   = useState(false);
+  const [error, setError]     = useState('');
+
+  useEffect(() => {
+    // Lấy tất cả races, modal sẽ filter ra scheduled
+    api.get('/public/races')
+      .then(r => setRaces(r.data?.data ?? r.data ?? []))
+      .catch(() => {});
+  }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!horseId || !raceId) { setError('Vui lòng chọn ngựa và cuộc đua.'); return; }
+    setSaving(true); setError('');
+    try {
+      await api.post('/registrations', { horse_id: +horseId, race_id: +raceId });
+      onSuccess();
+    } catch (err) {
+      const msg = err.response?.data?.message
+        || Object.values(err.response?.data?.errors || {})[0]?.[0]
+        || 'Không thể đăng ký. Vui lòng thử lại.';
+      setError(msg);
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-7">
+        <h2 className="text-xl font-bold text-gray-800 mb-1">Đăng ký cuộc đua</h2>
+        <p className="text-gray-500 text-sm mb-6">Chọn ngựa và cuộc đua để đăng ký tham gia</p>
+
+        {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Chọn ngựa *</label>
+            <select value={horseId} onChange={e => setHorseId(e.target.value)} required
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+              <option value="">-- Chọn ngựa --</option>
+              {horses.map(h => <option key={h.id} value={h.id}>{h.name} ({h.breed})</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Cuộc đua *</label>
+            <select value={raceId} onChange={e => setRaceId(e.target.value)} required
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+              <option value="">-- Chọn cuộc đua --</option>
+              {races.filter(r => r.status === 'scheduled').map(r => (
+                <option key={r.id} value={r.id}>
+                  {r.name ?? r.round ?? `Cuộc đua #${r.id}`} — {r.distance}m
+                  {r.race_time ? ` (${new Date(r.race_time).toLocaleDateString('vi-VN')})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="submit" disabled={saving}
+              className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50">
+              {saving ? 'Đang đăng ký...' : 'Đăng ký'}
+            </button>
+            <button type="button" onClick={onClose}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2.5 rounded-lg transition-colors">
+              Hủy
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 const RaceRegistrations = () => {
-
-  // --- STATE ---
+  const { user } = useAuth();
   const [registrations, setRegistrations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedReg, setSelectedReg] = useState(null);
-  const [confirmModal, setConfirmModal] = useState({ show: false, id: null, raceName: '', horseName: '' });
-  const [successModal, setSuccessModal] = useState({ show: false, title: '', message: '' });
+  const [horses, setHorses]               = useState([]);
+  const [loading, setLoading]             = useState(true);
+  const [showModal, setShowModal]         = useState(false);
+  const [toast, setToast]                 = useState('');
+  const [cancelling, setCancelling]       = useState(null);
 
-  // --- API CALLS ---
-  const fetchRegistrations = () => {
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3500); };
+
+  const fetchData = () => {
     setLoading(true);
-    api.get('/registrations/owner')
-      .then(res => {
-        if (res.data?.success) {
-          setRegistrations(res.data.data ?? []);
-        }
+    // Lấy danh sách ngựa trước
+    api.get('/horse-owner/horses')
+      .then(async hRes => {
+        const horseList = hRes.data?.data ?? hRes.data ?? [];
+        setHorses(horseList);
+
+        // Lấy registrations từ từng ngựa qua schedule endpoint
+        const scheduleArrays = await Promise.all(
+          horseList.map(h =>
+            api.get(`/horse-owner/horses/${h.id}/schedule`)
+              .then(r => {
+                const races = r.data?.data ?? r.data ?? [];
+                return races.map(race => ({
+                  ...race,
+                  horse_name:  h.name,
+                  horse_id:    h.id,
+                  race_name:   race.name ?? `Cuộc đua #${race.id}`,
+                  race_date:   race.race_time,
+                  // registration_status có sẵn từ API đã fix
+                  status:      race.registration_status ?? race.status ?? 'pending',
+                  reg_id:      race.registration_id,
+                  lane:        race.lane,
+                  tournament:  race.tournament?.name ?? '—',
+                }));
+              })
+              .catch(() => [])
+          )
+        );
+
+        // Flatten và loại trùng theo reg_id
+        const all = scheduleArrays.flat();
+        setRegistrations(all);
       })
-      .catch(err => console.error('Error fetching registrations:', err))
+      .catch(console.error)
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => {
-    fetchRegistrations();
-  }, []);
+  useEffect(() => { fetchData(); }, [user]);
 
-  // --- HANDLERS ---
-  const handleCancelRegistration = (id, raceName, horseName) => {
-    setConfirmModal({ show: true, id, raceName, horseName });
-  };
-
-  const executeCancelRegistration = () => {
-    const { id, raceName, horseName } = confirmModal;
-    api.delete(`/registrations/${id}`)
-      .then(res => {
-        if (res.data?.success) {
-          setSuccessModal({
-            show: true,
-            title: 'Hủy đăng ký thành công!',
-            message: `Đã hủy đơn đăng ký của ngựa ${horseName} tại chặng đua ${raceName}.`,
-            type: 'success'
-          });
-          // Also close detail panel if it was the cancelled reg
-          if (selectedReg?.id === id) setSelectedReg(null);
-          fetchRegistrations();
-        }
-      })
-      .catch(err => {
-        setSuccessModal({
-          show: true,
-          title: 'Hủy đăng ký thất bại',
-          message: err.response?.data?.message || 'Có lỗi xảy ra khi hủy đăng ký.',
-          type: 'error'
-        });
-      });
-  };
-
-  const statusLabel = (status) => {
-    if (status === 'confirmed') return { text: 'Đã duyệt', cls: 'bg-green-50 text-green-600 border border-green-100' };
-    if (status === 'rejected')  return { text: 'Từ chối',  cls: 'bg-red-50 text-red-600 border border-red-100' };
-    if (status === 'withdrawn') return { text: 'Đã hủy',   cls: 'bg-slate-100 text-slate-500' };
-    return { text: 'Chờ duyệt', cls: 'bg-yellow-50 text-yellow-600 border border-yellow-100' };
+  const handleCancel = async (reg) => {
+    const regId = reg.reg_id ?? reg.id;
+    if (!regId) { alert('Không tìm thấy ID đăng ký.'); return; }
+    if (!window.confirm(`Hủy đăng ký ngựa "${reg.horse_name}" khỏi cuộc đua này?`)) return;
+    setCancelling(regId);
+    try {
+      await api.put(`/registrations/${regId}/status`, { status: 'withdrawn' });
+      showToast('Đã hủy đăng ký thành công.');
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Không thể hủy đăng ký.');
+    } finally { setCancelling(null); }
   };
 
   return (
@@ -84,198 +172,85 @@ const RaceRegistrations = () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
           <div>
-            <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Đăng Ký Đua Ngựa</h1>
-            <p className="text-slate-500 mt-2">Theo dõi và quản lý các yêu cầu đăng ký tham gia thi đấu của đội ngựa của bạn.</p>
+            <h1 className="text-3xl font-bold text-gray-800">Đăng ký cuộc đua</h1>
+            <p className="text-gray-500 mt-1 text-sm">Quản lý việc đăng ký tham gia của ngựa bạn</p>
           </div>
-          <Link
-            to="/horse-owner/tournaments-races"
-            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 px-6 rounded-2xl text-sm transition-all shadow-lg shadow-indigo-600/10 active:scale-95"
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-5 rounded-lg transition-colors text-sm"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-            </svg>
-            Đăng ký giải đấu mới
-          </Link>
+            + Đăng ký cuộc đua
+          </button>
         </div>
 
-        {/* Registrations List */}
+        {toast && (
+          <div className="mb-5 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm font-medium">
+            ✅ {toast}
+          </div>
+        )}
+
         {loading ? (
-          <div className="text-center py-20 text-slate-400 font-medium">Đang tải danh sách đăng ký...</div>
-        ) : registrations.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-200 p-12 text-slate-400">
-            <svg className="w-16 h-16 mx-auto mb-4 opacity-25" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-            <p className="font-semibold text-lg">Chưa có đăng ký thi đấu nào.</p>
-            <p className="text-sm mt-1 text-slate-500">Nhấn nút bên trên để chọn một giải đấu và tiến hành đăng ký.</p>
-          </div>
+          <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />)}</div>
         ) : (
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/75 border-b border-slate-100">
-                    {['Ngựa', 'Jockey', 'Vòng đua', 'Giải đấu', 'Thời gian', 'Làn đua', 'Trạng thái', 'Hành động'].map(h => (
-                      <th key={h} className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">{h}</th>
-                    ))}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  {['Ngựa', 'Cuộc đua', 'Giải đấu', 'Ngày đua', 'Làn', 'Trạng thái', 'Hành động'].map(h => (
+                    <th key={h} className="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {registrations.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-16 text-center">
+                      <p className="text-3xl mb-2">🏁</p>
+                      <p className="text-gray-500 text-sm">Chưa có đăng ký nào. Hãy đăng ký cuộc đua cho ngựa của bạn!</p>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {registrations.map((reg) => {
-                    const { text: stText, cls: stCls } = statusLabel(reg.status);
-                    const isSelected = selectedReg?.id === reg.id;
-                    return (
-                      <tr
-                        key={reg.id}
-                        onClick={() => setSelectedReg(isSelected ? null : reg)}
-                        className={`cursor-pointer transition-colors ${
-                          isSelected ? 'bg-indigo-50/60' : 'hover:bg-slate-50/40'
-                        }`}
-                      >
-                        <td className="px-6 py-4 font-bold text-slate-900">{reg.horse_name}</td>
-                        <td className="px-6 py-4 text-slate-600 text-sm">{reg.jockey_name ?? '—'}</td>
-                        <td className="px-6 py-4 text-slate-700 font-medium">{reg.race_name}</td>
-                        <td className="px-6 py-4 text-slate-500 text-sm">{reg.tournament_name}</td>
-                        <td className="px-6 py-4 text-slate-500 text-sm">
-                          {reg.race_date ? new Date(reg.race_date).toLocaleString('vi-VN') : '—'}
-                        </td>
-                        <td className="px-6 py-4">
-                          {reg.lane ? (
-                            <span className="font-bold text-indigo-600">Làn {reg.lane}</span>
-                          ) : (
-                            <span className="text-slate-400 text-xs italic">Chưa xếp làn</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${stCls}`}>
-                            {stText}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
-                          {reg.status === 'pending' ? (
-                            <button
-                              onClick={() => handleCancelRegistration(reg.id, reg.race_name, reg.horse_name)}
-                              className="bg-red-50 hover:bg-red-100/80 text-red-600 font-bold text-xs px-4 py-2.5 rounded-xl transition"
-                            >
-                              Hủy đăng ký
-                            </button>
-                          ) : (
-                            <span className="text-slate-400 text-xs italic">Không thể hủy</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                ) : registrations.map((reg, idx) => {
+                  const s = STATUS_MAP[reg.status] ?? { label: reg.status, cls: 'bg-gray-100 text-gray-600' };
+                  const regId = reg.reg_id ?? reg.id;
+                  return (
+                    <tr key={`${reg.horse_id}-${reg.id}-${idx}`} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-5 py-4 font-semibold text-gray-800 text-sm">{reg.horse_name ?? '—'}</td>
+                      <td className="px-5 py-4 text-gray-700 text-sm">{reg.race_name ?? '—'}</td>
+                      <td className="px-5 py-4 text-gray-500 text-sm">{reg.tournament ?? '—'}</td>
+                      <td className="px-5 py-4 text-gray-500 text-sm">
+                        {reg.race_date ? new Date(reg.race_date).toLocaleDateString('vi-VN') : '—'}
+                      </td>
+                      <td className="px-5 py-4 text-gray-500 text-sm">{reg.lane ?? '—'}</td>
+                      <td className="px-5 py-4">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${s.cls}`}>{s.label}</span>
+                      </td>
+                      <td className="px-5 py-4">
+                        {(reg.status === 'pending' || reg.status === 'scheduled') && regId && (
+                          <button
+                            onClick={() => handleCancel(reg)}
+                            disabled={cancelling === regId}
+                            className="text-red-500 hover:text-red-700 text-xs font-medium disabled:opacity-40"
+                          >
+                            {cancelling === regId ? 'Đang hủy...' : 'Hủy'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
-
-        {/* --- DETAIL SIDE PANEL --- */}
-        {/* Backdrop */}
-        {selectedReg && (
-          <div
-            className="fixed inset-0 bg-slate-900/20 z-40"
-            onClick={() => setSelectedReg(null)}
-          />
-        )}
-        {/* Panel */}
-        <div
-          className={`fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out ${
-            selectedReg ? 'translate-x-0' : 'translate-x-full'
-          }`}
-        >
-          {selectedReg && (() => {
-            const { text: stText, cls: stCls } = statusLabel(selectedReg.status);
-            return (
-              <>
-                {/* Panel Header */}
-                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
-                  <div>
-                    <h2 className="text-lg font-black text-slate-900">Chi Tiết Đăng Ký</h2>
-                    <p className="text-xs text-slate-400 mt-0.5">#{selectedReg.id}</p>
-                  </div>
-                  <button
-                    onClick={() => setSelectedReg(null)}
-                    className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                {/* Panel Body */}
-                <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
-                  {/* Status badge */}
-                  <div className="flex items-center gap-3">
-                    <span className={`px-4 py-1.5 rounded-full text-sm font-bold ${stCls}`}>{stText}</span>
-                  </div>
-
-                  <div className="bg-slate-50 rounded-2xl p-5 space-y-4">
-                    <DetailRow icon="horse" label="Ngựa" value={selectedReg.horse_name} />
-                    <DetailRow icon="jockey" label="Jockey" value={selectedReg.jockey_name ?? '—'} />
-                  </div>
-
-                  <div className="bg-slate-50 rounded-2xl p-5 space-y-4">
-                    <DetailRow icon="race" label="Vòng đua" value={selectedReg.race_name} />
-                    <DetailRow icon="tournament" label="Giải đấu" value={selectedReg.tournament_name} />
-                    <DetailRow
-                      icon="time"
-                      label="Thời gian đua"
-                      value={selectedReg.race_date ? new Date(selectedReg.race_date).toLocaleString('vi-VN') : '—'}
-                    />
-                  </div>
-
-                  <div className="bg-slate-50 rounded-2xl p-5">
-                    <DetailRow
-                      icon="lane"
-                      label="Làn đua"
-                      value={selectedReg.lane ? `Làn ${selectedReg.lane}` : 'Chưa được xếp làn'}
-                      highlight={!!selectedReg.lane}
-                    />
-                  </div>
-                </div>
-
-                {/* Panel Footer */}
-                {selectedReg.status === 'pending' && (
-                  <div className="px-6 py-5 border-t border-slate-100">
-                    <button
-                      onClick={() => {
-                        handleCancelRegistration(selectedReg.id, selectedReg.race_name, selectedReg.horse_name);
-                        setSelectedReg(null);
-                      }}
-                      className="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-2xl transition"
-                    >
-                      Hủy đăng ký này
-                    </button>
-                  </div>
-                )}
-              </>
-            );
-          })()}
-        </div>
-        
-        {/* Confirm Cancel Modal */}
-        <ConfirmModal
-          isOpen={confirmModal.show}
-          title="Xác nhận hủy đăng ký"
-          message={`Bạn có chắc chắn muốn hủy đăng ký thi đấu của ngựa ${confirmModal.horseName} tại vòng ${confirmModal.raceName}?`}
-          confirmText="Hủy đăng ký"
-          cancelText="Bỏ qua"
-          type="danger"
-          onClose={() => setConfirmModal({ show: false, id: null, raceName: '', horseName: '' })}
-          onConfirm={executeCancelRegistration}
-        />
-
-        {/* Success Modal */}
-        <SuccessModal
-          isOpen={successModal.show}
-          title={successModal.title}
-          message={successModal.message}
-          type={successModal.type || 'success'}
-          onClose={() => setSuccessModal({ show: false, title: '', message: '', type: 'success' })}
-        />
       </div>
+
+      {showModal && (
+        <RegisterModal
+          horses={horses}
+          onClose={() => setShowModal(false)}
+          onSuccess={() => { setShowModal(false); showToast('Đã đăng ký thành công!'); fetchData(); }}
+        />
+      )}
     </HorseOwnerLayout>
   );
 };

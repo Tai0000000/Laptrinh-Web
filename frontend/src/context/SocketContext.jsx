@@ -12,9 +12,17 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     // Khởi tạo connection WebSocket (Ratchet)
     const socketUrl = import.meta.env.VITE_SOCKET_URL || 'ws://localhost:8080';
-    socketRef.current = new WebSocket(socketUrl);
+    
+    let socket;
+    try {
+      socket = new WebSocket(socketUrl);
+      socketRef.current = socket;
+    } catch (e) {
+      console.warn('WebSocket init failed:', e);
+      return;
+    }
 
-    socketRef.current.onopen = () => {
+    socket.onopen = () => {
       console.log('WebSocket connected');
       setIsConnected(true);
       

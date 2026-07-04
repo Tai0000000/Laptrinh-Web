@@ -40,7 +40,7 @@ class AdminController extends Controller
             'total_bets'            => Bet::count(),
             'total_users'           => User::count(),
             'active_races'          => Race::whereIn('status', ['scheduled', 'ongoing'])->count(),
-            'completed_races'       => Race::where('status', 'completed')->orWhere('status', 'finished')->count(),
+            'completed_races'       => Race::where('status', 'finished')->count(),
             'pending_registrations' => Registration::where('status', 'pending')->count(),
             'user_growth_percent'   => $userGrowth,
         ]);

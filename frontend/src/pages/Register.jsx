@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+
+/** Normalise role về string dù backend trả string hay enum object */
+const resolveRole = (role) => role?.value ?? role ?? '';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -16,23 +19,30 @@ const Register = () => {
     setLoading(true);
     setError('');
 
-    const result = await register({
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-      password_confirmation: formData.password_confirmation,
-      role: formData.role,
-    });
+    // Client-side password match check
+    if (formData.password !== formData.password_confirmation) {
+      setError('Mật khẩu xác nhận không khớp.');
+      setLoading(false);
+      return;
+    }
+
+    const result = await register(
+      formData.name,
+      formData.email,
+      formData.password,
+      formData.password_confirmation,
+      formData.role,
+    );
 
     if (result.success) {
-      const role = result.user?.role;
+      const role = resolveRole(result.user?.role);
       switch (role) {
-        case 'horse_owner': navigate('/horse-owner/dashboard'); break;
+        case 'horse_owner':  navigate('/horse-owner/dashboard'); break;
         case 'referee':
-        case 'race_referee': navigate('/referee/dashboard');   break;
-        case 'jockey':       navigate('/jockey');              break;
-        case 'admin':        navigate('/dashboard');           break;
-        default:             navigate('/');                    break;
+        case 'race_referee': navigate('/referee/dashboard');     break;
+        case 'jockey':       navigate('/jockey');                break;
+        case 'admin':        navigate('/dashboard');             break;
+        default:             navigate('/');                      break;
       }
     } else {
       setError(result.message || 'Đăng ký thất bại.');
@@ -76,7 +86,7 @@ const Register = () => {
             <label className="block text-sm font-bold text-slate-700 mb-2">Mật khẩu</label>
             <input
               type="password" name="password" value={formData.password}
-              onChange={handleChange} placeholder="••••••••" required minLength={6}
+              onChange={handleChange} placeholder="••••••••" required minLength={8}
               className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-4 outline-none transition placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm"
             />
           </div>
@@ -84,7 +94,7 @@ const Register = () => {
             <label className="block text-sm font-bold text-slate-700 mb-2">Xác nhận mật khẩu</label>
             <input
               type="password" name="password_confirmation" value={formData.password_confirmation}
-              onChange={handleChange} placeholder="••••••••" required minLength={6}
+              onChange={handleChange} placeholder="••••••••" required minLength={8}
               className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-4 outline-none transition placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm"
             />
           </div>
@@ -97,8 +107,7 @@ const Register = () => {
               <option value="spectator">Khán giả</option>
               <option value="horse_owner">Chủ ngựa</option>
               <option value="jockey">Nài ngựa (Jockey)</option>
-              <option value="referee">Trọng tài</option>
-              <option value="admin">Quản trị viên</option>
+              <option value="race_referee">Trọng tài</option>
             </select>
           </div>
           <button

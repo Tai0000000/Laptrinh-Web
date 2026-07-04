@@ -26,7 +26,6 @@ export const AuthProvider = ({ children }) => {
           localStorage.setItem('user', JSON.stringify(u));
         })
         .catch(() => {
-          // Token hết hạn hoặc không hợp lệ
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           setToken(null);
@@ -67,7 +66,11 @@ export const AuthProvider = ({ children }) => {
       const u = saveAuth(res.data);
       return { success: true, user: u };
     } catch (err) {
-      const message = err.response?.data?.message || 'Đăng ký thất bại.';
+      // Lấy tất cả validation errors hoặc message chung
+      const errors = err.response?.data?.errors;
+      const message = errors
+        ? Object.values(errors).flat().join(' ')
+        : (err.response?.data?.message || 'Đăng ký thất bại.');
       return { success: false, message };
     }
   }, []);
@@ -86,6 +89,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const isAuthenticated = !!token && !!user;
+  // Hỗ trợ cả role là string ('admin') lẫn enum object ({value: 'admin'})
   const isRole = (r) => (user?.role?.value ?? user?.role) === r;
 
   return (
@@ -103,4 +107,42 @@ export const useAuth = () => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth phải dùng bên trong <AuthProvider>');
   return ctx;
+};
+
+/**
+ * useApi — hook tiện ích để gọi API với axios đã cấu hình sẵn token.
+ * Trả về { get, post, put, patch, delete } chuẩn hóa response thành
+ * { success, data, message }.
+ */
+export const useApi = () => {
+  const request = async (method, path, body) => {
+    try {
+      const res = await api.request({
+        method,
+        url: path,
+        ...(body !== undefined ? { data: body } : {}),
+      });
+
+      return { success: true, data: res.data, message: 'OK' };
+    } catch (err) {
+      if (err.response?.status === 204) {
+        return { success: true, data: null, message: 'OK' };
+      }
+      const data = err.response?.data;
+      const message =
+        Object.values(data?.errors || {})[0]?.[0] ||
+        data?.message ||
+        err.message ||
+        'Network error';
+      return { success: false, data: null, message };
+    }
+  };
+
+  return {
+    get:    (path)        => request('GET',    path),
+    post:   (path, body)  => request('POST',   path, body),
+    put:    (path, body)  => request('PUT',    path, body),
+    patch:  (path, body)  => request('PATCH',  path, body),
+    delete: (path)        => request('DELETE', path),
+  };
 };

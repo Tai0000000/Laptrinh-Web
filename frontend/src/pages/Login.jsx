@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+
+/** Normalise role về string dù backend trả string hay enum object */
+const resolveRole = (role) => role?.value ?? role ?? '';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -17,24 +20,14 @@ const Login = () => {
     const result = await login(formData.email, formData.password);
 
     if (result.success) {
-      const role = result.user?.role;
+      const role = resolveRole(result.user?.role);
       switch (role) {
-        case 'horse_owner':
-          navigate('/horse-owner/dashboard');
-          break;
+        case 'horse_owner':  navigate('/horse-owner/dashboard'); break;
         case 'referee':
-        case 'race_referee':
-          navigate('/referee/dashboard');
-          break;
-        case 'jockey':
-          navigate('/jockey');
-          break;
-        case 'admin':
-          navigate('/dashboard');
-          break;
-        default:
-          navigate('/');
-          break;
+        case 'race_referee': navigate('/referee/dashboard');     break;
+        case 'jockey':       navigate('/jockey');                break;
+        case 'admin':        navigate('/dashboard');             break;
+        default:             navigate('/');                      break;
       }
     } else {
       setError(result.message || 'Đăng nhập thất bại.');
@@ -61,24 +54,16 @@ const Login = () => {
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Email</label>
             <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="example@gmail.com"
-              required
+              type="email" name="email" value={formData.email}
+              onChange={handleChange} placeholder="example@gmail.com" required
               className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-4 outline-none transition placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm"
             />
           </div>
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Mật khẩu</label>
             <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="••••••••"
-              required
+              type="password" name="password" value={formData.password}
+              onChange={handleChange} placeholder="••••••••" required
               className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-4 outline-none transition placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm"
             />
           </div>
@@ -90,8 +75,7 @@ const Login = () => {
             <a href="#" className="text-indigo-600 font-bold hover:underline">Quên mật khẩu?</a>
           </div>
           <button
-            type="submit"
-            disabled={loading}
+            type="submit" disabled={loading}
             className="w-full rounded-full bg-slate-900 px-6 py-4 font-bold text-white shadow-lg transition hover:-translate-y-1 hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}

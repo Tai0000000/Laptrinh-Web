@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 function AdminTopbar() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
 
   return (
@@ -40,6 +42,14 @@ function AdminTopbar() {
           <div className="h-10 w-10 rounded-2xl bg-gradient-to-tr from-emerald-400 to-teal-500 flex items-center justify-center font-bold text-slate-950 shadow-md">
             {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
           </div>
+          {/* Logout button */}
+          <button
+            onClick={() => { logout(); navigate('/login'); }}
+            title="Đăng xuất"
+            className="ml-2 flex items-center gap-1.5 rounded-xl border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/20 transition-all"
+          >
+            🚪 Đăng xuất
+          </button>
         </div>
       </div>
     </header>

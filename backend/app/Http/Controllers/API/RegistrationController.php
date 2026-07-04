@@ -19,35 +19,20 @@ class RegistrationController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'race_id' => 'required|integer',
-            'horse_id' => 'required|integer',
-            'jockey_id' => 'required|integer',
+            'race_id'   => 'required|integer|exists:races,id',
+            'horse_id'  => 'required|integer|exists:horses,id',
+            'jockey_id' => 'nullable|integer|exists:jockeys,id',
         ]);
 
-        // Prevent duplicate horse registration in the same race
-        $existingHorse = \App\Models\Registration::where('race_id', $validated['race_id'])
-            ->where('horse_id', $validated['horse_id'])
-            ->first();
-        if ($existingHorse) {
-            return response()->json([
-                'message' => 'Ngựa này đã được đăng ký tham gia cuộc đua này rồi.'
-            ], 422);
-        }
-
-        // Prevent duplicate jockey registration in the same race
-        $existingJockey = \App\Models\Registration::where('race_id', $validated['race_id'])
-            ->where('jockey_id', $validated['jockey_id'])
-            ->first();
-        if ($existingJockey) {
-            return response()->json([
-                'message' => 'Jockey này đã được phân công lái cho ngựa khác trong cuộc đua này.'
-            ], 422);
-        }
-
-        $validated['status'] = 'pending';
+        $validated['status']    = 'pending';
+        $validated['jockey_id'] = $validated['jockey_id'] ?? null;
 
         $registration = $this->registrationService->createRegistration($validated);
-        return response()->json($registration, 201);
+        return response()->json([
+            'success' => true,
+            'message' => 'Đăng ký tham gia cuộc đua thành công.',
+            'data'    => $registration,
+        ], 201);
     }
 
     public function updateStatus(Request $request, int $id): JsonResponse

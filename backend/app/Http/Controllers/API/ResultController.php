@@ -57,7 +57,7 @@ class ResultController extends Controller
             }
 
             // ── Cập nhật status race ──────────────────────────────────────
-            $race->update(['status' => 'completed']);
+            $race->update(['status' => 'finished']);
 
             // ── Resolve bets ──────────────────────────────────────────────
             try {

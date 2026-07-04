@@ -36,13 +36,13 @@ export default function JockeyPerformance() {
           <div style={{ color: '#bccbb6', fontSize: 14, padding: 40, textAlign: 'center' }}>Đang tải...</div>
         ) : (
           <>
-            {/* Summary */}
+            {/* Summary stats */}
             <div className="grid grid-cols-4 gap-4">
               {[
-                { l: 'Tổng số trận',  v: total,                                              c: '#e4e2e4' },
-                { l: 'Vô địch',       v: wins,                                               c: '#5bf06c' },
-                { l: 'Top 3',         v: top3,                                               c: '#FFD700' },
-                { l: 'Tỉ lệ thắng',  v: `${total ? Math.round(wins / total * 100) : 0}%`,   c: '#5bf06c' },
+                { l: 'Tổng số trận',  v: total,                                             c: '#e4e2e4' },
+                { l: 'Vô địch',       v: wins,                                              c: '#5bf06c' },
+                { l: 'Top 3',         v: top3,                                              c: '#FFD700' },
+                { l: 'Tỉ lệ thắng',  v: `${total ? Math.round(wins / total * 100) : 0}%`,  c: '#5bf06c' },
               ].map(c => (
                 <div key={c.l} style={{ background: '#2C2C2E', padding: 24, borderRadius: 4, border: '1px solid #3d4a3b' }}>
                   <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#bccbb6', marginBottom: 12 }}>{c.l}</p>
