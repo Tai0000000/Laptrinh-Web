@@ -42,7 +42,11 @@ const Races = () => {
   const updateRaceStatus = async (raceId, status) => {
     try {
       await api.put(`/referee/races/${raceId}/status`, { status });
-      fetchRaces(); // reload
+      if (status === 'ongoing') {
+        navigate(`/referee/races/${raceId}/monitor`);
+      } else {
+        fetchRaces(); // reload
+      }
     } catch (err) {
       alert(err.response?.data?.message || 'Không thể cập nhật trạng thái cuộc đua.');
     }
@@ -248,21 +252,27 @@ const Races = () => {
                       Xem báo cáo
                     </button>
                   ) : (race.status === 'active' || race.status === 'ongoing') ? (
-                    <>
+                    <div className="flex gap-2 w-full flex-wrap">
+                      <button
+                        onClick={() => navigate(`/referee/races/${race.id}/monitor`)}
+                        className="flex-1 min-w-[70px] bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition-all duration-300"
+                      >
+                        Giám sát
+                      </button>
                       <button
                         onClick={() => navigate(`/referee/races/${race.id}/results`)}
-                        className="flex-1 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-slate-950 font-bold py-2.5 px-4 rounded-xl text-xs transition-all duration-300"
+                        className="flex-1 min-w-[75px] bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-slate-950 font-bold py-2.5 px-3 rounded-xl text-xs transition-all duration-300"
                       >
                         Ghi kết quả
                       </button>
                       <button
                         onClick={() => updateRaceStatus(race.id, 'completed')}
-                        className="bg-slate-800 hover:bg-rose-500/20 hover:border-rose-500/40 text-rose-400 font-bold p-2.5 rounded-xl border border-slate-700/50 transition text-xs px-3"
+                        className="bg-slate-800 hover:bg-rose-500/20 hover:border-rose-500/40 text-rose-400 font-bold p-2.5 rounded-xl border border-slate-700/50 transition text-xs px-2.5"
                         title="Kết thúc cuộc đua"
                       >
                         ■ Kết thúc
                       </button>
-                    </>
+                    </div>
                   ) : race.status === 'cancelled' ? (
                     <button disabled className="w-full bg-slate-800/50 text-slate-600 font-bold py-2.5 px-4 rounded-xl text-xs cursor-not-allowed border border-slate-800">
                       Đã hủy
@@ -277,7 +287,7 @@ const Races = () => {
                         Kiểm tra
                       </button>
                       <button
-                        onClick={() => updateRaceStatus(race.id, 'active')}
+                        onClick={() => updateRaceStatus(race.id, 'ongoing')}
                         className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-bold py-2.5 px-3 rounded-xl text-xs transition-all duration-200"
                       >
                         ▶ Bắt đầu
