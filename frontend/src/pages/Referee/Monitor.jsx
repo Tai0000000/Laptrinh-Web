@@ -67,7 +67,7 @@ const Monitor = () => {
 
   // Simulate progress/speeds when race is active and started
   useEffect(() => {
-    if (!race || race.status !== 'active' || !isStarted) return;
+    if (!race || (race.status !== 'active' && race.status !== 'ongoing') || !isStarted) return;
 
     // Initialize speeds/progress
     const initialSpeeds = {};
@@ -259,7 +259,7 @@ const Monitor = () => {
             </p>
           </div>
 
-          {race && race.status === 'active' && (
+          {race && (race.status === 'active' || race.status === 'ongoing') && (
             isStarted ? (
               <button
                 onClick={handleEndRace}
@@ -303,7 +303,7 @@ const Monitor = () => {
               <div className="bg-slate-900/50 border border-slate-850 p-6 rounded-2xl flex justify-between items-center backdrop-blur-md">
                 <div className="space-y-1">
                   <span className="text-[10px] font-bold text-amber-500 bg-amber-500/5 border border-amber-500/20 px-2 py-0.5 rounded uppercase tracking-wider">
-                    {race.status === 'active' ? 'Trực tiếp' : 'Trạng thái: ' + race.status}
+                    {(race.status === 'active' || race.status === 'ongoing') ? 'Trực tiếp' : 'Trạng thái: ' + race.status}
                   </span>
                   <h3 className="text-xl font-bold text-white mt-1">{race.name}</h3>
                   <p className="text-slate-500 text-xs">Cự ly: {race.distance}m | {race.tournament?.name || 'Không xác định'}</p>

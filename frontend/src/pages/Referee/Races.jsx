@@ -42,7 +42,7 @@ const Races = () => {
   const updateRaceStatus = async (raceId, status) => {
     try {
       await api.put(`/referee/races/${raceId}/status`, { status });
-      if (status === 'active') {
+      if (status === 'ongoing') {
         navigate(`/referee/races/${raceId}/monitor`);
       } else {
         fetchRaces(); // reload
@@ -287,7 +287,7 @@ const Races = () => {
                         Kiểm tra
                       </button>
                       <button
-                        onClick={() => updateRaceStatus(race.id, 'active')}
+                        onClick={() => updateRaceStatus(race.id, 'ongoing')}
                         className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-bold py-2.5 px-3 rounded-xl text-xs transition-all duration-200"
                       >
                         ▶ Bắt đầu
