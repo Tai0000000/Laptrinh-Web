@@ -34,23 +34,6 @@ export default function JockeyInvitations() {
     }
   };
 
-    setResponding(id);
-    setError(null);
-    try {
-      const res = await api.put(`/jockey/invitations/${id}/respond`, { status });
-      if (!res.data?.success) {
-        setError(res.data?.message || 'Không thể phản hồi lời mời.');
-        return;
-      }
-      loadInvitations();
-    } catch (e) {
-      setError(e.response?.data?.message || 'Không thể phản hồi lời mời. Vui lòng thử lại.');
-    } finally {
-      setResponding(null);
-    }
-  };
-
-
   return (
     <div className="flex-1 ml-64 pt-16" style={{ background: '#131315', minHeight: '100vh' }}>
       <header className="fixed top-0 left-64 right-0 h-16 z-40 flex items-center px-6"

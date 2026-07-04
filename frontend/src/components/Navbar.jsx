@@ -1,10 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-
-import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-
 
 const linkClass = ({ isActive }) =>
   [
@@ -17,8 +13,8 @@ const linkClass = ({ isActive }) =>
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, logout } = useAuth();
-  const navigate  = useNavigate();
-  const location  = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -33,26 +29,6 @@ const Navbar = () => {
   if (user && hideOn.some(p => location.pathname.startsWith(p))) {
     return null;
   }
-
-  const { user, logout } = useAuth();
-  const navigate  = useNavigate();
-  const location  = useLocation();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-    setIsMenuOpen(false);
-  };
-
-  // Ẩn global navbar bên trong Admin Portal
-  const role = user?.role?.value ?? user?.role;
-  if (
-    role === 'admin' &&
-    (location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/admin'))
-  ) {
-    return null;
-  }
-
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/70 bg-white/70 backdrop-blur-xl shadow-sm">
@@ -77,10 +53,10 @@ const Navbar = () => {
 
           {user && (
             <>
-              {role === 'admin'        && <NavLink to="/dashboard"             className={linkClass}>Admin</NavLink>}
-              {role === 'horse_owner'  && <NavLink to="/horse-owner/dashboard" className={linkClass}>Chủ ngựa</NavLink>}
+              {role === 'admin'       && <NavLink to="/dashboard"             className={linkClass}>Admin</NavLink>}
+              {role === 'horse_owner' && <NavLink to="/horse-owner/dashboard" className={linkClass}>Chủ ngựa</NavLink>}
               {(role === 'referee' || role === 'race_referee') && <NavLink to="/referee/dashboard" className={linkClass}>Trọng tài</NavLink>}
-              {role === 'jockey'       && <NavLink to="/jockey"                className={linkClass}>Nài ngựa</NavLink>}
+              {role === 'jockey'      && <NavLink to="/jockey"                className={linkClass}>Nài ngựa</NavLink>}
             </>
           )}
         </nav>
