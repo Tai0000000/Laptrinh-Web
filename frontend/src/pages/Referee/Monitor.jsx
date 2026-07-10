@@ -364,7 +364,13 @@ const Monitor = () => {
                               {reg.lane}
                             </span>
                             <div>
-                              <span className="text-slate-100 font-bold">{reg.horse?.name || 'N/A'}</span>
+                              <span 
+                                onClick={() => handleOpenViolationModal(reg)}
+                                className="text-slate-100 font-bold cursor-pointer hover:text-rose-400 hover:underline transition-colors"
+                                title="Nhấp để ghi nhận vi phạm nhanh cho ngựa này"
+                              >
+                                {reg.horse?.name || 'N/A'}
+                              </span>
                               <span className="text-slate-500 text-[11px] ml-2">({reg.jockey?.name || reg.jockey?.user?.name || 'Jockey N/A'})</span>
                             </div>
                           </div>

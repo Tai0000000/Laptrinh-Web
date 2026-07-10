@@ -52,6 +52,22 @@ const Races = () => {
     }
   };
 
+  const handleRecordResultsClick = async (race) => {
+    if (race.status === 'active' || race.status === 'ongoing') {
+      const confirm = window.confirm('Cuộc đua đang diễn ra, bạn có muốn kết thúc trận đấu để ghi kết quả?');
+      if (confirm) {
+        try {
+          await api.put(`/referee/races/${race.id}/status`, { status: 'finished' });
+          navigate(`/referee/races/${race.id}/results`);
+        } catch (err) {
+          alert(err.response?.data?.message || 'Không thể kết thúc cuộc đua.');
+        }
+      }
+    } else {
+      navigate(`/referee/races/${race.id}/results`);
+    }
+  };
+
   const getStatusLabel = (status) => {
     switch (status) {
       case 'completed': return 'Đã hoàn thành';
@@ -260,7 +276,7 @@ const Races = () => {
                         Giám sát
                       </button>
                       <button
-                        onClick={() => navigate(`/referee/races/${race.id}/results`)}
+                        onClick={() => handleRecordResultsClick(race)}
                         className="flex-1 min-w-[75px] bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-slate-950 font-bold py-2.5 px-3 rounded-xl text-xs transition-all duration-300"
                       >
                         Ghi kết quả
