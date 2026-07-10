@@ -16,6 +16,7 @@ const Races = () => {
   const [selectedRace, setSelectedRace] = useState(null);
   const [checklistState, setChecklistState] = useState({});
   const [checklistNotes, setChecklistNotes] = useState('');
+  const [completedRacesChecklist, setCompletedRacesChecklist] = useState({});
 
   useEffect(() => {
     fetchRaces();
@@ -40,6 +41,10 @@ const Races = () => {
   };
 
   const updateRaceStatus = async (raceId, status) => {
+    if (status === 'ongoing' && !completedRacesChecklist[raceId]) {
+      alert('Không thể bắt đầu cuộc đua! Vui lòng hoàn thành kiểm tra trước cuộc đua (Checklist) và đảm bảo tất cả thông số đạt chuẩn cho mọi làn đua.');
+      return;
+    }
     try {
       await api.put(`/referee/races/${raceId}/status`, { status });
       if (status === 'ongoing') {
@@ -128,7 +133,28 @@ const Races = () => {
   };
 
   const handleChecklistSubmit = () => {
-    alert('Kiểm tra trước đua hoàn tất!');
+    const regs = selectedRace.registrations || [];
+    if (regs.length === 0) {
+      alert('Không có ngựa đăng ký để kiểm tra!');
+      return;
+    }
+
+    // Check if weight, equipment, and health are checked for all registrations
+    const allChecked = regs.every(reg => {
+      const state = checklistState[reg.id];
+      return state && state.weight && state.equipment && state.health;
+    });
+
+    if (!allChecked) {
+      alert('Bạn phải kiểm tra và tích chọn tất cả các thông số (Cân nặng, Thiết bị, Sức khỏe) cho toàn bộ ngựa đua trước khi xác nhận đạt chuẩn!');
+      return;
+    }
+
+    setCompletedRacesChecklist(prev => ({
+      ...prev,
+      [selectedRace.id]: true
+    }));
+    alert('Kiểm tra trước đua hoàn tất! Tất cả thông số đã đạt chuẩn, sẵn sàng bắt đầu cuộc đua.');
     setChecklistModal(false);
   };
 
