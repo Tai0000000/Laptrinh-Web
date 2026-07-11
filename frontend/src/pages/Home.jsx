@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import { useSocket } from '../hooks/useSocket';
 
 /* ── Countdown ── */
 function Countdown({ target }) {
@@ -298,8 +299,9 @@ export default function Home() {
   const [tournaments, setTournaments] = useState([]);
   const [races, setRaces]       = useState([]);
   const [nextRace, setNextRace] = useState(null);
+  const { addMessageListener, removeMessageListener } = useSocket();
 
-  useEffect(() => {
+  const loadData = () => {
     Promise.all([
       api.get('/public/tournaments'),
       api.get('/public/races'),
@@ -318,7 +320,22 @@ export default function Home() {
       else if (rs.length)  setNextRace(rs[0]);
     }).catch(console.error)
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
+
+  // ── Listen for real-time race results ───────────────────────────────────
+  useEffect(() => {
+    const handleRaceResult = () => {
+      loadData();
+    };
+    addMessageListener('race_result', handleRaceResult);
+    return () => {
+      removeMessageListener('race_result', handleRaceResult);
+    };
+  }, [addMessageListener, removeMessageListener]);
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">

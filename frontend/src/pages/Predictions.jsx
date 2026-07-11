@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../api/axios';
-import PredictionHistory from '../components/PredictionHistory';
+import { useSocket } from '../hooks/useSocket';
+import { useAuth } from '../context/AuthContext';
 
 const Predictions = () => {
+  const { isAuthenticated } = useAuth();
+
   const [races, setRaces]               = useState([]);
   const [racesLoading, setRacesLoading] = useState(true);
 
@@ -15,9 +18,15 @@ const Predictions = () => {
   const [message, setMessage]             = useState({ text: '', type: '' });
   const [predictions, setPredictions]     = useState([]);
   const [submitting, setSubmitting]       = useState(false);
+  const [cancellingId, setCancellingId]   = useState(null);
+
+  const [balance, setBalance]     = useState(null);
+  const [balanceLoading, setBalanceLoading] = useState(false);
+
+  const { addMessageListener, removeMessageListener } = useSocket();
 
   // ── Load danh sách race scheduled ─────────────────────────────────────
-  useEffect(() => {
+  const loadRaces = () => {
     api.get('/public/races')
       .then(res => {
         const data = res.data?.data ?? res.data ?? [];
@@ -26,17 +35,48 @@ const Predictions = () => {
       })
       .catch(() => setRaces([]))
       .finally(() => setRacesLoading(false));
+  };
+
+  useEffect(() => {
+    loadRaces();
   }, []);
 
-  // ── Load participants khi chọn race ───────────────────────────────────
+  // ── Load số dư ví ────────────────────────────────────────────────────
+  const fetchBalance = () => {
+    if (!isAuthenticated) return;
+    setBalanceLoading(true);
+    api.get('/wallet')
+      .then(res => setBalance(res.data?.balance ?? null))
+      .catch(() => setBalance(null))
+      .finally(() => setBalanceLoading(false));
+  };
+
+  useEffect(() => { fetchBalance(); }, [isAuthenticated]);
+
+  // ── Listen for real-time race results ───────────────────────────────────
   useEffect(() => {
-    if (!selectedRace) return;
+    const handleRaceResult = () => {
+      loadRaces();
+      fetchPredictions();
+      fetchBalance();
+      if (selectedRace) {
+        loadParticipants(selectedRace.id);
+      }
+    };
+    addMessageListener('race_result', handleRaceResult);
+    return () => {
+      removeMessageListener('race_result', handleRaceResult);
+    };
+  }, [addMessageListener, removeMessageListener, selectedRace]);
+
+  // ── Load participants khi chọn race ───────────────────────────────────
+  const loadParticipants = (raceId) => {
     setParticipants([]);
     setSelectedHorse(null);
     setMessage({ text: '', type: '' });
     setParticipantsLoading(true);
 
-    api.get(`/public/races/${selectedRace.id}`)
+    api.get(`/public/races/${raceId}`)
       .then(res => {
         const race = res.data?.data ?? res.data ?? {};
         const regs = race.registrations ?? [];
@@ -50,6 +90,12 @@ const Predictions = () => {
       })
       .catch(() => setParticipants([]))
       .finally(() => setParticipantsLoading(false));
+  };
+
+  useEffect(() => {
+    if (selectedRace) {
+      loadParticipants(selectedRace.id);
+    }
   }, [selectedRace]);
 
   // ── Load lịch sử cược ─────────────────────────────────────────────────
@@ -75,18 +121,38 @@ const Predictions = () => {
 
     setSubmitting(true);
     try {
-      await api.post('/bets', {
+      const res = await api.post('/bets', {
         registration_id: selectedHorse.id,
         race_id:         selectedRace.id,
         amount:          Number(prediction.amount),
         prediction_type: prediction.type,
       });
       setMessage({ text: 'Đặt dự đoán thành công! Chúc bạn may mắn.', type: 'success' });
+      // Cập nhật balance từ response thay vì gọi thêm 1 request
+      if (res.data?.new_balance !== undefined) {
+        setBalance(res.data.new_balance);
+      }
       fetchPredictions();
     } catch (err) {
       setMessage({ text: err.response?.data?.message || 'Có lỗi xảy ra khi gửi dự đoán.', type: 'error' });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // ── Hủy cược ────────────────────────────────────────────────────────
+  const handleCancelBet = async (betId) => {
+    setCancellingId(betId);
+    try {
+      const res = await api.delete(`/bets/${betId}`);
+      if (res.data?.new_balance !== undefined) {
+        setBalance(res.data.new_balance);
+      }
+      fetchPredictions();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Không thể hủy cược.');
+    } finally {
+      setCancellingId(null);
     }
   };
 
@@ -96,6 +162,18 @@ const Predictions = () => {
       <div className="mb-10 text-center">
         <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Sàn Dự Đoán Kết Quả</h1>
         <p className="text-lg text-slate-600">Chọn cuộc đua, phân tích chiến mã và đưa ra dự đoán của bạn.</p>
+        {isAuthenticated && (
+          <div className="mt-4 inline-flex items-center gap-2 bg-white border border-gray-200 px-5 py-2.5 rounded-full shadow-sm text-sm font-bold text-slate-700">
+            <span className="text-slate-400">💰 Số dư ví:</span>
+            {balanceLoading ? (
+              <span className="text-slate-400">Đang tải...</span>
+            ) : balance !== null ? (
+              <span className="text-green-600">{Number(balance).toLocaleString('vi-VN')} ₫</span>
+            ) : (
+              <span className="text-slate-400">—</span>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
@@ -275,7 +353,7 @@ const Predictions = () => {
             <table className="w-full text-sm">
               <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
                 <tr>
-                  {['Cuộc đua', 'Ngựa', 'Loại', 'Tiền cược', 'Trạng thái', 'Phần thưởng'].map(h => (
+                  {['Cuộc đua', 'Ngựa', 'Loại', 'Tiền cược', 'Trạng thái', 'Phần thưởng', ''].map(h => (
                     <th key={h} className="px-6 py-4 text-left">{h}</th>
                   ))}
                 </tr>
@@ -298,6 +376,17 @@ const Predictions = () => {
                     </td>
                     <td className="px-6 py-4 font-bold text-green-600">
                       {bet.payout > 0 ? `${Number(bet.payout).toLocaleString('vi-VN')} ₫` : '—'}
+                    </td>
+                    <td className="px-6 py-4">
+                      {bet.status === 'pending' && (
+                        <button
+                          onClick={() => handleCancelBet(bet.id)}
+                          disabled={cancellingId === bet.id}
+                          className="text-xs font-bold text-red-500 hover:text-red-700 disabled:opacity-50 px-3 py-1 rounded-lg border border-red-200 hover:bg-red-50 transition-all"
+                        >
+                          {cancellingId === bet.id ? 'Đang hủy...' : 'Hủy'}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

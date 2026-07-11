@@ -7,11 +7,15 @@ function AdminSidebar({ activeTab, setActiveTab, pendingCount = 0 }) {
   const menuItems = [
     { id: 'overview',      label: 'Tổng quan',             icon: '📊' },
     { id: 'tournaments',   label: 'Giải đấu',              icon: '🏆' },
+    { id: 'races',         label: 'Cuộc đua',              icon: '🏇' },
+    { id: 'horses',        label: 'Ngựa đua',              icon: '🐴' },
+    { id: 'jockeys',       label: 'Nài ngựa',              icon: '🤠' },
     { id: 'registrations', label: 'Duyệt đăng ký',         icon: '📋', badge: pendingCount },
     { id: 'users',         label: 'Người dùng',            icon: '👥' },
     { id: 'results',       label: 'Nhập kết quả',          icon: '🏁' },
     { id: 'leaderboard',   label: 'Bảng xếp hạng',         icon: '🥇' },
-    { id: 'settings',      label: 'Cài đặt',               icon: '⚙️' },
+    { id: 'finance',       label: 'Tài chính',             icon: '💰' },
+    { id: 'settings',      label: 'Cài đặt hệ thống',      icon: '⚙️' },
   ];
 
   return (

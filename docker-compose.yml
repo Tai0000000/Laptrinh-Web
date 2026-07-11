@@ -8,7 +8,7 @@ services:
       MYSQL_USER: horse_user
       MYSQL_PASSWORD: horse_pass
     ports:
-      - "3307:3306"
+      - "3309:3306"
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
@@ -90,10 +90,6 @@ services:
         composer install &&
         php server.php
       "
-
-networks:
-  mysql-demo_default:
-    external: true
 
 volumes:
   db_data:

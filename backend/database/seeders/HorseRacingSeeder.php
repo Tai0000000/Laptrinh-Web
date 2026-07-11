@@ -200,7 +200,7 @@ class HorseRacingSeeder extends Seeder
             'race_time' => now()->addDays(3)->addHours(14)->format('Y-m-d H:i:s'),
             'distance' => 1000,
             'max_horses' => 8,
-            'status' => 'completed'
+            'status' => 'finished'
         ]);
 
         $race2 = Race::create([
@@ -228,7 +228,8 @@ class HorseRacingSeeder extends Seeder
             'horse_id' => $horse1->id,
             'jockey_id' => $j1->id,
             'lane' => 1,
-            'status' => 'confirmed'
+            'status' => 'confirmed',
+            'odds' => 2.5
         ]);
 
         $reg2 = Registration::create([
@@ -236,7 +237,8 @@ class HorseRacingSeeder extends Seeder
             'horse_id' => $horse2->id,
             'jockey_id' => $j2->id,
             'lane' => 2,
-            'status' => 'confirmed'
+            'status' => 'confirmed',
+            'odds' => 3.0
         ]);
 
         $reg3 = Registration::create([
@@ -244,7 +246,8 @@ class HorseRacingSeeder extends Seeder
             'horse_id' => $horse3->id,
             'jockey_id' => $j3->id,
             'lane' => 3,
-            'status' => 'confirmed'
+            'status' => 'confirmed',
+            'odds' => 4.0
         ]);
 
         $reg4 = Registration::create([
@@ -252,7 +255,8 @@ class HorseRacingSeeder extends Seeder
             'horse_id' => $horse4->id,
             'jockey_id' => $j4->id,
             'lane' => 4,
-            'status' => 'confirmed'
+            'status' => 'confirmed',
+            'odds' => 5.0
         ]);
 
         Registration::create([
@@ -260,7 +264,8 @@ class HorseRacingSeeder extends Seeder
             'horse_id' => $horse1->id,
             'jockey_id' => $j1->id,
             'lane' => 1,
-            'status' => 'confirmed'
+            'status' => 'confirmed',
+            'odds' => 2.5
         ]);
 
         Registration::create([
@@ -268,7 +273,26 @@ class HorseRacingSeeder extends Seeder
             'horse_id' => $horse2->id,
             'jockey_id' => $j2->id,
             'lane' => 2,
-            'status' => 'confirmed'
+            'status' => 'confirmed',
+            'odds' => 3.0
+        ]);
+
+        Registration::create([
+            'race_id' => $race3->id,
+            'horse_id' => $horse1->id,
+            'jockey_id' => $j1->id,
+            'lane' => 1,
+            'status' => 'confirmed',
+            'odds' => 2.5
+        ]);
+
+        Registration::create([
+            'race_id' => $race3->id,
+            'horse_id' => $horse2->id,
+            'jockey_id' => $j2->id,
+            'lane' => 2,
+            'status' => 'confirmed',
+            'odds' => 3.0
         ]);
 
         $res1 = RaceResult::create([

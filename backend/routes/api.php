@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\API\AdminController;
 use App\Http\Controllers\API\AdminUserController;
+use App\Http\Controllers\API\AdminHorseController;
+use App\Http\Controllers\API\AdminJockeyController;
+use App\Http\Controllers\API\AdminFinanceController;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\BetController;
 use App\Http\Controllers\API\HorseController;
@@ -67,6 +70,25 @@ Route::middleware('jwt.auth')->group(function () {
         Route::get('/admin/users',                        [AdminUserController::class, 'index']);
         Route::put('/admin/users/{id}/role',              [AdminUserController::class, 'changeRole']);
         Route::put('/admin/users/{id}/toggle-lock',       [AdminUserController::class, 'toggleLock']);
+        Route::delete('/admin/users/{id}',                [AdminUserController::class, 'destroy']);
+
+        // Horse management (admin)
+        Route::get('/admin/horses',                       [AdminHorseController::class, 'index']);
+        Route::post('/admin/horses',                      [AdminHorseController::class, 'store']);
+        Route::put('/admin/horses/{id}',                  [AdminHorseController::class, 'update']);
+        Route::delete('/admin/horses/{id}',               [AdminHorseController::class, 'destroy']);
+
+        // Jockey management (admin)
+        Route::get('/admin/jockeys',                      [AdminJockeyController::class, 'index']);
+        Route::post('/admin/jockeys',                     [AdminJockeyController::class, 'store']);
+        Route::put('/admin/jockeys/{id}',                 [AdminJockeyController::class, 'update']);
+        Route::delete('/admin/jockeys/{id}',              [AdminJockeyController::class, 'destroy']);
+
+        // Finance
+        Route::get('/admin/finance/summary',              [AdminFinanceController::class, 'summary']);
+        Route::get('/admin/finance/bets',                 [AdminFinanceController::class, 'bets']);
+        Route::put('/admin/finance/bets/{id}/settle',     [AdminFinanceController::class, 'settleBet']);
+        Route::get('/admin/finance/revenue',              [AdminFinanceController::class, 'revenue']);
 
         // Registration approval (admin view)
         Route::get('/admin/registrations',                [AdminUserController::class, 'registrations']);
@@ -109,7 +131,7 @@ Route::middleware('jwt.auth')->group(function () {
     // --------------------------------------------------------
     // Referee only: results & violations
     // --------------------------------------------------------
-    Route::middleware('jwt.auth:race_referee')->group(function () {
+    Route::middleware('jwt.auth:race_referee,referee')->group(function () {
         Route::post('/race-results',        [RaceResultController::class, 'store']);
         Route::get('/race-results',         [RaceResultController::class, 'index']);
         Route::get('/race-results/{id}',    [RaceResultController::class, 'show']);
@@ -122,6 +144,11 @@ Route::middleware('jwt.auth')->group(function () {
         Route::put('/referee/races/{id}/status',         [RefereeController::class, 'updateRaceStatus']);
         Route::post('/referee/races/{race}/results',     [ResultController::class, 'store']);
         Route::get('/referee/races/{race}/results',      [ResultController::class, 'show']);
+        // Quản lý vi phạm
+        Route::put('/referee/violations/{id}/status',                              [RefereeController::class, 'updateViolationStatus']);
+        Route::put('/referee/races/{race}/registrations/{registration}/disqualify',[RefereeController::class, 'disqualifyResult']);
+        // Xếp làn
+        Route::post('/referee/races/{race}/assign-lanes',                          [RefereeController::class, 'assignLanes']);
     });
 
     // --------------------------------------------------------
@@ -197,5 +224,8 @@ Route::middleware('jwt.auth')->group(function () {
         Route::get('/bets',           [BetController::class, 'index']);
         Route::get('/bets/{id}',      [BetController::class, 'show']);
         Route::delete('/bets/{id}',   [BetController::class, 'destroy']);
+        Route::get('/wallet',         [BetController::class, 'wallet']);
+        Route::post('/wallet/deposit',  [BetController::class, 'deposit']);
+        Route::post('/wallet/withdraw', [BetController::class, 'withdraw']);
     });
 });

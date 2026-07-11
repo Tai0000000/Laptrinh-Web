@@ -72,6 +72,24 @@ class AdminUserController extends Controller
     }
 
     // ──────────────────────────────────────────────────────────────────────
+    // DELETE /admin/users/{id}
+    // ──────────────────────────────────────────────────────────────────────
+    public function destroy(int $id): JsonResponse
+    {
+        $user = User::findOrFail($id);
+
+        // Ngăn admin tự xóa chính mình
+        $adminId = request()->attributes->get('auth_user_id');
+        if ($adminId && $adminId == $id) {
+            return response()->json(['message' => 'Không thể tự xóa tài khoản của mình.'], 422);
+        }
+
+        $user->delete();
+
+        return response()->json(['message' => 'Đã xóa tài khoản người dùng thành công.']);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
     // PUT /admin/users/{id}/toggle-lock
     // ──────────────────────────────────────────────────────────────────────
     public function toggleLock(int $id): JsonResponse

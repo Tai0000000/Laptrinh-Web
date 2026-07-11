@@ -47,6 +47,7 @@ class RaceUpdateHandler implements \Ratchet\MessageComponentInterface {
                     }
                     break;
                 case 'race_update':
+                case 'race_result':
                     if (isset($data['race_id'])) {
                         $this->broadcastRaceUpdate($data);
                     }
@@ -81,6 +82,11 @@ class RaceUpdateHandler implements \Ratchet\MessageComponentInterface {
             }
             echo "Broadcasted race update to race {$raceId}\n";
         }
+        // Also broadcast to all clients if we want (optional, but let's do it for global updates)
+        foreach ($this->clients as $client) {
+            $client->send(json_encode($data));
+        }
+        echo "Broadcasted global update\n";
     }
 }
 

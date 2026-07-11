@@ -30,17 +30,15 @@ const Monitor = () => {
   const [notes, setNotes] = useState('');
   const [submittingViolation, setSubmittingViolation] = useState(false);
 
+  const [isPaused, setIsPaused] = useState(false);
+  const [cancellingRace, setCancellingRace] = useState(false);
+
   // Toast
   const [toast, setToast] = useState(null);
 
+  // Handle timer start/stop/pause
   useEffect(() => {
-    fetchRace();
-    fetchViolations();
-  }, [raceId]);
-
-  // Handle timer start/stop
-  useEffect(() => {
-    if (isStarted) {
+    if (isStarted && !isPaused) {
       timerRef.current = setInterval(() => {
         setElapsedTime(prev => prev + 1);
       }, 1000);
@@ -50,7 +48,7 @@ const Monitor = () => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isStarted]);
+  }, [isStarted, isPaused]);
 
   // Initialize speeds/progress when race data is loaded
   useEffect(() => {
@@ -67,7 +65,7 @@ const Monitor = () => {
 
   // Simulate progress/speeds when race is active and started
   useEffect(() => {
-    if (!race || race.status !== 'active' || !isStarted) return;
+    if (!race || race.status !== 'ongoing' || !isStarted) return;
 
     // Initialize speeds/progress
     const initialSpeeds = {};
@@ -197,7 +195,6 @@ const Monitor = () => {
       const response = await api.put(`/referee/races/${raceId}/status`, { status: 'finished' });
       if (response.data.success) {
         showToast('Đã kết thúc cuộc đua thành công!', 'success');
-        // Redirect to result entry screen
         setTimeout(() => {
           navigate(`/referee/races/${raceId}/results`);
         }, 1000);
@@ -206,6 +203,20 @@ const Monitor = () => {
       }
     } catch (err) {
       showToast(err.response?.data?.message || 'Có lỗi xảy ra khi kết thúc cuộc đua.', 'error');
+    }
+  };
+
+  const handleCancelRace = async () => {
+    if (!window.confirm('Hủy cuộc đua? Hành động này không thể hoàn tác. Tất cả cược đang chờ sẽ được hoàn tiền.')) return;
+    setCancellingRace(true);
+    try {
+      await api.put(`/referee/races/${raceId}/status`, { status: 'cancelled' });
+      showToast('Đã hủy cuộc đua thành công.', 'success');
+      setTimeout(() => navigate('/referee/races'), 1500);
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Không thể hủy cuộc đua.', 'error');
+    } finally {
+      setCancellingRace(false);
     }
   };
 
@@ -259,24 +270,49 @@ const Monitor = () => {
             </p>
           </div>
 
-          {race && race.status === 'active' && (
-            isStarted ? (
+          {race && race.status === 'ongoing' && (
+            <div className="flex flex-wrap gap-2">
+              {!isStarted ? (
+                <button
+                  onClick={() => { setIsStarted(true); setIsPaused(false); }}
+                  className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3 px-6 rounded-xl text-sm transition-all duration-300 shadow-lg shadow-emerald-500/15 active:scale-[0.98] flex items-center gap-2 animate-pulse"
+                >
+                  <span className="w-2.5 h-2.5 bg-white rounded-full" />
+                  Bắt đầu cuộc đua (GO)
+                </button>
+              ) : isPaused ? (
+                <button
+                  onClick={() => setIsPaused(false)}
+                  className="bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-slate-950 font-bold py-3 px-6 rounded-xl text-sm transition-all duration-300 shadow-lg active:scale-[0.98] flex items-center gap-2"
+                >
+                  ▶ Tiếp tục
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsPaused(true)}
+                  className="bg-slate-700 hover:bg-slate-600 text-amber-400 font-bold py-3 px-6 rounded-xl text-sm transition-all duration-300 border border-slate-600 active:scale-[0.98] flex items-center gap-2"
+                >
+                  ⏸ Tạm dừng
+                </button>
+              )}
+              {isStarted && (
+                <button
+                  onClick={handleEndRace}
+                  className="bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white font-bold py-3 px-6 rounded-xl text-sm transition-all duration-300 shadow-lg shadow-rose-500/15 active:scale-[0.98] flex items-center gap-2"
+                >
+                  <span className="w-2.5 h-2.5 bg-white rounded-full animate-ping" />
+                  Kết thúc cuộc đua
+                </button>
+              )}
               <button
-                onClick={handleEndRace}
-                className="bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-750 text-white font-bold py-3 px-6 rounded-xl text-sm transition-all duration-300 shadow-lg shadow-rose-500/15 active:scale-[0.98] flex items-center space-x-2 border border-rose-600/30"
+                onClick={handleCancelRace}
+                disabled={cancellingRace}
+                className="bg-slate-900 hover:bg-rose-950/40 text-rose-400 font-bold py-3 px-4 rounded-xl text-sm transition-all duration-300 border border-rose-500/30 active:scale-[0.98] disabled:opacity-50"
+                title="Hủy cuộc đua (sự cố)"
               >
-                <span className="w-2.5 h-2.5 bg-white rounded-full animate-ping mr-1"></span>
-                <span>Kết thúc cuộc đua</span>
+                {cancellingRace ? '...' : '✕ Hủy đua'}
               </button>
-            ) : (
-              <button
-                onClick={() => setIsStarted(true)}
-                className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-750 text-white font-bold py-3 px-6 rounded-xl text-sm transition-all duration-300 shadow-lg shadow-emerald-500/15 active:scale-[0.98] flex items-center space-x-2 border border-emerald-600/30 animate-pulse"
-              >
-                <span className="w-2.5 h-2.5 bg-white rounded-full mr-1"></span>
-                <span>Bắt đầu cuộc đua (GO)</span>
-              </button>
-            )
+            </div>
           )}
         </div>
 

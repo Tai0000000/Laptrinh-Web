@@ -97,7 +97,7 @@ return new class extends Migration
             $table->dateTime('race_time');
             $table->integer('distance'); // Tính bằng mét
             $table->integer('max_horses')->default(8);
-            $table->string('status')->default('scheduled'); // scheduled, ongoing, completed, cancelled
+            $table->string('status')->default('scheduled'); // scheduled, ongoing, finished, cancelled
             $table->timestamps();
         });
 

@@ -8,19 +8,12 @@ export const SocketProvider = ({ children }) => {
   
   const socketRef = useRef(null);
   const subscriptionsRef = useRef(new Set());
+  const messageListenersRef = useRef([]); // Array of { action, callback }
+  const socketUrl = import.meta.env.VITE_SOCKET_URL || 'ws://localhost:8080';
 
-  useEffect(() => {
-    // Khởi tạo connection WebSocket (Ratchet)
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'ws://localhost:8080';
-    
-    let socket;
-    try {
-      socket = new WebSocket(socketUrl);
-      socketRef.current = socket;
-    } catch (e) {
-      console.warn('WebSocket init failed:', e);
-      return;
-    }
+  const createSocket = useCallback(() => {
+    const socket = new WebSocket(socketUrl);
+    socketRef.current = socket;
 
     socket.onopen = () => {
       console.log('WebSocket connected');
@@ -35,41 +28,51 @@ export const SocketProvider = ({ children }) => {
       });
     };
 
-    socketRef.current.onclose = () => {
+    socket.onclose = () => {
       console.log('WebSocket disconnected');
       setIsConnected(false);
       
       // Try to reconnect after 3 seconds
       setTimeout(() => {
-        if (socketRef.current.readyState === WebSocket.CLOSED) {
-          console.log('Reconnecting to WebSocket...');
-          const newSocket = new WebSocket(socketUrl);
-          socketRef.current = newSocket;
-        }
+        createSocket();
       }, 3000);
     };
 
-    socketRef.current.onerror = (error) => {
+    socket.onerror = (error) => {
       console.error('WebSocket error:', error);
     };
 
     // Lắng nghe dữ liệu live chung
-    socketRef.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.race_id) {
-        setRaceData((prev) => ({
-          ...prev,
-          [data.race_id]: data,
-        }));
+    socket.onmessage = (event) => {
+      console.log('WebSocket received raw data:', event.data);
+      try {
+        const data = JSON.parse(event.data);
+        if (data.race_id) {
+          setRaceData((prev) => ({
+            ...prev,
+            [data.race_id]: data,
+          }));
+        }
+        // Call all registered listeners for this action
+        messageListenersRef.current.forEach(listener => {
+          if (listener.action === data.action || listener.action === '*') {
+            listener.callback(data);
+          }
+        });
+      } catch (e) {
+        console.error('Failed to parse WebSocket message:', e, 'Raw data:', event.data);
       }
     };
+  }, [socketUrl]);
 
+  useEffect(() => {
+    createSocket();
     return () => {
       if (socketRef.current) {
         socketRef.current.close();
       }
     };
-  }, []);
+  }, [createSocket]);
 
   // Hàm subscribe vào một cuộc đua cụ thể
   const subscribeToRace = useCallback((raceId) => {
@@ -99,11 +102,25 @@ export const SocketProvider = ({ children }) => {
     }
   }, []);
 
+  // Hàm đăng ký listener cho message
+  const addMessageListener = useCallback((action, callback) => {
+    messageListenersRef.current.push({ action, callback });
+  }, []);
+
+  // Hàm hủy đăng ký listener
+  const removeMessageListener = useCallback((action, callback) => {
+    messageListenersRef.current = messageListenersRef.current.filter(
+      listener => !(listener.action === action && listener.callback === callback)
+    );
+  }, []);
+
   const value = {
     isConnected,
     raceData,
     subscribeToRace,
     unsubscribeFromRace,
+    addMessageListener,
+    removeMessageListener,
   };
 
   return (

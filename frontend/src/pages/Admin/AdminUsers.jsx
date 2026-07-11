@@ -33,6 +33,7 @@ export default function AdminUsers() {
     // Modal đổi role
     const [roleModal, setRoleModal] = useState(null); // { user }
     const [newRole, setNewRole]     = useState('');
+    const [deleteModal, setDeleteModal] = useState(null); // { user }
 
     const fetchUsers = useCallback(async () => {
         setLoading(true);
@@ -85,6 +86,21 @@ export default function AdminUsers() {
             setRoleModal(null);
         } catch (e) {
             alert(e.response?.data?.message || 'Đổi role thất bại.');
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    /* Xóa tài khoản */
+    const confirmDelete = async () => {
+        if (!deleteModal) return;
+        setActionLoading(deleteModal.user.id);
+        try {
+            await api.delete(`/admin/users/${deleteModal.user.id}`);
+            setUsers(prev => prev.filter(u => u.id !== deleteModal.user.id));
+            setDeleteModal(null);
+        } catch (e) {
+            alert(e.response?.data?.message || 'Xóa tài khoản thất bại.');
         } finally {
             setActionLoading(null);
         }
@@ -204,10 +220,18 @@ export default function AdminUsers() {
                                                     className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition disabled:opacity-50 ${
                                                         user.is_locked
                                                             ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
-                                                            : 'border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
+                                                            : 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
                                                     }`}
                                                 >
                                                     {actionLoading === user.id ? '...' : user.is_locked ? 'Mở khoá' : 'Khoá'}
+                                                </button>
+                                                <button
+                                                    onClick={() => setDeleteModal({ user })}
+                                                    disabled={actionLoading === user.id || user.role === 'admin'}
+                                                    title={user.role === 'admin' ? 'Không thể xóa admin' : 'Xóa tài khoản'}
+                                                    className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-bold text-rose-400 hover:bg-rose-500/20 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                                                >
+                                                    🗑️
                                                 </button>
                                             </div>
                                         </td>
@@ -261,6 +285,37 @@ export default function AdminUsers() {
                                 className="flex-1 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 py-2.5 text-sm font-bold text-slate-950 shadow-lg hover:from-emerald-600 hover:to-teal-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {actionLoading === roleModal.user.id ? 'Đang lưu...' : 'Xác nhận'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deleteModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+                    <div className="w-full max-w-sm rounded-2xl border border-rose-500/30 bg-slate-900 shadow-2xl">
+                        <div className="p-6 border-b border-white/5">
+                            <h3 className="text-base font-bold text-rose-400">⚠️ Xác nhận xóa tài khoản</h3>
+                            <p className="mt-2 text-sm text-slate-400">
+                                Bạn có chắc muốn xóa tài khoản{' '}
+                                <span className="font-semibold text-white">"{deleteModal.user.name}"</span>?
+                            </p>
+                            <p className="mt-1 text-xs text-rose-400/80">Hành động này không thể hoàn tác.</p>
+                        </div>
+                        <div className="p-6 flex gap-3">
+                            <button
+                                onClick={() => setDeleteModal(null)}
+                                className="flex-1 rounded-xl border border-white/10 bg-white/5 py-2.5 text-sm font-bold text-slate-300 hover:bg-white/10 transition"
+                            >
+                                Huỷ
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                disabled={actionLoading === deleteModal.user.id}
+                                className="flex-1 rounded-xl bg-rose-500 py-2.5 text-sm font-bold text-white hover:bg-rose-600 transition disabled:opacity-50"
+                            >
+                                {actionLoading === deleteModal.user.id ? 'Đang xóa...' : 'Xóa tài khoản'}
                             </button>
                         </div>
                     </div>

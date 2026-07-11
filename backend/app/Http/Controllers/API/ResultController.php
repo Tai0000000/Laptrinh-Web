@@ -9,6 +9,7 @@ use App\Models\RaceResult;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use WebSocket\Client;
 
 class ResultController extends Controller
 {
@@ -63,6 +64,7 @@ class ResultController extends Controller
             try {
                 $bets = Bet::whereIn('registration_id', array_keys($rankMap))
                     ->where('status', 'pending')
+                    ->with('user')
                     ->get();
 
                 foreach ($bets as $bet) {
@@ -78,10 +80,17 @@ class ResultController extends Controller
                         };
                     }
 
+                    $rewardAmount = $isWon ? (float) $bet->amount * 2.5 : 0;
+
                     $bet->update([
                         'status'        => $isWon ? 'won' : 'lost',
-                        'reward_amount' => $isWon ? $bet->amount * 2.5 : 0,
+                        'reward_amount' => $rewardAmount,
                     ]);
+
+                    // Cộng tiền thưởng vào ví người thắng
+                    if ($isWon && $bet->user) {
+                        $bet->user->increment('balance', $rewardAmount);
+                    }
                 }
             } catch (\Exception $e) {
                 Log::error('Bet resolution failed for race ' . $raceId . ': ' . $e->getMessage());
@@ -89,6 +98,13 @@ class ResultController extends Controller
             }
 
             DB::commit();
+
+            // ── Broadcast kết quả qua WebSocket ───────────────────────────
+            try {
+                $this->broadcastRaceResult($raceId, $savedResults);
+            } catch (\Exception $e) {
+                Log::error('Failed to broadcast race result: ' . $e->getMessage());
+            }
 
             return response()->json([
                 'success' => true,
@@ -103,6 +119,24 @@ class ResultController extends Controller
             DB::rollBack();
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
+    }
+
+    protected function broadcastRaceResult($raceId, $results)
+    {
+        // Load full race data with registrations, horses, jockeys
+        $race = Race::with(['tournament', 'registrations.horse', 'registrations.jockey'])->find($raceId);
+        
+        $message = [
+            'action'    => 'race_result',
+            'race_id'   => $raceId,
+            'race'      => $race,
+            'results'   => $results
+        ];
+
+        // Connect to WebSocket server (ws://websocket:8080 from inside Docker, or localhost:8080 from host)
+        $wsClient = new Client('ws://websocket:8080');
+        $wsClient->send(json_encode($message));
+        $wsClient->close();
     }
 
     /**

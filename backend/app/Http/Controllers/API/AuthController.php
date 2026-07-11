@@ -36,6 +36,7 @@ class AuthController extends Controller
             'email'    => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role'     => $validated['role'],
+            'balance'  => 1000000.00, // 1,000,000 VNĐ ban đầu
         ]);
 
         // 2. Create role-specific profile
@@ -149,6 +150,7 @@ class AuthController extends Controller
             'email'      => $user->email,
             'role'       => $user->role->value,
             'role_label' => $user->role->getLabel(),
+            'balance'    => (float) $user->balance,
             'created_at' => $user->created_at,
         ];
     }

@@ -81,7 +81,18 @@ const Violations = () => {
       case 'lane_deviation': return 'Lấn làn đường';
       case 'jockey_conduct': return 'Hành vi nài ngựa không chuẩn mực';
       case 'equipment_violation': return 'Thiết bị không đúng quy định';
+      case 'disqualification': return 'Truất quyền thi đấu (DQ)';
       default: return type;
+    }
+  };
+
+  const updateViolationStatus = async (violationId, status) => {
+    try {
+      await api.put(`/referee/violations/${violationId}/status`, { status });
+      showToast(status === 'approved' ? 'Đã duyệt vi phạm.' : 'Đã từ chối vi phạm.', 'success');
+      fetchViolations();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Không thể cập nhật vi phạm.', 'error');
     }
   };
 
@@ -178,7 +189,7 @@ const Violations = () => {
                   </option>
                   {races.map((race) => (
                     <option key={race.id} value={race.id}>
-                      {race.name} {race.tournament ? `(${race.tournament.name})` : ''}
+                      {race.name ?? race.round ?? `Cuộc đua #${race.id}`}{race.tournament ? ` (${race.tournament.name})` : ''}
                     </option>
                   ))}
                 </select>
@@ -217,6 +228,7 @@ const Violations = () => {
                   <option value="lane_deviation">Lấn làn đường (Lane Infraction)</option>
                   <option value="jockey_conduct">Hành vi nài ngựa không chuẩn mực</option>
                   <option value="equipment_violation">Thiết bị không đúng quy định</option>
+                  <option value="disqualification">Truất quyền thi đấu (DQ)</option>
                 </select>
               </div>
 
@@ -264,36 +276,59 @@ const Violations = () => {
             ) : (
               <div className="space-y-4">
                 {violations.map((v) => (
-                  <div key={v.id} className="p-4 bg-slate-950/40 border border-slate-800/60 rounded-xl flex justify-between items-center hover:bg-slate-900/30 transition duration-300">
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.6)]"></span>
-                        <h4 className="text-sm font-bold text-white">
-                          {getViolationTypeLabel(v.violation_type || v.type)}
-                        </h4>
+                  <div key={v.id} className="p-4 bg-slate-950/40 border border-slate-800/60 rounded-xl hover:bg-slate-900/30 transition duration-300">
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.6)]"></span>
+                          <h4 className="text-sm font-bold text-white">
+                            {getViolationTypeLabel(v.violation_type || v.type)}
+                          </h4>
+                          {v.violation_type === 'disqualification' && (
+                            <span className="text-[9px] font-black bg-rose-600/20 text-rose-400 border border-rose-600/30 px-1.5 py-0.5 rounded uppercase">DQ</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-300">
+                          {v.registration
+                            ? `${v.registration.horse?.name || 'N/A'} (Nài ngựa: ${v.registration.jockey?.user?.name || v.registration.jockey?.name || 'N/A'})`
+                            : v.target || 'N/A'
+                          }
+                        </p>
+                        <p className="text-[10px] text-slate-500">
+                          {v.race?.name ?? v.race?.round ?? 'Cuộc đua không xác định'} • {formatDate(v.created_at || v.date)}
+                        </p>
+                        {v.notes && (
+                          <p className="text-[11px] text-slate-400 italic mt-1">"{v.notes}"</p>
+                        )}
                       </div>
-                      <p className="text-xs text-slate-300">
-                        {v.registration
-                          ? `${v.registration.horse?.name || 'N/A'} (Nài ngựa: ${v.registration.jockey?.user?.name || v.registration.jockey?.name || 'N/A'})`
-                          : v.target || 'N/A'
-                        }
-                      </p>
-                      <p className="text-[10px] text-slate-500">
-                        {v.race?.name || v.race || 'Cuộc đua không xác định'} • {formatDate(v.created_at || v.date)}
-                      </p>
-                      {v.notes && (
-                        <p className="text-[11px] text-slate-400 italic mt-1">"{v.notes}"</p>
-                      )}
+                      <div className="flex flex-col items-end gap-2 shrink-0">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${
+                          v.status === 'approved'
+                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                            : v.status === 'rejected'
+                            ? 'bg-slate-800 text-slate-500 border-slate-700'
+                            : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                        }`}>
+                          {v.status === 'approved' ? 'Đã duyệt' : v.status === 'rejected' ? 'Từ chối' : 'Chờ duyệt'}
+                        </span>
+                        {v.status === 'pending' && (
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => updateViolationStatus(v.id, 'approved')}
+                              className="text-[10px] font-bold px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition"
+                            >
+                              ✓ Duyệt
+                            </button>
+                            <button
+                              onClick={() => updateViolationStatus(v.id, 'rejected')}
+                              className="text-[10px] font-bold px-2 py-1 rounded-lg bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700 transition"
+                            >
+                              ✕ Từ chối
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500 bg-amber-500/5 border border-amber-500/20 px-2.5 py-1 rounded-full whitespace-nowrap">
-                      {v.status === 'approved' || v.status === 'Đã duyệt'
-                        ? 'Đã duyệt'
-                        : v.status === 'pending'
-                        ? 'Chờ duyệt'
-                        : v.status === 'rejected'
-                        ? 'Từ chối'
-                        : v.status || 'Chờ duyệt'}
-                    </span>
                   </div>
                 ))}
               </div>

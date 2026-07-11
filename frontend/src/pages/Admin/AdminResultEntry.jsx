@@ -37,28 +37,32 @@ const ResultForm = ({ race, onBack, onPublished }) => {
 
     /* Build rows from race registrations + existing results */
     useEffect(() => {
-        // Fetch existing results if race is already finished
+        // Luôn fetch existing results (cả khi scheduled/ongoing/finished)
         const loadExisting = async () => {
-            let existingResults = race.existing_results || [];
-            if (race.status === 'finished' && existingResults.length === 0) {
-                try {
-                    const r = await api.get(`/admin/races/${race.id}/results`);
-                    existingResults = r.data?.data || r.data || [];
-                } catch {}
-            }
+            let existingResults = [];
+            try {
+                const r = await api.get(`/admin/races/${race.id}/results`);
+                existingResults = r.data?.data || r.data || [];
+            } catch {}
+
             const existingMap = new Map(existingResults.map(r => [r.registration_id, r]));
             const built = (race.registrations || []).map((reg, i) => {
                 const ex = existingMap.get(reg.id);
                 return {
                     registration_id: reg.id,
-                    lane:            reg.lane ?? i + 1,
-                    horse_name:      reg.horse ?? 'N/A',
-                    rank:            ex?.rank ?? '',
-                    finish_time:     ex?.finish_time ?? '',
-                    notes:           ex?.notes ?? '',
+                    lane:        reg.lane ?? i + 1,
+                    // AdminUserController trả horse là string, RefereeController trả object
+                    horse_name:  (typeof reg.horse === 'string' ? reg.horse : reg.horse?.name) ?? 'N/A',
+                    rank:        ex?.rank ?? '',
+                    finish_time: ex?.finish_time ?? '',
+                    notes:       ex?.notes ?? '',
+                    auto_filled: !!ex,
                 };
             });
-            setRows(built.sort((a, b) => a.lane - b.lane));
+            setRows(built.sort((a, b) => {
+                if (existingResults.length > 0 && a.rank && b.rank) return Number(a.rank) - Number(b.rank);
+                return a.lane - b.lane;
+            }));
         };
         loadExisting();
     }, [race]);
@@ -134,6 +138,17 @@ const ResultForm = ({ race, onBack, onPublished }) => {
                 </div>
                 <StatusBadge status={race.status} />
             </div>
+
+            {/* Banner kết quả tự động */}
+            {rows.some(r => r.auto_filled) && (
+                <div className="flex items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+                    <span className="text-emerald-400 text-xl">🏁</span>
+                    <p className="text-sm font-bold text-emerald-400">
+                        Kết quả đã được ghi nhận tự động từ hệ thống simulation.
+                        Kiểm tra và publish chính thức bên dưới.
+                    </p>
+                </div>
+            )}
 
             {error && (
                 <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm font-semibold text-rose-300">{error}</div>
@@ -282,7 +297,7 @@ export default function AdminResultEntry() {
 
     /* Filtered races */
     const displayed = races.filter(r => {
-        const matchTournament = !tournamentFilter || r.tournament === tournaments.find(t => t.id === Number(tournamentFilter))?.name;
+        const matchTournament = !tournamentFilter || String(r.tournament_id) === String(tournamentFilter);
         const matchStatus     = !statusFilter     || r.status === statusFilter;
         return matchTournament && matchStatus;
     });

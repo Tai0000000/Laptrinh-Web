@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../api/axios';
+import { useSocket } from '../hooks/useSocket';
 
 const RaceDetail = () => {
   const { id } = useParams();
@@ -8,8 +9,9 @@ const RaceDetail = () => {
   const [results, setResults]   = useState([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState('');
+  const { addMessageListener, removeMessageListener } = useSocket();
 
-  useEffect(() => {
+  const loadData = () => {
     Promise.all([
       api.get(`/public/races/${id}`),
       api.get(`/public/race-results/${id}`).catch(() => ({ data: { data: [] } })),
@@ -19,7 +21,24 @@ const RaceDetail = () => {
       setResults(resultRes.data?.data ?? resultRes.data ?? []);
     }).catch(() => setError('Không thể tải thông tin cuộc đua.'))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadData();
   }, [id]);
+
+  // Listen for real-time updates
+  useEffect(() => {
+    const handleRaceResult = (data) => {
+      if (Number(data.race_id) === Number(id)) {
+        loadData();
+      }
+    };
+    addMessageListener('race_result', handleRaceResult);
+    return () => {
+      removeMessageListener('race_result', handleRaceResult);
+    };
+  }, [addMessageListener, removeMessageListener, id]);
 
   const statusLabel = (s) => {
     switch (s) {

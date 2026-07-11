@@ -45,12 +45,15 @@ return new class extends Migration
         });
 
         // 5. Cho phép registrations.jockey_id là nullable
-        // NOTE: Bỏ qua nếu có dữ liệu cũ không tương thích
-        // Schema::table('registrations', function (Blueprint $table) {
-        //     $table->dropForeign(['jockey_id']);
-        //     $table->unsignedBigInteger('jockey_id')->nullable()->change();
-        //     $table->foreign('jockey_id')->references('id')->on('jockeys')->onDelete('set null');
-        // });
+        Schema::table('registrations', function (Blueprint $table) {
+            $table->dropForeign(['jockey_id']);
+        });
+        DB::statement('ALTER TABLE registrations MODIFY COLUMN jockey_id BIGINT UNSIGNED NULL');
+        Schema::table('registrations', function (Blueprint $table) {
+            $table->foreign('jockey_id')
+                  ->references('id')->on('jockeys')
+                  ->onDelete('set null');
+        });
     }
 
     public function down(): void
@@ -81,7 +84,9 @@ return new class extends Migration
         // Revert jockey_id
         Schema::table('registrations', function (Blueprint $table) {
             $table->dropForeign(['jockey_id']);
-            $table->unsignedBigInteger('jockey_id')->nullable(false)->change();
+        });
+        DB::statement('ALTER TABLE registrations MODIFY COLUMN jockey_id BIGINT UNSIGNED NOT NULL');
+        Schema::table('registrations', function (Blueprint $table) {
             $table->foreign('jockey_id')->references('id')->on('jockeys')->onDelete('cascade');
         });
     }

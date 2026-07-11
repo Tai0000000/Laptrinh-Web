@@ -3,9 +3,14 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Bet;
 use App\Models\Race;
+use App\Models\RaceResult;
+use App\Models\Registration;
 use App\Models\Violation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class RefereeController extends Controller
 {
@@ -170,6 +175,116 @@ class RefereeController extends Controller
                 'success' => false,
                 'message' => 'Error updating race status: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Update violation status (approve/reject).
+     * PUT /referee/violations/{id}/status
+     */
+    public function updateViolationStatus(Request $request, $id)
+    {
+        try {
+            $validated = $request->validate([
+                'status' => 'required|string|in:pending,approved,rejected',
+            ]);
+
+            $violation = Violation::find($id);
+            if (!$violation) {
+                return response()->json(['success' => false, 'message' => 'Violation not found'], 404);
+            }
+
+            $violation->update(['status' => $validated['status']]);
+            $violation->load(['race', 'registration.horse', 'registration.jockey']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Violation status updated',
+                'data'    => $violation,
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Nullify result of a specific horse (disqualification action on result).
+     * PUT /referee/races/{race}/registrations/{registration}/disqualify
+     */
+    public function disqualifyResult(Request $request, $raceId, $registrationId)
+    {
+        DB::beginTransaction();
+        try {
+            // Đánh dấu kết quả là DQ (rank = null, notes = DQ)
+            RaceResult::updateOrCreate(
+                ['race_id' => $raceId, 'registration_id' => $registrationId],
+                ['rank' => null, 'finish_time' => null, 'notes' => 'Truất quyền thi đấu (DQ)']
+            );
+
+            // Hủy các bets liên quan — hoàn tiền
+            $bets = Bet::where('registration_id', $registrationId)
+                ->where('status', 'won')
+                ->with('user')
+                ->get();
+
+            foreach ($bets as $bet) {
+                $rewardTaken = (float) $bet->reward_amount;
+                if ($rewardTaken > 0 && $bet->user) {
+                    // Trừ lại tiền thưởng đã cộng
+                    $bet->user->decrement('balance', $rewardTaken);
+                }
+                $bet->update(['status' => 'lost', 'reward_amount' => 0]);
+            }
+
+            // Ghi violation tự động nếu chưa có
+            $refId = $request->attributes->get('auth_user_id');
+            Violation::firstOrCreate(
+                ['race_id' => $raceId, 'registration_id' => $registrationId, 'violation_type' => 'disqualification'],
+                ['referee_id' => $refId, 'notes' => 'Truất quyền thi đấu — kết quả bị hủy', 'status' => 'approved']
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã truất quyền thi đấu và hủy kết quả thành công.',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Disqualify error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Assign lanes to registrations for a race.
+     * POST /referee/races/{race}/assign-lanes
+     */
+    public function assignLanes(Request $request, $raceId)
+    {
+        try {
+            $validated = $request->validate([
+                'lanes'                    => 'required|array|min:1',
+                'lanes.*.registration_id'  => 'required|integer|exists:registrations,id',
+                'lanes.*.lane'             => 'required|integer|min:1',
+            ]);
+
+            DB::beginTransaction();
+            foreach ($validated['lanes'] as $item) {
+                Registration::where('id', $item['registration_id'])
+                    ->where('race_id', $raceId)
+                    ->update(['lane' => $item['lane']]);
+            }
+            DB::commit();
+
+            return response()->json(['success' => true, 'message' => 'Đã cập nhật làn chạy thành công.']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 }
